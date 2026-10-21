@@ -1,0 +1,43 @@
+import { z } from "zod";
+
+export const themeSchema = z.enum(["light", "dark"]);
+export type Theme = z.infer<typeof themeSchema>;
+
+/** Ilustración provisional del producto, hasta contar con fotografía real. */
+export const artSchema = z.enum(["headphones", "watch", "lamp-table", "lamp-floor", "vase", "candles"]);
+export type Art = z.infer<typeof artSchema>;
+
+export const variantSchema = z.object({
+  sku: z.string(),
+  label: z.string(),
+  /** Color de muestra en hex; la ilustración del producto lo usa. */
+  swatch: z.string().optional(),
+  priceCents: z.number().int().nonnegative(),
+  compareAtCents: z.number().int().nonnegative().optional(),
+  stock: z.number().int().nonnegative(),
+});
+export type Variant = z.infer<typeof variantSchema>;
+
+export const productSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  brand: z.string(),
+  /** Slug de la categoría hoja (ej. "audifonos"). */
+  category: z.string(),
+  tagline: z.string(),
+  description: z.string(),
+  theme: themeSchema,
+  art: artSchema.optional(),
+  /** Si tiene valor, aparece en la portada; menor número = primero. */
+  featuredRank: z.number().int().optional(),
+  specs: z.record(z.string(), z.string()),
+  highlights: z.array(z.object({ title: z.string(), body: z.string() })),
+  inBox: z.array(z.string()).optional(),
+  faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),
+  /** Rutas bajo /public, ej. /products/aura-pro/1.jpg */
+  images: z.array(z.object({ src: z.string(), alt: z.string() })).optional(),
+  videoUrl: z.string().optional(),
+  videoPoster: z.string().optional(),
+  variants: z.array(variantSchema).min(1),
+});
+export type Product = z.infer<typeof productSchema>;

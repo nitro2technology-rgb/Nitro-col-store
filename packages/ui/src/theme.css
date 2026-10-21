@@ -1,0 +1,116 @@
+/*
+ * Marca: fondo blanco y negro, como el logo. Los grises de la paleta
+ * (#EDEDED, #9CA3AF, #4B5563, #1F2937, #111827) acompañan como superficies y textos secundarios.
+ *
+ * Tema "light" (por defecto): fondo blanco, texto negro.
+ * Tema "dark": fondo negro, texto blanco. Se elige con data-theme en cualquier contenedor.
+ * La estructura y los radios siguen Instrucciones/Diseños frontend.
+ */
+@theme inline {
+  --font-display: "SF Pro Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-text: "SF Pro Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-soft: var(--soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-action: var(--action);
+  --color-on-action: var(--on-action);
+  --color-link: var(--link);
+  --color-eyebrow: var(--eyebrow);
+
+  --radius-card: 28px;
+  --radius-button: 980px;
+  --radius-chip: 999px;
+}
+
+:root {
+  --white: #ffffff;
+  --black: #000000;
+  --gray-1: #ededed;
+  --gray-2: #9ca3af;
+  --gray-3: #4b5563;
+  --gray-4: #1f2937;
+  --gray-5: #111827;
+}
+
+/* Claro (por defecto): fondo blanco y tinta negra, como el logo. */
+:root,
+[data-theme="light"] {
+  --canvas: var(--white);
+  --surface: var(--gray-1);
+  --soft: color-mix(in srgb, var(--gray-1) 60%, var(--gray-2));
+  --ink: var(--black);
+  --muted: var(--gray-3);
+  --action: var(--black);
+  --on-action: var(--white);
+  --link: var(--gray-3);
+  --eyebrow: var(--gray-3);
+  --glass-bg: linear-gradient(145deg, rgb(255 255 255 / 0.8), rgb(237 237 237 / 0.5));
+  --glass-border: rgb(156 163 175 / 0.45);
+  --glass-highlight: rgb(255 255 255 / 0.95);
+  --glass-shadow: rgb(17 24 39 / 0.28);
+}
+
+/* Oscuro: fondo negro, para los productos y secciones que lo piden. */
+[data-theme="dark"] {
+  --canvas: var(--black);
+  --surface: var(--gray-5);
+  --soft: var(--gray-3);
+  --ink: var(--white);
+  --muted: var(--gray-2);
+  --action: var(--white);
+  --on-action: var(--black);
+  --link: var(--gray-2);
+  --eyebrow: var(--gray-2);
+  --glass-bg: rgb(31 41 55 / 0.55);
+  --glass-border: rgb(255 255 255 / 0.12);
+  --glass-highlight: rgb(255 255 255 / 0.12);
+  --glass-shadow: rgb(0 0 0 / 0.5);
+}
+
+/* ───────── Efecto vidrio ─────────
+ * .glass        superficie translúcida que sigue el tema (clara u oscura)
+ * .glass-nav    barra superior y su panel: vidrio empañado gris oscuro, a todo el ancho
+ * .glass-band   banda de ancho completo
+ * .stage-dark   escenario negro con un resplandor suave detrás del producto
+ */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 40px -22px var(--glass-shadow);
+}
+
+.glass-nav {
+  /* Velo de luz arriba que se desvanece, sobre negro casi puro translúcido */
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.14) 0%, rgb(255 255 255 / 0.03) 55%, rgb(255 255 255 / 0) 100%),
+    rgb(4 5 7 / 0.86);
+  -webkit-backdrop-filter: blur(32px) saturate(1.9);
+  backdrop-filter: blur(32px) saturate(1.9);
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 -1px 0 rgb(0 0 0 / 0.5),
+    0 18px 36px -12px rgb(0 0 0 / 0.55),
+    0 4px 10px -2px rgb(0 0 0 / 0.3);
+}
+
+.glass-band {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  border-block: 1px solid var(--glass-border);
+}
+
+.stage-dark {
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgb(75 85 99 / 0.5), transparent 70%),
+    radial-gradient(60% 50% at 100% 100%, rgb(31 41 55 / 0.8), transparent 70%),
+    #000;
+}

@@ -1,0 +1,589 @@
+// Esquema del MVP (especificaciones-tecnicas.md, sección 4).
+// Dinero: enteros en la unidad mínima (centavos de COP). Nunca float.
+// Precios unitarios en Int; totales de pedidos y pagos en BigInt.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ───────────── Enums ─────────────
+
+enum Role {
+  customer
+  support
+  catalog_manager
+  marketing
+  admin
+  super_admin
+}
+
+enum ProductStatus {
+  draft
+  published
+  archived
+}
+
+enum AttributeType {
+  text
+  number
+  boolean
+  enum
+}
+
+enum OrderStatus {
+  pending_payment
+  paid
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+  return_requested
+  returned
+}
+
+enum PaymentStatus {
+  pending
+  approved
+  declined
+  voided
+  refunded
+}
+
+enum ShipmentStatus {
+  pending
+  in_transit
+  delivered
+  returned
+}
+
+enum CouponType {
+  percentage
+  fixed
+  free_shipping
+}
+
+enum ReservationStatus {
+  active
+  committed
+  released
+}
+
+enum LandingStatus {
+  draft
+  published
+  archived
+}
+
+// ───────────── Usuarios ─────────────
+
+/// Perfil ligado a auth.users de Supabase (mismo id).
+model Profile {
+  id         String    @id @db.Uuid
+  email      String    @unique
+  fullName   String?   @map("full_name")
+  phone      String?
+  documentId String?   @map("document_id")
+  role       Role      @default(customer)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  addresses Address[]
+  orders    Order[]
+  reviews   Review[]
+  carts     Cart[]
+
+  @@map("profiles")
+}
+
+model Address {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  profileId  String   @map("profile_id") @db.Uuid
+  fullName   String   @map("full_name")
+  phone      String
+  documentId String   @map("document_id")
+  department String
+  city       String
+  line1      String
+  line2      String?
+  notes      String?
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("addresses")
+}
+
+// ───────────── Catálogo ─────────────
+
+model Category {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  parentId  String?   @map("parent_id") @db.Uuid
+  name      String
+  slug      String    @unique
+  /// Ruta materializada, ej. "tecnologia/audifonos"
+  path      String
+  position  Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  parent     Category?         @relation("CategoryTree", fields: [parentId], references: [id])
+  children   Category[]        @relation("CategoryTree")
+  products   ProductCategory[]
+  attributes Attribute[]
+
+  @@index([parentId])
+  @@index([path])
+  @@map("categories")
+}
+
+model Brand {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  brandId      String?       @map("brand_id") @db.Uuid
+  name         String
+  slug         String        @unique
+  tagline      String?
+  description  String
+  status       ProductStatus @default(draft)
+  /// Si tiene valor, el producto sale en la portada; menor número = primero
+  featuredRank Int?          @map("featured_rank")
+  /// "light" | "dark": tema visual de la página de producto
+  theme        String        @default("light")
+  /// Especificaciones de solo lectura que no se filtran
+  specs        Json          @default("{}")
+  seo          Json          @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  brand           Brand?                  @relation(fields: [brandId], references: [id])
+  variants        ProductVariant[]
+  images          ProductImage[]
+  categories      ProductCategory[]
+  attributeValues ProductAttributeValue[]
+  reviews         Review[]
+  landingPages    LandingPageProduct[]
+
+  @@index([status])
+  @@index([brandId])
+  @@map("products")
+}
+
+model ProductCategory {
+  productId  String @map("product_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+  @@map("product_categories")
+}
+
+model ProductVariant {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  productId      String    @map("product_id") @db.Uuid
+  sku            String    @unique
+  gtin           String?
+  label          String
+  priceCents     Int       @map("price_cents")
+  compareAtCents Int?      @map("compare_at_cents")
+  currency       String    @default("COP")
+  weightGrams    Int       @map("weight_grams")
+  lengthMm       Int       @map("length_mm")
+  widthMm        Int       @map("width_mm")
+  heightMm       Int       @map("height_mm")
+  allowBackorder Boolean   @default(false) @map("allow_backorder")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory  InventoryItem?
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  url       String
+  alt       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+  @@map("product_images")
+}
+
+/// Atributos filtrables por categoría (RAM, material, color...).
+model Attribute {
+  id         String        @id @default(uuid(7)) @db.Uuid
+  categoryId String?       @map("category_id") @db.Uuid
+  name       String
+  slug       String
+  type       AttributeType
+  unit       String?
+  filterable Boolean       @default(false)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  category Category?               @relation(fields: [categoryId], references: [id])
+  values   ProductAttributeValue[]
+
+  @@unique([categoryId, slug])
+  @@map("attributes")
+}
+
+model ProductAttributeValue {
+  productId   String @map("product_id") @db.Uuid
+  attributeId String @map("attribute_id") @db.Uuid
+  value       String
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@id([productId, attributeId])
+  @@index([attributeId, value])
+  @@map("product_attribute_values")
+}
+
+// ───────────── Inventario ─────────────
+
+model InventoryItem {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  variantId  String   @unique @map("variant_id") @db.Uuid
+  onHand     Int      @default(0) @map("on_hand")
+  /// Unidades reservadas por pagos en curso
+  reserved   Int      @default(0)
+  lowStockAt Int      @default(5) @map("low_stock_at")
+  /// Bloqueo optimista
+  version    Int      @default(0)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  variant      ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  reservations StockReservation[]
+  movements    StockMovement[]
+
+  @@map("inventory_items")
+}
+
+model StockReservation {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  inventoryItemId String            @map("inventory_item_id") @db.Uuid
+  orderId         String            @map("order_id") @db.Uuid
+  quantity        Int
+  status          ReservationStatus @default(active)
+  expiresAt       DateTime          @map("expires_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id])
+
+  @@index([status, expiresAt])
+  @@index([orderId])
+  @@map("stock_reservations")
+}
+
+/// Todo ajuste manual exige motivo y queda registrado.
+model StockMovement {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  inventoryItemId String   @map("inventory_item_id") @db.Uuid
+  delta           Int
+  reason          String
+  actorId         String?  @map("actor_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([inventoryItemId, createdAt])
+  @@map("stock_movements")
+}
+
+// ───────────── Carrito ─────────────
+
+model Cart {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  profileId  String?  @map("profile_id") @db.Uuid
+  /// Carrito de invitado: id de la cookie firmada
+  guestToken String?  @unique @map("guest_token")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  profile Profile?   @relation(fields: [profileId], references: [id])
+  items   CartItem[]
+
+  @@index([profileId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  cartId    String   @map("cart_id") @db.Uuid
+  variantId String   @map("variant_id") @db.Uuid
+  quantity  Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, variantId])
+  @@map("cart_items")
+}
+
+// ───────────── Pedidos ─────────────
+
+model Order {
+  id              String      @id @default(uuid(7)) @db.Uuid
+  number          Int         @unique @default(autoincrement())
+  profileId       String?     @map("profile_id") @db.Uuid
+  email           String
+  phone           String
+  status          OrderStatus @default(pending_payment)
+  currency        String      @default("COP")
+  subtotalCents   BigInt      @map("subtotal_cents")
+  discountCents   BigInt      @default(0) @map("discount_cents")
+  shippingCents   BigInt      @default(0) @map("shipping_cents")
+  taxCents        BigInt      @default(0) @map("tax_cents")
+  totalCents      BigInt      @map("total_cents")
+  couponId        String?     @map("coupon_id") @db.Uuid
+  /// Dirección y datos de facturación congelados al momento de la compra
+  shippingAddress Json        @map("shipping_address")
+  billing         Json?
+  /// utm, click ids, landing_page_id, campaign_link_id
+  attribution     Json?
+  idempotencyKey  String?     @unique @map("idempotency_key")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  profile      Profile?             @relation(fields: [profileId], references: [id])
+  coupon       Coupon?              @relation(fields: [couponId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
+  shipments    Shipment[]
+  history      OrderStatusHistory[]
+  reservations StockReservation[]
+  redemptions  CouponRedemption[]
+
+  @@index([profileId])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(uuid(7)) @db.Uuid
+  orderId    String @map("order_id") @db.Uuid
+  variantId  String @map("variant_id") @db.Uuid
+  /// Nombre y SKU congelados: el catálogo puede cambiar después
+  name       String
+  sku        String
+  unitCents  Int    @map("unit_cents")
+  quantity   Int
+  totalCents BigInt @map("total_cents")
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  orderId    String       @map("order_id") @db.Uuid
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus  @map("to_status")
+  reason     String?
+  actorId    String?      @map("actor_id") @db.Uuid
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
+}
+
+model Payment {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  orderId     String        @map("order_id") @db.Uuid
+  provider    String
+  method      String
+  providerRef String?       @map("provider_ref")
+  status      PaymentStatus @default(pending)
+  amountCents BigInt        @map("amount_cents")
+  currency    String        @default("COP")
+  raw         Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  /// Evita procesar dos veces el mismo webhook
+  @@unique([provider, providerRef])
+  @@index([orderId])
+  @@map("payments")
+}
+
+model Shipment {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  orderId        String         @map("order_id") @db.Uuid
+  carrier        String
+  trackingNumber String?        @map("tracking_number")
+  trackingUrl    String?        @map("tracking_url")
+  status         ShipmentStatus @default(pending)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("shipments")
+}
+
+// ───────────── Promociones ─────────────
+
+model Coupon {
+  id               String     @id @default(uuid(7)) @db.Uuid
+  code             String     @unique
+  type             CouponType
+  value            Int
+  minSubtotalCents Int?       @map("min_subtotal_cents")
+  startsAt         DateTime?  @map("starts_at")
+  endsAt           DateTime?  @map("ends_at")
+  maxRedemptions   Int?       @map("max_redemptions")
+  perCustomerLimit Int?       @map("per_customer_limit")
+  /// Productos o categorías a las que aplica (vacío = todo)
+  appliesTo        Json       @default("{}") @map("applies_to")
+  active           Boolean    @default(true)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  orders      Order[]
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+model CouponRedemption {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  couponId  String   @map("coupon_id") @db.Uuid
+  orderId   String   @map("order_id") @db.Uuid
+  profileId String?  @map("profile_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
+
+  @@index([couponId, profileId])
+  @@map("coupon_redemptions")
+}
+
+// ───────────── Reseñas ─────────────
+
+model Review {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  profileId String   @map("profile_id") @db.Uuid
+  rating    Int
+  title     String?
+  body      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id])
+
+  @@unique([productId, profileId])
+  @@map("reviews")
+}
+
+// ───────────── Landings y campañas ─────────────
+
+model LandingPage {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  slug      String        @unique
+  title     String
+  status    LandingStatus @default(draft)
+  /// Bloques reutilizables (hero, beneficios, FAQ...)
+  blocks    Json          @default("[]")
+  seo       Json          @default("{}")
+  startsAt  DateTime?     @map("starts_at")
+  endsAt    DateTime?     @map("ends_at")
+  createdBy String?       @map("created_by") @db.Uuid
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  products LandingPageProduct[]
+  links    CampaignLink[]
+
+  @@map("landing_pages")
+}
+
+model LandingPageProduct {
+  landingPageId String @map("landing_page_id") @db.Uuid
+  productId     String @map("product_id") @db.Uuid
+
+  landingPage LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([landingPageId, productId])
+  @@map("landing_page_products")
+}
+
+model CampaignLink {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  shortCode      String   @unique @map("short_code")
+  destinationUrl String   @map("destination_url")
+  utm            Json     @default("{}")
+  landingPageId  String?  @map("landing_page_id") @db.Uuid
+  clicksCount    Int      @default(0) @map("clicks_count")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  landingPage LandingPage? @relation(fields: [landingPageId], references: [id])
+
+  @@map("campaign_links")
+}
+
+// ───────────── Auditoría ─────────────
+
+model AuditLog {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  changes   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}

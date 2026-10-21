@@ -1,0 +1,1 @@
+{ "extends": "@nitro/config/tsconfig.base.json", "include": ["src"] }

@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "@nitro/ui/theme.css";
+@source "../../../packages/ui/src";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(52rem 38rem at 8% 5%, rgb(156 163 175 / 0.42), transparent 70%),
+    radial-gradient(46rem 34rem at 97% 20%, rgb(75 85 99 / 0.2), transparent 70%),
+    radial-gradient(60rem 40rem at 3% 50%, rgb(156 163 175 / 0.34), transparent 70%),
+    radial-gradient(50rem 36rem at 93% 76%, rgb(156 163 175 / 0.4), transparent 70%),
+    radial-gradient(44rem 30rem at 20% 96%, rgb(75 85 99 / 0.16), transparent 70%),
+    var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-inter), "SF Pro Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-inter-tight), "SF Pro Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 600;
+  line-height: 1.07;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Único movimiento ambiental: el anillo del producto gira despacio. */
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ring-spin {
+  transform-origin: 320px 290px;
+  animation: ring-spin 60s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-spin {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Respuesta al clic: el panel de categorías aparece con un fundido corto. */
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.menu-in {
+  animation: menu-in 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-in {
+    animation: none;
+  }
+}
+
+/* Carrusel horizontal sin barra visible. */
+.snap-row {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-row > * {
+  scroll-snap-align: center;
+}
+
+/* Logo: la tinta es una máscara, así que toma el color del texto (negro o blanco según el tema). */
+.brand-mark {
+  aspect-ratio: 638 / 374;
+  background-color: currentColor;
+  -webkit-mask: url("/brand/logo-mark.png") center / contain no-repeat;
+  mask: url("/brand/logo-mark.png") center / contain no-repeat;
+}
+
+/* Momento de la portada: el nombre se escribe de izquierda a derecha. */
+@keyframes brand-write {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.brand-write {
+  animation: brand-write 1.7s cubic-bezier(0.65, 0, 0.35, 1) 0.25s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-write {
+    animation: none;
+  }
+}
