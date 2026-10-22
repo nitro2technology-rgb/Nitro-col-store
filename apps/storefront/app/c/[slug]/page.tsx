@@ -47,7 +47,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         })}
       </nav>
 
-      <section className="mt-12 grid gap-6 md:grid-cols-2">
+      <section className="mt-12 flex flex-wrap gap-6">
         {items.map((p) => (
           <ProductTile key={p.slug} product={p} />
         ))}

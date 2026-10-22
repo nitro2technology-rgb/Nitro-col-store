@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatCOP, type Product } from "@nitro/shared";
 import { buttonClasses } from "@nitro/ui";
+import { ProductTile } from "@/components/product-tile";
 import { ProductArt } from "@/components/art/product-art";
 import { BrandMark } from "@/components/brand-mark";
 import {
@@ -15,32 +16,8 @@ import {
 /** Dos destacados por fila; cada uno es un escenario con el tema de su producto. */
 function Tile({ product }: { product: Product }) {
   return (
-    <section
-      data-theme={product.theme}
-      className={`flex min-h-[620px] flex-col rounded-card p-8 text-ink md:min-h-[min(86svh,800px)] md:p-10 ${
-        product.theme === "dark" ? "stage-dark border border-white/10" : "glass"
-      }`}
-    >
-      <div className="flex flex-1 items-center justify-center py-4">
-        <ProductArt
-          product={product}
-          swatch={product.variants[0]?.swatch}
-          className="h-[min(36vh,360px)] w-auto max-w-full"
-        />
-      </div>
-      <div>
-        <p className="text-[17px] font-semibold text-eyebrow">{categoryName(product.category)}</p>
-        <h2 className="mt-2 text-[clamp(32px,3.6vw,52px)]">
-          <span className="mb-2 block text-[21px] tracking-[-0.012em]">{product.name}</span>
-          {product.tagline}
-        </h2>
-        <div className="mt-6 flex items-center gap-4">
-          <span className="text-[17px]">Desde {formatCOP(fromPrice(product))}</span>
-          <Link href={`/p/${product.slug}`} className={buttonClasses("buy")}>
-            Comprar
-          </Link>
-        </div>
-      </div>
+    <section className="flex justify-center">
+      <ProductTile product={product} />
     </section>
   );
 }
@@ -48,7 +25,7 @@ function Tile({ product }: { product: Product }) {
 function Row({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
   return (
-    <div className="mx-auto grid max-w-[1440px] gap-3 px-3 md:grid-cols-2 md:px-4">
+    <div className="mx-auto flex max-w-[1440px] flex-wrap justify-center gap-6 px-3 md:px-4">
       {products.map((p) => (
         <Tile key={p.slug} product={p} />
       ))}
@@ -58,8 +35,7 @@ function Row({ products }: { products: Product[] }) {
 
 // Productos que ilustran cada categoría en la bienvenida.
 const sampleSlugs: Record<string, string[]> = {
-  tecnologia: ["audifonos-aura-lite", "smartwatch-forma-sport"],
-  hogar: ["lampara-luma-pie", "accesorio-velas-brasa"],
+  tecnologia: ["audifonos-aurafit-fw5", "smartwatch-x8-pro"],
 };
 
 function CategoryCard({ category }: { category: CategoryNode }) {
@@ -104,7 +80,7 @@ export default function Home() {
           <BrandMark write className="w-full max-w-[620px] text-ink" />
           <div>
             <h1 className="text-[clamp(36px,4.6vw,64px)]">
-              Tecnología y hogar, elegidos con cuidado.
+              Tecnología elegida con cuidado.
             </h1>
             <p className="mt-6 max-w-[34rem] text-[clamp(18px,1.6vw,21px)] leading-[1.47] text-muted">
               Somos Nitro Col. Desde 2020 reunimos productos que mejoran tu día a día, con pago seguro
@@ -124,7 +100,7 @@ export default function Home() {
         <div className="mx-auto max-w-[760px] text-center">
           <h2 className="text-[clamp(40px,6vw,72px)]">Todo lo que buscas, en un solo lugar.</h2>
           <p className="mt-6 text-[clamp(18px,2vw,21px)] leading-[1.47] text-muted">
-            Audio, relojes, lámparas y detalles para tu casa. Elige una categoría y encuentra lo tuyo.
+            Audio y relojes inteligentes. Elige una categoría y encuentra lo tuyo.
           </p>
         </div>
         <div className="mt-16 grid gap-3 md:grid-cols-2 md:gap-4">

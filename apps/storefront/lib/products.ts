@@ -1,176 +1,78 @@
-import type { Product } from "@nitro/shared";
+import type { Product, ProductImage } from "@nitro/shared";
+
+const photos = (dir: string, name: string, prefix: string, nums: number[], ext = "webp"): ProductImage[] =>
+  nums.map((n) => ({ src: `/products/${dir}/${prefix}${n}.${ext}`, alt: `${name}, foto ${n}` }));
+
+const gtide: ProductImage[] = [
+  ...photos("gtide-l42", "G-tide L42", "", [1, 2, 3]),
+  ...photos("gtide-l42", "G-tide L42", "", [4], "avif"),
+];
 
 // Datos de ejemplo hasta conectar la API/BD. Precios en centavos de COP.
 // `featuredRank` decide qué productos salen en la portada (menor número = primero).
 export const products: Product[] = [
   {
-    slug: "audifonos-aura-pro",
-    name: "Aura Pro",
-    brand: "Nitro",
+    slug: "audifonos-aurafit-fw5",
+    name: "Aurafit Aurabuds FW5",
+    brand: "Aurafit",
     category: "audifonos",
-    art: "headphones",
-    featuredRank: 1,
-    tagline: "Silencio que se siente.",
-    description:
-      "Audífonos inalámbricos con cancelación activa de ruido y hasta 30 horas de batería.",
+    tagline: "Música sin cables, en dos colores.",
+    description: "Audífonos inalámbricos pequeños y cómodos, disponibles en azul y beige.",
     theme: "light",
-    specs: {
-      Batería: "30 horas",
-      Conectividad: "Bluetooth 5.3",
-      Cancelación: "Activa, 3 niveles",
-      Peso: "250 g",
-      Carga: "USB-C, 10 min = 5 h",
-    },
+    specs: { Conectividad: "Bluetooth", Colores: "Azul, Beige" },
     highlights: [
-      { title: "Cancelación activa de ruido", body: "Aísla el entorno en la oficina, el bus o el avión, y deja pasar la voz cuando lo necesitas." },
-      { title: "Una semana sin cargador", body: "Hasta 30 horas de música. Diez minutos de carga te dan cinco horas más." },
+      { title: "Pequeños y livianos", body: "Caben en el bolsillo y se olvidan puestos." },
+      { title: "Dos colores", body: "Elige azul o beige, al mismo precio." },
     ],
-    inBox: ["Audífonos Aura Pro", "Estuche rígido", "Cable USB-C", "Cable de audio de 3,5 mm"],
+    images: [
+      ...photos("aurafit-fw5", "Aurafit Aurabuds FW5 azul", "azul-", [1, 2, 3, 4, 5, 6, 7]),
+      ...photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-", [1, 2, 3, 6]),
+    ],
     variants: [
-      { sku: "AURA-PRO-BLK", label: "Negro", swatch: "#1f2937", priceCents: 49900000, compareAtCents: 59900000, stock: 12 },
-      { sku: "AURA-PRO-WHT", label: "Blanco", swatch: "#ffffff", priceCents: 49900000, stock: 3 },
+      {
+        sku: "AURAFIT-FW5-AZL", label: "Azul", swatch: "#3b6fb6", priceCents: 6500000, stock: 10,
+        images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 azul", "principal-", [1, 2, 3]),
+      },
+      {
+        sku: "AURAFIT-FW5-BEI", label: "Beige", swatch: "#d9c7a8", priceCents: 6500000, stock: 10,
+        images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-", [1, 2, 3, 6]),
+      },
     ],
   },
   {
-    slug: "audifonos-aura-lite",
-    name: "Aura Lite",
-    brand: "Nitro",
+    slug: "audifonos-gtide-l42",
+    name: "G-tide L42",
+    brand: "G-tide",
     category: "audifonos",
-    art: "headphones",
-    tagline: "Música ligera, todo el día.",
-    description: "Audífonos de diadema livianos, con 40 horas de batería y micrófono integrado.",
+    tagline: "Sonido directo, en negro.",
+    description: "Audífonos inalámbricos pequeños en color negro.",
     theme: "light",
-    specs: { Batería: "40 horas", Conectividad: "Bluetooth 5.2", Peso: "190 g", Carga: "USB-C" },
-    highlights: [
-      { title: "Solo 190 gramos", body: "Tan livianos que olvidas que los llevas puestos." },
-      { title: "40 horas de batería", body: "Para toda la semana, sin pensar en el cargador." },
-    ],
-    inBox: ["Audífonos Aura Lite", "Cable USB-C", "Bolsa de tela"],
-    variants: [
-      { sku: "AURA-LITE-BLK", label: "Negro", swatch: "#1f2937", priceCents: 24990000, stock: 20 },
-      { sku: "AURA-LITE-WHT", label: "Blanco", swatch: "#ffffff", priceCents: 24990000, stock: 8 },
-    ],
+    specs: { Conectividad: "Bluetooth", Color: "Negro" },
+    highlights: [{ title: "Compactos", body: "Livianos y fáciles de llevar a todas partes." }],
+    images: gtide,
+    variants: [{ sku: "GTIDE-L42-BLK", label: "Negro", swatch: "#1f2937", priceCents: 6990000, stock: 10, images: gtide }],
   },
   {
-    slug: "smartwatch-forma-ultra",
-    name: "Forma Ultra",
-    brand: "Nitro",
+    slug: "smartwatch-x8-pro",
+    name: "Smartwatch X8 Pro 7+1",
+    brand: "X8 Pro",
     category: "smartwatch",
-    art: "watch",
-    featuredRank: 2,
-    tagline: "Una fuerza de la naturaleza.",
-    description:
-      "Reloj inteligente en titanio con GPS de doble frecuencia y pantalla siempre activa.",
+    tagline: "Un reloj, ocho correas.",
+    description: "Smartwatch con pantalla HD de 2,19\", llamadas por Bluetooth, notificaciones y 7 correas más la del reloj.",
     theme: "dark",
-    specs: {
-      Caja: "49 mm, titanio",
-      GPS: "Doble frecuencia",
-      Resistencia: "Agua hasta 100 m",
-      Batería: "Hasta 36 horas",
-      Pantalla: "Siempre activa",
-    },
+    specs: { Pantalla: "2,19\" HD", Llamadas: "Bluetooth", Notificaciones: "Sí", Correas: "7 + 1" },
     highlights: [
-      { title: "GPS de precisión", body: "Rutas exactas en ciudad, montaña y mar, incluso entre edificios altos." },
-      { title: "Titanio de grado aeroespacial", body: "Ligero, resistente a los golpes y hecho para durar años de entrenamiento." },
+      { title: "Llamadas desde la muñeca", body: "Contesta por Bluetooth sin sacar el celular." },
+      { title: "Siete correas extra", body: "Cambia de estilo cuando quieras." },
     ],
-    inBox: ["Reloj Forma Ultra", "Correa de silicona", "Cable de carga magnético"],
-    variants: [{ sku: "FORMA-ULTRA-49", label: "49 mm", priceCents: 349900000, stock: 5 }],
-  },
-  {
-    slug: "smartwatch-forma-sport",
-    name: "Forma Sport",
-    brand: "Nitro",
-    category: "smartwatch",
-    art: "watch",
-    tagline: "Tu ritmo, al día.",
-    description: "Reloj deportivo con GPS, monitor cardíaco y siete días de batería.",
-    theme: "dark",
-    specs: { Caja: "Aluminio", GPS: "Integrado", Resistencia: "Agua hasta 50 m", Batería: "7 días" },
-    highlights: [
-      { title: "Siete días de batería", body: "Entrena toda la semana y carga el fin de semana." },
-      { title: "Monitor cardíaco", body: "Frecuencia cardíaca en tiempo real, en reposo y en movimiento." },
-    ],
-    inBox: ["Reloj Forma Sport", "Correa deportiva", "Cable de carga"],
+    images: photos("smartwatch-x8-pro", "Smartwatch X8 Pro", "", [1, 2, 3, 4], "avif"),
+    videoUrl: "/products/smartwatch-x8-pro/video.mp4",
+    videoPoster: "/products/smartwatch-x8-pro/principal-1.webp",
     variants: [
-      { sku: "FORMA-SPORT-41", label: "41 mm", priceCents: 189900000, stock: 14 },
-      { sku: "FORMA-SPORT-45", label: "45 mm", priceCents: 209900000, stock: 0 },
-    ],
-  },
-  {
-    slug: "lampara-luma-mesa",
-    name: "Luma Mesa",
-    brand: "Nitro",
-    category: "lamparas",
-    art: "lamp-table",
-    featuredRank: 3,
-    tagline: "La luz justa, a tu altura.",
-    description: "Lámpara de mesa con luz cálida regulable y base de metal.",
-    theme: "dark",
-    specs: { Altura: "42 cm", Luz: "Cálida, 2700 K", Intensidad: "Regulable", Material: "Metal y tela" },
-    highlights: [
-      { title: "Luz cálida regulable", body: "De una luz tenue para leer a una luz plena para trabajar, con un solo giro." },
-      { title: "Base de metal", body: "Estable y de acabado mate, se ve bien en la mesa de noche o en el escritorio." },
-    ],
-    inBox: ["Lámpara Luma Mesa", "Bombillo LED", "Guía de instalación"],
-    variants: [{ sku: "LUMA-MESA-STD", label: "Estándar", priceCents: 18990000, stock: 9 }],
-  },
-  {
-    slug: "lampara-luma-pie",
-    name: "Luma Pie",
-    brand: "Nitro",
-    category: "lamparas",
-    art: "lamp-floor",
-    tagline: "Una esquina con calma.",
-    description: "Lámpara de pie de 1,6 m, con pantalla en domo y luz difusa.",
-    theme: "light",
-    specs: { Altura: "160 cm", Luz: "Cálida, 2700 K", Material: "Acero y tela", Cable: "2 m" },
-    highlights: [
-      { title: "Luz difusa", body: "La pantalla en domo reparte la luz sin deslumbrar." },
-      { title: "160 cm de altura", body: "Cabe en cualquier esquina de la sala o la habitación." },
-    ],
-    inBox: ["Lámpara Luma Pie", "Pantalla", "Bombillo LED"],
-    variants: [{ sku: "LUMA-PIE-STD", label: "Estándar", priceCents: 34990000, stock: 4 }],
-  },
-  {
-    slug: "accesorio-jarron-terra",
-    name: "Jarrón Terra",
-    brand: "Nitro",
-    category: "accesorios-hogar",
-    art: "vase",
-    featuredRank: 4,
-    tagline: "Cerámica con carácter.",
-    description: "Jarrón de cerámica esmaltada, hecho para ramas secas o flores de tallo largo.",
-    theme: "light",
-    specs: { Altura: "28 cm", Material: "Cerámica esmaltada", Capacidad: "1,2 L", Cuidado: "Lavar a mano" },
-    highlights: [
-      { title: "Cerámica esmaltada", body: "Acabado liso por fuera y sellado por dentro, listo para agua." },
-      { title: "Tres tonos", body: "Arcilla, arena o grafito, para combinar con cualquier espacio." },
-    ],
-    inBox: ["Jarrón Terra", "Base antideslizante"],
-    variants: [
-      { sku: "TERRA-ARC", label: "Arcilla", swatch: "#b9785a", priceCents: 12990000, stock: 18 },
-      { sku: "TERRA-ARE", label: "Arena", swatch: "#d9c7a8", priceCents: 12990000, stock: 11 },
-      { sku: "TERRA-GRA", label: "Grafito", swatch: "#4b5563", priceCents: 12990000, stock: 2 },
-    ],
-  },
-  {
-    slug: "accesorio-velas-brasa",
-    name: "Velas Brasa",
-    brand: "Nitro",
-    category: "accesorios-hogar",
-    art: "candles",
-    tagline: "Tres alturas, una atmósfera.",
-    description: "Set de tres velas de soja con bandeja de metal.",
-    theme: "dark",
-    specs: { Velas: "3 unidades", Cera: "Soja", Duración: "Hasta 40 horas cada una", Bandeja: "Metal" },
-    highlights: [
-      { title: "Cera de soja", body: "Se consume lento y parejo, sin humo negro." },
-      { title: "Bandeja incluida", body: "Las tres velas juntas ya parecen una decoración." },
-    ],
-    inBox: ["3 velas de soja", "Bandeja de metal"],
-    variants: [
-      { sku: "BRASA-MAR", label: "Marfil", swatch: "#ededed", priceCents: 8990000, stock: 25 },
-      { sku: "BRASA-GRA", label: "Grafito", swatch: "#4b5563", priceCents: 8990000, stock: 10 },
+      {
+        sku: "SW-X8PRO", label: "Único", priceCents: 9500000, stock: 10,
+        images: photos("smartwatch-x8-pro", "Smartwatch X8 Pro", "principal-", [1, 2, 3, 4]),
+      },
     ],
   },
 ];
@@ -192,15 +94,6 @@ export const categories: CategoryNode[] = [
     children: [
       { slug: "audifonos", name: "Audífonos" },
       { slug: "smartwatch", name: "Smartwatch" },
-    ],
-  },
-  {
-    slug: "hogar",
-    name: "Hogar",
-    description: "Luz y detalles para tus espacios.",
-    children: [
-      { slug: "lamparas", name: "Lámparas" },
-      { slug: "accesorios-hogar", name: "Accesorios para el hogar" },
     ],
   },
 ];
@@ -241,3 +134,9 @@ export function findVariant(sku: string) {
 }
 
 export const fromPrice = (p: Product) => Math.min(...p.variants.map((v) => v.priceCents));
+
+/** Imágenes del carrusel de la tarjeta y la cabecera: las de la variante, o la galería general. */
+export function variantImages(product: Product, sku?: string): ProductImage[] {
+  const v = product.variants.find((x) => x.sku === sku) ?? product.variants[0];
+  return v?.images ?? product.images ?? [];
+}

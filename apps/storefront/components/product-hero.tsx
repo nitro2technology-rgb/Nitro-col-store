@@ -7,11 +7,13 @@ import { useCart } from "@/lib/cart";
 import { formatCOP, type Product } from "@nitro/shared";
 import { Badge, Button } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
-import { categoryName } from "@/lib/products";
+import { ImageCarousel } from "@/components/image-carousel";
+import { categoryName, variantImages } from "@/lib/products";
 
 export function ProductHero({ product }: { product: Product }) {
   const [sku, setSku] = useState(() => (product.variants.find((v) => v.stock > 0) ?? product.variants[0]!).sku);
   const variant = product.variants.find((v) => v.sku === sku)!;
+  const images = variantImages(product, sku);
   const soldOut = variant.stock === 0;
   const lowStock = !soldOut && variant.stock <= 5;
   const discount = variant.compareAtCents
@@ -49,29 +51,29 @@ export function ProductHero({ product }: { product: Product }) {
 
   return (
     <section className="mx-auto max-w-[1440px] px-6 pt-10 md:pt-14">
-      <div className="flex justify-center">
-        <ProductArt
-          product={product}
-          swatch={variant.swatch}
-          className="h-[min(40vh,440px)] w-auto max-w-full"
-        />
-      </div>
+      <div className="grid gap-10 pb-24 md:grid-cols-[1.25fr_1fr] md:items-start md:gap-16">
+        {/* Izquierda: fotos y, debajo, nombre y descripción. */}
+        <div>
+          {images.length > 0 ? (
+            <ImageCarousel images={images} className="mx-auto w-full max-w-[560px] md:mx-0" priority />
+          ) : (
+            <div className="flex justify-center">
+              <ProductArt product={product} swatch={variant.swatch} className="h-[min(40vh,440px)] w-auto max-w-full" />
+            </div>
+          )}
+        </div>
 
-      <div className="mt-8 grid gap-10 pb-24 md:grid-cols-[1.5fr_1fr] md:items-end md:gap-16">
+        {/* Derecha: nombre, descripción y, debajo, color, precio y compra. */}
         <div>
           <p className="text-[17px] font-semibold text-eyebrow">{categoryName(product.category)}</p>
-          <h1 className="mt-3 text-[clamp(40px,6vw,72px)]">
+          <h1 className="mt-3 text-[clamp(32px,4vw,52px)]">
             <span className="mb-3 block text-[21px] tracking-[-0.012em]">{product.name}</span>
             {product.tagline}
           </h1>
-          <p className="mt-5 max-w-[34rem] text-[20px] leading-[1.47] text-muted">
-            {product.description}
-          </p>
-        </div>
+          <p className="mt-5 max-w-[34rem] text-[19px] leading-[1.47] text-muted">{product.description}</p>
 
-        <div>
           {product.variants.length > 1 && (
-            <fieldset>
+            <fieldset className="mt-9">
               <legend className="text-[17px]">
                 {product.category === "smartwatch" ? "Tamaño" : "Color"}:{" "}
                 <span className="font-semibold">{variant.label}</span>
@@ -104,7 +106,7 @@ export function ProductHero({ product }: { product: Product }) {
             </fieldset>
           )}
 
-          <div className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-[32px] font-semibold tracking-[-0.02em]">
               {formatCOP(variant.priceCents)}
             </span>

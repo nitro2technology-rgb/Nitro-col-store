@@ -14,7 +14,7 @@ const interTight = Inter_Tight({
 
 export const metadata: Metadata = {
   title: { default: "Nitro Col Store", template: "%s | Nitro Col Store" },
-  description: "Tecnología y hogar con envío a toda Colombia.",
+  description: "Tecnología con envío a toda Colombia.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

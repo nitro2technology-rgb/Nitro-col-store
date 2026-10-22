@@ -7,6 +7,9 @@ export type Theme = z.infer<typeof themeSchema>;
 export const artSchema = z.enum(["headphones", "watch", "lamp-table", "lamp-floor", "vase", "candles"]);
 export type Art = z.infer<typeof artSchema>;
 
+export const imageSchema = z.object({ src: z.string(), alt: z.string() });
+export type ProductImage = z.infer<typeof imageSchema>;
+
 export const variantSchema = z.object({
   sku: z.string(),
   label: z.string(),
@@ -15,6 +18,8 @@ export const variantSchema = z.object({
   priceCents: z.number().int().nonnegative(),
   compareAtCents: z.number().int().nonnegative().optional(),
   stock: z.number().int().nonnegative(),
+  /** Carrusel de la tarjeta y de la cabecera para esta variante (ej. las fotos de un color). */
+  images: z.array(imageSchema).optional(),
 });
 export type Variant = z.infer<typeof variantSchema>;
 
@@ -34,8 +39,8 @@ export const productSchema = z.object({
   highlights: z.array(z.object({ title: z.string(), body: z.string() })),
   inBox: z.array(z.string()).optional(),
   faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),
-  /** Rutas bajo /public, ej. /products/aura-pro/1.jpg */
-  images: z.array(z.object({ src: z.string(), alt: z.string() })).optional(),
+  /** Galería general (sección "Galería"). Rutas bajo /public, ej. /products/aura-pro/1.jpg */
+  images: z.array(imageSchema).optional(),
   videoUrl: z.string().optional(),
   videoPoster: z.string().optional(),
   variants: z.array(variantSchema).min(1),

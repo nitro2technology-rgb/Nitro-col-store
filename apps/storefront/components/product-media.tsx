@@ -11,7 +11,7 @@ const crops = ["50% 50%", "50% 12%", "50% 88%"];
 export function ProductGallery({ product }: { product: Product }) {
   const images = product.images ?? [];
   const card =
-    "relative aspect-[4/5] w-[84vw] max-w-[860px] shrink-0 glass overflow-hidden rounded-card md:aspect-[16/11] md:w-[62vw]";
+    "relative aspect-square w-[84vw] max-w-[560px] shrink-0 glass overflow-hidden rounded-card md:w-[560px]";
 
   return (
     <div className="snap-row -mx-6 flex gap-4 overflow-x-auto px-6 pb-2" tabIndex={0} aria-label="Galería de imágenes">
@@ -22,8 +22,8 @@ export function ProductGallery({ product }: { product: Product }) {
                 src={img.src}
                 alt={img.alt}
                 fill
-                sizes="(min-width: 768px) 62vw, 84vw"
-                className="object-cover"
+                sizes="(min-width: 768px) 560px, 84vw"
+                className="object-contain p-3"
                 priority={i === 0}
               />
             </div>

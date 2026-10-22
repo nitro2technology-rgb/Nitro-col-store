@@ -53,7 +53,7 @@ export function CartView() {
               }`}
               aria-label={product.name}
             >
-              <ProductArt product={product} swatch={variant.swatch} className="h-[80%] w-auto" />
+              <ProductArt product={product} swatch={variant.swatch} sku={variant.sku} className="h-[80%] w-auto" />
             </Link>
 
             <div className="min-w-0">

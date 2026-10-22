@@ -71,6 +71,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark" : ""}`}>
         <ProductHero product={product} />
 
+        <section className="mx-auto max-w-[1024px] px-6 pb-28">
+          <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
+            <h2 className={h2}>Especificaciones.</h2>
+            <dl className="divide-y divide-muted/20 self-end">
+              {Object.entries(product.specs).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-6 py-4 text-[17px]">
+                  <dt className="text-muted">{k}</dt>
+                  <dd className="text-right">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
         <section className="mx-auto max-w-[1440px] px-6 pb-28">
           <h2 className={h2}>Lo principal.</h2>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
@@ -106,25 +120,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* Banda clara: especificaciones, contenido de la caja y preguntas. */}
       <section data-theme="light" className="glass-band text-ink">
         <div className="mx-auto max-w-[1024px] px-6 py-24 md:py-32">
-          <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
-            <div>
-              <p className="text-[17px] font-semibold text-eyebrow" data-theme={product.theme}>
-                {categoryName(product.category)}
-              </p>
-              <h2 className={`mt-3 ${h2}`}>Especificaciones</h2>
-            </div>
-            <dl className="self-end">
-              {Object.entries(product.specs).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-6 py-4 text-[17px]">
-                  <dt className="text-muted">{k}</dt>
-                  <dd className="text-right">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
           {product.inBox && product.inBox.length > 0 && (
-            <div className="mt-24 grid gap-12 md:grid-cols-[1fr_1.4fr]">
+            <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
               <h2 className="text-[clamp(28px,4vw,40px)]">En la caja</h2>
               <ul className="space-y-3 text-[17px]">
                 {product.inBox.map((item) => (
@@ -165,7 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <section className="mx-auto max-w-[1440px] px-6 py-24">
         <h2 className="text-[clamp(28px,4vw,40px)]">También te puede gustar</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 flex flex-wrap gap-6">
           {related.map((p) => (
             <ProductTile key={p.slug} product={p} />
           ))}
