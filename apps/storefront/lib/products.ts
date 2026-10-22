@@ -13,6 +13,7 @@ const gtide: ProductImage[] = [
 export const products: Product[] = [
   {
     slug: "audifonos-aurafit-fw5",
+    featuredRank: 1,
     name: "Aurafit Aurabuds FW5",
     brand: "Aurafit",
     category: "audifonos",
@@ -41,6 +42,7 @@ export const products: Product[] = [
   },
   {
     slug: "audifonos-gtide-l42",
+    featuredRank: 2,
     name: "G-tide L42",
     brand: "G-tide",
     category: "audifonos",
@@ -54,6 +56,7 @@ export const products: Product[] = [
   },
   {
     slug: "smartwatch-x8-pro",
+    featuredRank: 3,
     name: "Smartwatch X8 Pro 7+1",
     brand: "X8 Pro",
     category: "smartwatch",

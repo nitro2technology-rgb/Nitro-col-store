@@ -69,8 +69,8 @@ function CategoryCard({ category }: { category: CategoryNode }) {
 }
 
 export default function Home() {
-  const firstRow = featuredProducts.slice(0, 2);
-  const secondRow = featuredProducts.slice(2, 4);
+  // La portada siempre muestra tres destacados, en una sola fila.
+  const featured = featuredProducts.slice(0, 3);
 
   return (
     <main>
@@ -93,7 +93,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Row products={firstRow} />
+      <Row products={featured} />
 
       {/* Bienvenida: invita a comprar y presenta las categorías. */}
       <section id="categorias" className="mx-auto max-w-[1440px] scroll-mt-16 px-6 py-24 md:py-32">
@@ -109,8 +109,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      <Row products={secondRow} />
 
       <section data-theme="light" className="glass-band mt-3 text-ink md:mt-4">
         <div className="mx-auto grid max-w-[1024px] gap-12 px-6 py-24 md:grid-cols-[1fr_1.4fr] md:py-32">
