@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatCOP, type Product } from "@nitro/shared";
+import { HomeHero } from "@/components/home-hero";
 import { ProductTile } from "@/components/product-tile";
 import { ProductArt } from "@/components/art/product-art";
 import {
@@ -72,24 +73,19 @@ export default function Home() {
 
   return (
     <main>
-      {/* Portada: banner de marca a todo el ancho (imagen en public/brand/portada.webp, original en imagenes/portada/). */}
-      <section className="mx-auto w-full max-w-[2048px]">
-        <h1 className="sr-only">Nitro Col Store: todo lo que necesitas, en un solo lugar.</h1>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/portada.webp"
-          alt="Nitro, desde 2020. Tecnología, hogar, decoración y mucho más."
-          width={2048}
-          height={768}
-          fetchPriority="high"
-          className="block h-auto w-full"
-        />
+      <HomeHero />
+
+      <section aria-labelledby="destacados" className="relative overflow-hidden pb-16 pt-14 md:pt-20">
+        <h2 id="destacados" className="relative px-6 text-center text-[clamp(36px,5vw,60px)]">
+          Productos destacados
+        </h2>
+        <div className="relative mt-10">
+          <Row products={featured} />
+        </div>
       </section>
 
-      <Row products={featured} />
-
       {/* Bienvenida: invita a comprar y presenta las categorías. */}
-      <section id="categorias" className="mx-auto max-w-[1440px] scroll-mt-16 px-6 py-24 md:py-32">
+      <section id="categorias" className="relative mx-auto max-w-[1440px] scroll-mt-16 overflow-hidden px-6 py-24 md:py-32">
         <div className="mx-auto max-w-[760px] text-center">
           <h2 className="text-[clamp(40px,6vw,72px)]">Todo lo que buscas, en un solo lugar.</h2>
           <p className="mt-6 text-[clamp(18px,2vw,21px)] leading-[1.47] text-muted">

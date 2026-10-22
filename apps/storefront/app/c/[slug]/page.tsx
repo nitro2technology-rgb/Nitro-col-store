@@ -23,7 +23,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const items = productsIn(slug);
 
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-28 pt-16 md:pt-24">
+    <main className="relative mx-auto max-w-[1440px] overflow-hidden px-6 pb-28 pt-16 md:pt-24">
       <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>
       <p className="mt-3 text-[20px] text-muted">
         {items.length} {items.length === 1 ? "producto" : "productos"}

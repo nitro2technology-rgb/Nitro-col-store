@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Foliage } from "@/components/foliage";
 import { ProductHero } from "@/components/product-hero";
 import { ProductGallery, ProductVideo } from "@/components/product-media";
 import { ProductTile } from "@/components/product-tile";
@@ -68,7 +69,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
 
       {/* Escenario del producto en su tema (claro u oscuro): compra primero, detalle después. */}
-      <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark" : ""}`}>
+      <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark isolate" : ""}`}>
+        {product.theme === "dark" && <Foliage tone="night" />}
         <ProductHero product={product} />
 
         <section className="mx-auto max-w-[1024px] px-6 pb-28">

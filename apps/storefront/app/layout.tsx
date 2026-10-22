@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
+import { Intro, INTRO_SCRIPT } from "@/components/intro";
+import { Foliage } from "@/components/foliage";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -19,8 +21,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-CO" className={`${inter.variable} ${interTight.variable}`}>
+    <html lang="es-CO" className={`${inter.variable} ${interTight.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
+      </head>
       <body>
+        <Intro />
+        <Foliage />
         <SiteHeader />
         {children}
         <SiteFooter />
