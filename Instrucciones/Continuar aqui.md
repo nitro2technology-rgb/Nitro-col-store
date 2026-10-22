@@ -80,7 +80,7 @@ Instrucciones/         especificaciones, diseños de referencia, logo original
 - **Productos reales, textos provisionales:** nombres, precios y fotos son reales (Aurafit $65.000, G-tide $69.900, X8 Pro $95.000, stock 10 cada uno; el dueño escribió "95.0000" para el reloj y se asumió $95.000). Las **descripciones, eslóganes, especificaciones y destacados los redactó Claude** con muy pocos datos; el dueño debe darlos o revisarlos. G-tide no tiene fotos de ChatGPT (usa sus fotos normales) y el color beige de Aurafit usa fotos del catálogo.
 - **Fuentes de las fotos:** carpeta `Catálogo/` en la raíz (no está en git: 21 MB con PNG originales). Las fotos de ChatGPT se convirtieron a WebP (1600 px) como `principal-N.webp`. Si hay fotos nuevas, copiarlas a `apps/storefront/public/products/<slug>/` y referenciarlas en `lib/products.ts`.
 - **Ilustraciones SVG** (`components/art/`): ya no se usan en los productos actuales; solo son el respaldo si un producto no tiene fotos.
-- **Textos de la portada** (titular "Tecnología elegida con cuidado.", presentación, "Compra con calma") los redactó Claude; el único dato real es "Desde 2020", tomado del logo.
+- **Portada de inicio:** banner a todo el ancho `public/brand/portada.webp` (original en `imagenes/portada/portada.png`, fuera de git no: se versiona la copia WebP). Muestra laptop, hogar, moda, etc., que hoy no vendemos; el dueño puede cambiarla. El resto de textos de la portada los redactó Claude.
 - El logo en PNG mide ~640 px de ancho. Con un **SVG** se vería más nítido en pantallas de alta densidad.
 
 ## 6. Qué sigue (en este orden)

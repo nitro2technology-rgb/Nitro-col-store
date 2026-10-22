@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { formatCOP, type Product } from "@nitro/shared";
-import { buttonClasses } from "@nitro/ui";
 import { ProductTile } from "@/components/product-tile";
 import { ProductArt } from "@/components/art/product-art";
-import { BrandMark } from "@/components/brand-mark";
 import {
   categories,
   categoryName,
@@ -74,23 +72,18 @@ export default function Home() {
 
   return (
     <main>
-      {/* Presentación de la marca: el nombre se escribe al cargar. */}
-      <section className="mx-auto max-w-[1440px] px-6 pb-16 pt-14 md:pb-24 md:pt-20">
-        <div className="grid items-center gap-10 md:grid-cols-[1.1fr_1fr] md:gap-16">
-          <BrandMark write className="w-full max-w-[620px] text-ink" />
-          <div>
-            <h1 className="text-[clamp(36px,4.6vw,64px)]">
-              Tecnología elegida con cuidado.
-            </h1>
-            <p className="mt-6 max-w-[34rem] text-[clamp(18px,1.6vw,21px)] leading-[1.47] text-muted">
-              Somos Nitro Col. Desde 2020 reunimos productos que mejoran tu día a día, con pago seguro
-              y factura electrónica en cada compra.
-            </p>
-            <a href="#categorias" className={`${buttonClasses("ghost")} mt-8`}>
-              Explorar categorías
-            </a>
-          </div>
-        </div>
+      {/* Portada: banner de marca a todo el ancho (imagen en public/brand/portada.webp, original en imagenes/portada/). */}
+      <section className="mx-auto w-full max-w-[2048px]">
+        <h1 className="sr-only">Nitro Col Store: todo lo que necesitas, en un solo lugar.</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/portada.webp"
+          alt="Nitro, desde 2020. Tecnología, hogar, decoración y mucho más."
+          width={2048}
+          height={768}
+          fetchPriority="high"
+          className="block h-auto w-full"
+        />
       </section>
 
       <Row products={featured} />
