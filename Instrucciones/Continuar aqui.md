@@ -138,6 +138,14 @@ Catálogo/              fotos originales (NO está en git)
 - **Falta verificar (requiere salir de la red que bloquea el puerto, p. ej. internet del celular):** arrancar con `CATALOG_SOURCE=db` y comparar la tienda con el modo estático (precios, fotos por color, orden de variantes, destacados). El mapeo de `loadFromDb` aún no se ha corrido con datos reales.
 - **Hosting recomendado: Vercel** (plan Hobby gratis; es para uso no comercial, al cobrar hay que pasar a Pro). Render gratis duerme el servicio a los 15 min. Para Vercel: ejecutar `prisma generate` antes del build y definir `DATABASE_URL`, `DIRECT_URL` y `CATALOG_SOURCE=db`. Pagos futuros: Wompi o Mercado Pago (webhooks como rutas de Next).
 
+### Despliegue en Render (decidido el 23 oct 2026; en curso)
+
+- **Decisión del dueño:** Render gratis + un monitor externo (UptimeRobot o cron-job.org, cada 5 min) que llama a `/api/health`. Esa ruta hace `select 1` en la base, así que mantiene despiertos Render (que duerme a los 15 min) y Supabase (que se pausa a los 7 días). No usar GitHub Actions para el ping.
+- **Listo en el repo:** `render.yaml` (Blueprint, rama `feat/storefront-inicial`, plan free) y `apps/storefront/app/api/health/route.ts`. No se ha probado en Render todavía.
+- **Pasos del dueño:** cuenta en render.com con GitHub → New → Blueprint → repo `Nitro-col-store` → pegar `DATABASE_URL` y `DIRECT_URL` desde `packages/db/.env` → crear el monitor con la URL `https://<servicio>.onrender.com/api/health`.
+- **Riesgos conocidos:** (1) 512 MB pueden no alcanzar para compilar Next (se limitó el heap con `NODE_OPTIONS`; si falla, pasar al plan de ~7 USD o compilar fuera); (2) Render quizá no reconozca `pnpm@12.14.0` de `packageManager`; (3) Supabase gratis **no hace copias de seguridad**: resolver antes de recibir pedidos reales; (4) Render gratis permite uso comercial, Vercel Hobby no.
+- **Primera tarea de mañana:** ver el log del primer despliegue, corregir lo que falle, y con la base alcanzable (otra red) comparar la tienda en modo `db` contra el catálogo estático.
+
 ## 6. Qué sigue (en este orden)
 
 1. **Probar la lectura desde la base** (`CATALOG_SOURCE=db`, sección 5d), activarla y desplegar en Vercel. Después, retirar `lib/products.ts`/`gafas-data.ts` como fuente (quedan solo para el seed) y decidir dónde viven las categorías (`cover`, `byColor`).
