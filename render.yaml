@@ -1,0 +1,24 @@
+# Render Blueprint: servicio web gratis para la tienda (apps/storefront).
+# Gratis duerme a los 15 min sin visitas: un monitor externo debe llamar a /api/health cada 5-10 min.
+services:
+  - type: web
+    name: nitro-col-store
+    runtime: node
+    plan: free
+    region: oregon
+    branch: feat/storefront-inicial
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @nitro/db generate && pnpm --filter @nitro/storefront build
+    startCommand: pnpm --filter @nitro/storefront start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      # La compilación de Next con 512 MB queda justa: se limita el heap para evitar que lo maten.
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=460
+      - key: CATALOG_SOURCE
+        value: db
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
