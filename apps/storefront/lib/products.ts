@@ -173,21 +173,22 @@ export function findCategory(slug: string) {
 
 export const categoryName = (slug: string) => findCategory(slug)?.name ?? slug;
 
-export function productsIn(slug: string): Product[] {
+export function productsIn(slug: string, list: Product[] = products): Product[] {
   const found = findCategory(slug);
   if (!found) return [];
   const leaves = found.node ? found.node.children.map((c) => c.slug) : [slug];
-  return products.filter((p) => leaves.includes(p.category));
+  return list.filter((p) => leaves.includes(p.category));
 }
 
-export const featuredProducts = products
-  .filter((p) => p.featuredRank != null)
-  .sort((a, b) => a.featuredRank! - b.featuredRank!);
+export const featuredOf = (list: Product[] = products) =>
+  list.filter((p) => p.featuredRank != null).sort((a, b) => a.featuredRank! - b.featuredRank!);
 
-export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
+export const featuredProducts = featuredOf();
+
+export const getProduct = (slug: string, list: Product[] = products) => list.find((p) => p.slug === slug);
 /** Busca una variante por SKU junto con su producto. */
-export function findVariant(sku: string) {
-  for (const product of products) {
+export function findVariant(sku: string, list: Product[] = products) {
+  for (const product of list) {
     const variant = product.variants.find((v) => v.sku === sku);
     if (variant) return { product, variant };
   }
@@ -245,8 +246,8 @@ export type SearchEntry = { key: string; href: string; title: string; subtitle: 
 export const normalizeText = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 /** Una entrada por producto, o por color cuando la categoría se lista por color (gafas). */
-export function buildSearchIndex(): SearchEntry[] {
-  return products.flatMap((p) => {
+export function buildSearchIndex(list: Product[] = products): SearchEntry[] {
+  return list.flatMap((p) => {
     const cat = findCategory(p.category);
     const catNames = [cat?.name, cat?.parent?.name].filter(Boolean).join(" ");
     const specs = Object.entries(p.specs).filter(([k]) => k !== "Colores").map(([, v]) => v);

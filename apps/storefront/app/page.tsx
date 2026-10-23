@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { formatCOP, type Product } from "@nitro/shared";
+import { getProducts } from "@/lib/catalog";
 import { HomeHero } from "@/components/home-hero";
 import { ProductTile } from "@/components/product-tile";
 import { ProductArt } from "@/components/art/product-art";
 import {
   categories,
   categoryName,
-  featuredProducts,
+  featuredOf,
   fromPrice,
   getProduct,
   variantImages,
@@ -39,8 +40,8 @@ const sampleSlugs: Record<string, string[]> = {
   moda: ["gafas-miami", "gafas-paris"],
 };
 
-function CategoryCard({ category }: { category: CategoryNode }) {
-  const samples = (sampleSlugs[category.slug] ?? []).flatMap((s) => getProduct(s) ?? []);
+function CategoryCard({ category, all }: { category: CategoryNode; all: Product[] }) {
+  const samples = (sampleSlugs[category.slug] ?? []).flatMap((s) => getProduct(s, all) ?? []);
   return (
     <section data-theme="light" className="glass rounded-card p-8 text-ink md:p-10">
       <div className="flex h-[170px] items-center justify-center gap-8">
@@ -75,9 +76,12 @@ function CategoryCard({ category }: { category: CategoryNode }) {
   );
 }
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function Home() {
+  const all = await getProducts();
   // La portada siempre muestra tres destacados, en una sola fila.
-  const featured = featuredProducts.slice(0, 3);
+  const featured = featuredOf(all).slice(0, 3);
 
   return (
     <main>
@@ -102,7 +106,7 @@ export default function Home() {
         </div>
         <div className="mt-16 grid gap-3 md:grid-cols-2 md:gap-4">
           {categories.map((c) => (
-            <CategoryCard key={c.slug} category={c} />
+            <CategoryCard key={c.slug} category={c} all={all} />
           ))}
         </div>
       </section>

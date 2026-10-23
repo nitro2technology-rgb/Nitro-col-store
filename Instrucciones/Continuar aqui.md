@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 23 de octubre de 2026 (base de datos de Supabase migrada, gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
+**Última actualización:** 23 de octubre de 2026 (base de Supabase migrada **y sembrada**, capa de lectura del catálogo desde la base, gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -25,7 +25,7 @@ pnpm --filter @nitro/storefront build   # build de producción
 
 ## 2. Estado actual
 
-Hecho (el catálogo todavía se lee de `lib/products.ts`; la base de datos existe pero **está vacía**: el seed no se ha ejecutado):
+Hecho (la base de datos **ya tiene el catálogo** —19 productos, 77 variantes, 249 fotos, sembrado el 23 oct 2026 con las partes SQL—, pero la tienda **todavía lee de `lib/products.ts`** hasta activar `CATALOG_SOURCE=db`, sección 5d):
 
 | Área | Estado |
 |---|---|
@@ -33,8 +33,8 @@ Hecho (el catálogo todavía se lee de `lib/products.ts`; la base de datos exist
 | Tienda (Next.js 15, Tailwind v4) | Portada, categorías con filtros, ficha de producto, carrito, búsqueda, páginas informativas |
 | Tecnología | Aurafit FW5 (azul/beige), G-tide L42 (negro/blanco/lila/rosado), Smartwatch X8 Pro, con fotos y video |
 | Moda → Gafas | 16 modelos / 70 colores con fotos (`lib/gafas-data.ts`), **precios inventados** |
-| Base de datos (Supabase) | **Conectada y migrada** (4 migraciones, con RLS). Sin datos |
-| Seed | Escrito (`packages/db/prisma/seed.ts`), probado solo en simulación |
+| Base de datos (Supabase) | **Conectada, migrada (5 migraciones, con RLS) y sembrada** con datos provisionales (precios de gafas inventados) |
+| Seed | `prisma/seed.ts` (conexión directa) y `prisma/seed-sql.ts` (genera `prisma/seed-partes/parte-NN.sql` para el SQL Editor). Ambos repetibles |
 | Diseño | Blanco y negro con vidrio; **diseño editorial solo para Moda** (sección 5) |
 | Carrito | Navegador (Zustand + localStorage); mini ventana al pasar el mouse por el icono |
 | Búsqueda | Lupa del menú: por nombre, color o palabra clave (cliente) |
@@ -129,9 +129,18 @@ Catálogo/              fotos originales (NO está en git)
 - **Botón de volver** (`components/back-button.tsx`, en `layout.tsx`): flotante arriba a la izquierda, solo en fichas de producto, Carrito y páginas informativas; **no** en Inicio ni en categorías.
 - **Imágenes:** `next/image` con AVIF/WebP (`images` en `next.config.ts`); solo las portadas de Moda van sin recomprimir. La velocidad real se ve con `pnpm --filter @nitro/storefront build` y `start`; en `dev` compila cada página al abrirla.
 
+## 5d. Catálogo desde la base de datos (23 oct 2026, en progreso)
+
+- **`lib/catalog.ts`** (servidor): `getProducts()`, `getSearchIndex()`, `getCartCatalog()`. Con `CATALOG_SOURCE=db` lee de Supabase (Prisma); sin esa variable usa el catálogo estático de `lib/products.ts` (hoy es el modo por defecto). En modo `db` un fallo **no** cae al estático: rompe el build o conserva la última página buena (ISR).
+- **`lib/catalog-client.tsx`**: proveedor en `layout.tsx` que da al navegador un catálogo mínimo (una foto por color) y el índice del buscador. Carrito, mini carrito y buscador ya lo usan en vez de importar `products`.
+- Los helpers de `lib/products.ts` aceptan una lista opcional (`productsIn(slug, list)`, `getProduct(slug, list)`, `featuredOf(list)`, `findVariant(sku, list)`, `buildSearchIndex(list)`). Las **categorías siguen estáticas** (traen `cover`, `byColor` y descripción que no están en la base).
+- **Sembrar sin puertos de base de datos** (red de biblioteca o colegio que bloquea 5432/6543): `pnpm --filter @nitro/db seed:sql` genera 10 archivos `packages/db/prisma/seed-partes/parte-01.sql … parte-10.sql` (≤25 KB cada uno); se pegan **en orden** en el *SQL Editor* de Supabase. Un solo script de 180 KB falla con "connection termination". Es repetible. Ya se ejecutó y se verificó: 19 productos, 77 variantes, 249 fotos. Si cambia el catálogo estático, se regeneran y se vuelven a ejecutar (actualiza por slug/SKU, pero no borra productos retirados).
+- **Falta verificar (requiere salir de la red que bloquea el puerto, p. ej. internet del celular):** arrancar con `CATALOG_SOURCE=db` y comparar la tienda con el modo estático (precios, fotos por color, orden de variantes, destacados). El mapeo de `loadFromDb` aún no se ha corrido con datos reales.
+- **Hosting recomendado: Vercel** (plan Hobby gratis; es para uso no comercial, al cobrar hay que pasar a Pro). Render gratis duerme el servicio a los 15 min. Para Vercel: ejecutar `prisma generate` antes del build y definir `DATABASE_URL`, `DIRECT_URL` y `CATALOG_SOURCE=db`. Pagos futuros: Wompi o Mercado Pago (webhooks como rutas de Next).
+
 ## 6. Qué sigue (en este orden)
 
-1. **Sembrar el catálogo** (`pnpm --filter @nitro/db seed -- --apply`, una sola vez, cuando el dueño entregue el Excel; es repetible) y **reemplazar `lib/products.ts` por lecturas a la base de datos**. Falta decidir cómo se mantienen `lib/gafas-data.ts` y los helpers de búsqueda cuando el catálogo venga de la base.
+1. **Probar la lectura desde la base** (`CATALOG_SOURCE=db`, sección 5d), activarla y desplegar en Vercel. Después, retirar `lib/products.ts`/`gafas-data.ts` como fuente (quedan solo para el seed) y decidir dónde viven las categorías (`cover`, `byColor`).
 2. **Cargar el Excel** `Datos de productos.xlsx` (precios reales, stock, peso, medidas, textos) a la base.
 3. **Capa de API** (NestJS según las especificaciones, o consultas desde el servidor de Next para empezar) con precios y stock validados en el servidor. El navegador nunca escribe pedidos, pagos ni inventario.
 4. **Carrito en el servidor** (hoy solo en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
@@ -154,7 +163,7 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 ## 8. Qué NO funciona aún (para no perder tiempo)
 
 - **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía. El formulario de `/ingresar` está desactivado hasta tener Supabase Auth. `/ayuda`, `/terminos`, `/privacidad` tienen texto provisional (legal por revisar).
-- La base de datos está conectada pero **vacía**: la tienda no la lee todavía.
+- La base tiene el catálogo, pero la tienda **no la lee por defecto** (hay que definir `CATALOG_SOURCE=db`; el mapeo no se ha probado con datos reales).
 - Las gafas tienen precios inventados; la tienda se puede navegar y comprar (carrito local) con ellos.
 - No se probó en celular real ni con lectores de pantalla; sí en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos. El hover (mini carrito, cambio de foto, menú) no existe en pantallas táctiles: allí el clic abre la página.
 - El carrito de prueba de un navegador se guarda en `localStorage` (clave `nitro-cart`).

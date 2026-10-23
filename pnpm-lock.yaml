@@ -178,6 +178,9 @@ importers:
 
   apps/storefront:
     dependencies:
+      '@nitro/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@nitro/shared':
         specifier: workspace:*
         version: link:../../packages/shared

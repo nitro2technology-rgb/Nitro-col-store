@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { formatCOP } from "@nitro/shared";
 import { useCart, useHydrated } from "@/lib/cart";
-import { findVariant, variantImages } from "@/lib/products";
+import { useVariantLookup } from "@/lib/catalog-client";
+import { variantImages } from "@/lib/products";
 
 const MAX_ROWS = 4;
 
@@ -13,6 +14,7 @@ const MAX_ROWS = 4;
 export function CartLink() {
   const hydrated = useHydrated();
   const lines = useCart((s) => s.lines);
+  const findVariant = useVariantLookup();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);

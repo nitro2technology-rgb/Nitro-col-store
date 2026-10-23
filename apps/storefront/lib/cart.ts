@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { findVariant } from "@/lib/products";
+import { findCatalogVariant } from "@/lib/catalog-client";
 
 /** El carrito solo guarda SKU y cantidad; precio y nombre se leen siempre del catálogo. */
 export type CartLine = { sku: string; qty: number };
@@ -17,7 +17,7 @@ type CartState = {
   clear: () => void;
 };
 
-const maxFor = (sku: string) => findVariant(sku)?.variant.stock ?? 0;
+const maxFor = (sku: string) => findCatalogVariant(sku)?.variant.stock ?? 0;
 
 export const useCart = create<CartState>()(
   persist(

@@ -7,14 +7,15 @@ import { VariantGallery } from "@/components/variant-gallery";
 import { VariantProvider } from "@/components/variant-context";
 import { ProductTile } from "@/components/product-tile";
 import { commonFaq } from "@/lib/faq";
-import { categoryName, getProduct, isEditorial, products } from "@/lib/products";
+import { getProducts } from "@/lib/catalog";
+import { categoryName, getProduct, isEditorial } from "@/lib/products";
 
 export const revalidate = 300;
 
 const h2 = "text-[clamp(32px,5vw,56px)]";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  return (await getProducts()).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -22,13 +23,14 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const product = getProduct((await params).slug);
+  const product = getProduct((await params).slug, await getProducts());
   if (!product) return {};
   return { title: product.name, description: product.description };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const product = getProduct((await params).slug);
+  const products = await getProducts();
+  const product = getProduct((await params).slug, products);
   if (!product) notFound();
 
   const related = products

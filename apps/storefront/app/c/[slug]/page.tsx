@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getProducts } from "@/lib/catalog";
 import { allCategorySlugs, findCategory, productsIn } from "@/lib/products";
 import { CatalogGrid } from "@/components/catalog-grid";
 import { ModaHero } from "@/components/moda-hero";
@@ -21,7 +22,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     { slug: parent.slug, name: `Todo ${parent.name}` },
     ...parent.children,
   ];
-  const items = productsIn(slug);
+  const items = productsIn(slug, await getProducts());
 
   return (
     <main

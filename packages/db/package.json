@@ -9,7 +9,8 @@
     "validate": "prisma validate",
     "migrate:dev": "prisma migrate dev",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "seed:sql": "tsx prisma/seed-sql.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.8.0"

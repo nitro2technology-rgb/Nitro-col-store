@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@nitro/db": "workspace:*",
     "@nitro/shared": "workspace:*",
     "@nitro/ui": "workspace:*",
     "next": "^15.3.0",

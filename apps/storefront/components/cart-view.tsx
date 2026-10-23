@@ -5,11 +5,13 @@ import { formatCOP } from "@nitro/shared";
 import { Button, buttonClasses } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
 import { useCart, useHydrated } from "@/lib/cart";
-import { categories, findVariant } from "@/lib/products";
+import { useVariantLookup } from "@/lib/catalog-client";
+import { categories } from "@/lib/products";
 
 export function CartView() {
   const hydrated = useHydrated();
   const { lines, setQty, remove, clear } = useCart();
+  const findVariant = useVariantLookup();
 
   if (!hydrated) return <div className="mt-12 h-48" aria-hidden="true" />;
 

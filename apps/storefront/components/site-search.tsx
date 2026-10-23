@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildSearchIndex, normalizeText } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog-client";
+import { normalizeText } from "@/lib/products";
 
 const MAX = 12;
 
@@ -14,7 +15,7 @@ export function SiteSearch() {
   const pathname = usePathname();
   const wrap = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
-  const index = useMemo(() => (open ? buildSearchIndex() : []), [open]);
+  const { searchIndex: index } = useCatalog();
 
   useEffect(() => {
     setOpen(false);
