@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ProductImage } from "@nitro/shared";
 
@@ -8,10 +9,19 @@ export function ImageCarousel({
   images,
   className = "",
   priority = false,
+  editorial = false,
+  jumpTo,
+  sizes = "(min-width: 768px) 420px, 90vw",
 }: {
   images: ProductImage[];
   className?: string;
   priority?: boolean;
+  /** Diseño de Moda: fotos que llenan el recuadro, sin esquinas redondeadas. */
+  editorial?: boolean;
+  /** Si cambia, salta de inmediato a esa foto (la tarjeta lo usa al pasar el mouse). */
+  jumpTo?: number;
+  /** Ancho aproximado de la foto en pantalla, para pedir el tamaño justo. */
+  sizes?: string;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -22,6 +32,13 @@ export function ImageCarousel({
     track.current?.scrollTo({ left: 0 });
     setIndex(0);
   }, [key]);
+
+  useEffect(() => {
+    const el = track.current;
+    if (jumpTo === undefined || !el) return;
+    el.scrollTo({ left: Math.min(jumpTo, images.length - 1) * el.clientWidth, behavior: "instant" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo]);
 
   const go = (e: React.MouseEvent, to: number) => {
     e.preventDefault();
@@ -34,7 +51,7 @@ export function ImageCarousel({
     <div className={`group/car relative ${className}`}>
       <div
         ref={track}
-        className="snap-row flex aspect-square w-full overflow-x-auto rounded-[20px]"
+        className={`snap-row flex w-full overflow-x-auto ${editorial ? "aspect-square" : "aspect-square rounded-[20px]"}`}
         onScroll={(e) => {
           const el = e.currentTarget;
           setIndex(Math.round(el.scrollLeft / el.clientWidth));
@@ -42,15 +59,17 @@ export function ImageCarousel({
         aria-label="Fotos del producto"
       >
         {images.map((img, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={img.src}
-            src={img.src}
-            alt={img.alt}
-            draggable={false}
-            loading={priority && i === 0 ? "eager" : "lazy"}
-            className="aspect-square w-full shrink-0 object-contain"
-          />
+          <div key={img.src} className="relative aspect-square w-full shrink-0">
+            <Image
+              src={img.src}
+              alt={img.alt}
+              fill
+              sizes={sizes}
+              draggable={false}
+              priority={priority && i === 0}
+              className={editorial ? "object-cover object-[50%_25%]" : "object-contain"}
+            />
+          </div>
         ))}
       </div>
       {images.length > 1 && (
@@ -64,7 +83,7 @@ export function ImageCarousel({
                 type="button"
                 aria-label={dir === "prev" ? "Foto anterior" : "Foto siguiente"}
                 onClick={(e) => go(e, to)}
-                className={`absolute top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-lg text-white opacity-0 backdrop-blur transition-opacity focus-visible:opacity-100 group-hover/car:opacity-100 max-md:opacity-100 ${
+                className={`absolute top-1/2 grid size-9 -translate-y-1/2 place-items-center ${editorial ? "" : "rounded-full"} bg-black/55 text-lg text-white opacity-0 backdrop-blur transition-opacity focus-visible:opacity-100 group-hover/car:opacity-100 max-md:opacity-100 ${
                   dir === "prev" ? "left-2" : "right-2"
                 }`}
               >

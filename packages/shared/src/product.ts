@@ -20,6 +20,8 @@ export const variantSchema = z.object({
   stock: z.number().int().nonnegative(),
   /** Carrusel de la tarjeta y de la cabecera para esta variante (ej. las fotos de un color). */
   images: z.array(imageSchema).optional(),
+  /** Fotos extra de este color para la sección "Galería" (se muestran junto a `images`). */
+  gallery: z.array(imageSchema).optional(),
 });
 export type Variant = z.infer<typeof variantSchema>;
 
@@ -36,6 +38,8 @@ export const productSchema = z.object({
   /** Si tiene valor, aparece en la portada; menor número = primero. */
   featuredRank: z.number().int().optional(),
   specs: z.record(z.string(), z.string()),
+  /** Etiquetas para filtrar y buscar (ej. "Deportivas"). */
+  tags: z.array(z.string()).optional(),
   highlights: z.array(z.object({ title: z.string(), body: z.string() })),
   inBox: z.array(z.string()).optional(),
   faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),

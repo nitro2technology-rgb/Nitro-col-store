@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { allCategorySlugs, findCategory, productsIn } from "@/lib/products";
-import { ProductTile } from "@/components/product-tile";
+import { CatalogGrid } from "@/components/catalog-grid";
+import { ModaHero } from "@/components/moda-hero";
 
 export const revalidate = 300;
 
@@ -23,12 +24,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const items = productsIn(slug);
 
   return (
-    <main className="relative mx-auto max-w-[1440px] overflow-hidden px-6 pb-28 pt-16 md:pt-24">
-      <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>
-      <p className="mt-3 text-[20px] text-muted">
-        {items.length} {items.length === 1 ? "producto" : "productos"}
-      </p>
+    <main
+      className={`relative px-6 pb-28 pt-16 md:pt-24 ${parent.byColor ? "" : "mx-auto max-w-[1440px] overflow-hidden"}`}
+    >
+      {parent.byColor ? (
+        <ModaHero title={found.name} panels={parent.cover ?? []} />
+      ) : (
+        <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>
+      )}
 
+      <div id="coleccion" className="scroll-mt-16 pt-10">
       <nav aria-label="Subcategorías" className="mt-8 flex flex-wrap gap-2">
         {chips.map((c) => {
           const active = c.slug === slug;
@@ -47,11 +52,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         })}
       </nav>
 
-      <section className="mt-12 flex flex-wrap gap-6">
-        {items.map((p) => (
-          <ProductTile key={p.slug} product={p} />
-        ))}
-      </section>
+      <CatalogGrid products={items} byColor={parent.byColor} />
+      </div>
     </main>
   );
 }

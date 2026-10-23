@@ -1,8 +1,8 @@
 # Especificaciones Técnicas — E-commerce (Tecnología y Hogar)
 
-**Versión:** 1.0
-**Fecha:** 21 de octubre de 2026
-**Estado:** Borrador inicial
+**Versión:** 1.1
+**Fecha:** 23 de octubre de 2026 (v1.0: 21 de octubre)
+**Estado:** En implementación. Ver sección 18 para lo ya construido y las decisiones tomadas
 
 ---
 
@@ -526,11 +526,11 @@ Más comisiones de pasarela de pagos (porcentaje + tarifa fija por transacción)
 
 | # | Tema | Decisión / acción |
 |---|---|---|
-| 1 | NestJS propio vs. Medusa.js | Definir antes de la Fase 0 |
+| 1 | NestJS propio vs. Medusa.js | **Decidido: NestJS propio** |
 | 2 | Pasarela de pagos principal | Comparar comisiones y medios de pago (Wompi vs. Mercado Pago vs. PayU) |
 | 3 | Modelo logístico | ¿Bodega propia, dropshipping o proveedores? Impacta inventario y envíos |
 | 4 | Proveedor de facturación electrónica | Seleccionar y validar integración con la DIAN |
-| 5 | Marketplace a futuro | Si habrá vendedores externos, modelar `sellers` desde ya (campo `seller_id` en productos y pedidos) |
+| 5 | Marketplace | **Decidido (22 oct): habrá vendedores externos.** Implementado: tabla `sellers`, `seller_id` en productos y líneas de pedido, rol `seller`. Pendiente: RLS por vendedor, comisiones y liquidación |
 | 6 | Región de despliegue | Confirmar región de Supabase y API según latencia hacia Colombia |
 | 7 | Asesoría legal | Términos, privacidad, retracto, tratamiento de datos |
 
@@ -544,3 +544,37 @@ Más comisiones de pasarela de pagos (porcentaje + tarifa fija por transacción)
 - **Monolito modular:** Una sola aplicación desplegable, organizada internamente en módulos independientes.
 - **Idempotencia:** Repetir una operación no produce efectos duplicados.
 - **Webhook:** Llamada automática de un servicio externo para notificar un evento (p. ej. pago aprobado).
+
+---
+
+## 18. Estado de implementación y decisiones (actualizado el 23 de octubre de 2026)
+
+### 18.1 Construido
+
+- **Monorepo** pnpm + Turborepo: `apps/storefront` (Next.js 15, Tailwind v4), `packages/ui`, `shared`, `db`, `config`. Aún no existe `apps/api`.
+- **Base de datos en Supabase**, conectada con Prisma y **migrada** (migraciones `init`, `catalogo_completo`, `rls_politicas`, `imagen_tipo`, `etiquetas`). Está **vacía**; el catálogo aún se lee de `lib/products.ts`.
+- **Seguridad (RLS):** activa en todas las tablas de `public`. Catálogo (`categories`, `brands`, `products`, `product_variants`, `product_images`) de solo lectura pública y solo lo publicado; el cliente autenticado ve solo su perfil, direcciones y pedidos. Prisma se conecta como dueño y la ignora; pedidos, pagos e inventario solo se escriben desde el servidor. En Supabase se desactivó "exponer tablas nuevas automáticamente" y se activó la RLS automática.
+- **Seed** idempotente (`packages/db/prisma/seed.ts`) que lee `lib/products.ts`; simula por defecto y escribe con `--apply`. Peso y medidas son provisionales (150 g, 100×100×60 mm) hasta recibir los reales.
+
+### 18.2 Cambios al modelo de datos (respecto a la sección 4)
+
+- **`sellers`** (nueva): nombre, slug, `is_house` (la tienda propia es un vendedor), dueño (`owner_profile_id`), `commission_bps`, activo. `products.seller_id` (obligatorio) y `order_items.seller_id`; rol `seller` en `Role`.
+- **`products`:** `highlights`, `in_box`, `faq` (jsonb), `video_url`, `video_poster`, `tags` (text[], p. ej. "Deportivas").
+- **`product_variants`:** `swatch` (color de muestra).
+- **`product_images`:** `variant_id` (foto de un color; null = galería general) y `kind` (`card` = carrusel de la tarjeta/cabecera, `gallery` = sección Galería).
+
+### 18.3 Frontend
+
+- **Catálogo y búsqueda:** la búsqueda es del lado del cliente (`buildSearchIndex`) sobre el catálogo en memoria. Con el catálogo en base de datos habrá que pasarla a servidor (índice `tsvector` / Postgres) por tamaño y frescura.
+- **Variantes y fotos:** el color elegido se comparte entre la cabecera y la galería (`VariantProvider`); la URL admite `?color=SKU`. Galería de Moda sin repetir la foto de portada de la tarjeta.
+- **Diseño por categoría:** una categoría con `byColor` usa lista por color, diseño editorial y su propia portada (`cover`). Otras categorías mantienen el diseño de vidrio con tarjetas por producto.
+- **Imágenes:** `next/image` con AVIF/WebP y `qualities: [75, 90]`; los originales de gafas se guardan a 1080 px / calidad 88 y la entrega se optimiza. Solo las portadas de Moda se sirven sin recomprimir (`unoptimized`). Las fotos originales miden como máximo 1080 px de ancho: no hay más resolución disponible.
+- **Precios sin definir:** `priceCents = 0` se muestra como "Precio por definir" y bloquea la compra (`formatPrice`).
+- **Menú:** Inicio, Categorías y carrito con apertura al pasar el mouse, buscador, botón flotante de volver (solo en páginas de segundo nivel).
+
+### 18.4 Pendiente técnico
+
+- Sembrar el catálogo y leerlo desde la base; decidir dónde viven las fotos (hoy `public/`; candidato: Supabase Storage + CDN).
+- API con precios y stock validados en servidor, carrito en servidor, autenticación, checkout y pagos, panel de administración, RLS por vendedor.
+- Probar rendimiento con `build` + `start` (Core Web Vitals de la sección 6.2) y en celular real.
+- En desarrollo, el servidor de Next puede corromper su caché (`apps/storefront/.next`); borrarla y reiniciar lo soluciona.

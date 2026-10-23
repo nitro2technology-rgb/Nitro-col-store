@@ -65,6 +65,7 @@ async function main() {
       featuredRank: p.featuredRank ?? null,
       theme: p.theme,
       specs: p.specs,
+      tags: p.tags ?? [],
       highlights: p.highlights,
       inBox: p.inBox ?? [],
       faq: p.faq ?? [],
@@ -78,7 +79,7 @@ async function main() {
 
     await db.productImage.deleteMany({ where: { productId: product.id } });
     await db.productImage.createMany({
-      data: (p.images ?? []).map((im, position) => ({ productId: product.id, url: im.src, alt: im.alt, position })),
+      data: (p.images ?? []).map((im, position) => ({ productId: product.id, kind: "gallery", url: im.src, alt: im.alt, position })),
     });
 
     for (const v of p.variants) {
@@ -94,7 +95,10 @@ async function main() {
         create: { variantId: variant.id, onHand: v.stock },
       });
       await db.productImage.createMany({
-        data: (v.images ?? []).map((im, position) => ({ productId: product.id, variantId: variant.id, url: im.src, alt: im.alt, position })),
+        data: [
+          ...(v.images ?? []).map((im) => ({ ...im, kind: "card" })),
+          ...(v.gallery ?? []).map((im) => ({ ...im, kind: "gallery" })),
+        ].map((im, position) => ({ productId: product.id, variantId: variant.id, kind: im.kind, url: im.src, alt: im.alt, position })),
       });
     }
   }

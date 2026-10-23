@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Foliage } from "@/components/foliage";
 import { ProductHero } from "@/components/product-hero";
-import { ProductGallery, ProductVideo } from "@/components/product-media";
+import { ProductVideo } from "@/components/product-media";
+import { VariantGallery } from "@/components/variant-gallery";
+import { VariantProvider } from "@/components/variant-context";
 import { ProductTile } from "@/components/product-tile";
 import { commonFaq } from "@/lib/faq";
-import { categoryName, getProduct, products } from "@/lib/products";
+import { categoryName, getProduct, isEditorial, products } from "@/lib/products";
 
 export const revalidate = 300;
 
@@ -62,7 +64,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ];
 
   return (
-    <>
+    <VariantProvider product={product}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -102,12 +104,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1440px] overflow-hidden px-6 pb-28">
-          <h2 className={h2}>Galería.</h2>
-          <div className="mt-10">
-            <ProductGallery product={product} />
-          </div>
-        </section>
+        {isEditorial(product) ? (
+          <VariantGallery product={product} titleClass={h2} />
+        ) : (
+          <section className="mx-auto max-w-[1440px] overflow-hidden px-6 pb-28">
+            <h2 className={h2}>Galería.</h2>
+            <div className="mt-10">
+              <VariantGallery product={product} />
+            </div>
+          </section>
+        )}
 
         {(product.videoUrl || process.env.NODE_ENV !== "production") && (
           <section className="mx-auto max-w-[1440px] px-6 pb-32">
@@ -170,6 +176,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ))}
         </div>
       </section>
-    </>
+    </VariantProvider>
   );
 }

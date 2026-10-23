@@ -1,5 +1,5 @@
 import type { Product, ProductImage } from "@nitro/shared";
-import { gafasModels } from "@/lib/gafas-data";
+import { gafasModels } from "./gafas-data";
 
 const photos = (dir: string, name: string, prefix: string, nums: number[], ext = "webp"): ProductImage[] =>
   nums.map((n) => ({ src: `/products/${dir}/${prefix}${n}.${ext}`, alt: `${name}, foto ${n}` }));
@@ -34,10 +34,12 @@ const tech: Product[] = [
       {
         sku: "AURAFIT-FW5-AZL", label: "Azul", swatch: "#3b6fb6", priceCents: 6500000, stock: 10,
         images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 azul", "principal-", [1, 2, 3]),
+        gallery: photos("aurafit-fw5", "Aurafit Aurabuds FW5 azul", "azul-", [1, 2, 3, 4, 5, 6, 7]),
       },
       {
         sku: "AURAFIT-FW5-BEI", label: "Beige", swatch: "#d9c7a8", priceCents: 6500000, stock: 10,
         images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-principal-", [1, 2]),
+        gallery: photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-", [1, 2, 3, 6]),
       },
     ],
   },
@@ -54,7 +56,7 @@ const tech: Product[] = [
     highlights: [{ title: "Compactos", body: "Livianos y fáciles de llevar a todas partes." }],
     images: gtideGallery,
     variants: [
-      { sku: "GTIDE-L42-BLK", label: "Negro", swatch: "#1f2937", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 negro", "negro-principal-", [1, 2]) },
+      { sku: "GTIDE-L42-BLK", label: "Negro", swatch: "#1f2937", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 negro", "negro-principal-", [1, 2]), gallery: gtideGallery },
       { sku: "GTIDE-L42-WHT", label: "Blanco", swatch: "#f3f4f6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 blanco", "blanco-principal-", [1, 2]) },
       { sku: "GTIDE-L42-LIL", label: "Lila", swatch: "#b7a3d6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 lila", "lila-principal-", [1]) },
       { sku: "GTIDE-L42-ROS", label: "Rosado", swatch: "#f2b4c6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 rosado", "rosado-principal-", [1]) },
@@ -104,9 +106,9 @@ const gafas: Product[] = gafasModels.map((m) => ({
   tagline: `Modelo ${m.name}.`,
   description: `Gafas de sol modelo ${m.name}, disponibles en ${m.variants.length} ${m.variants.length === 1 ? "color" : "colores"}.`,
   theme: "light",
+  tags: [m.slug === "impact" || m.slug === "x-treme" ? "Deportivas" : "Casuales"],
   specs: { Modelo: m.name, Colores: m.variants.map((v) => v.label).join(", ") },
   highlights: [],
-  images: m.gallery.map((src, i) => ({ src, alt: `Gafas ${m.name}, foto ${i + 1}` })),
   variants: m.variants.map((v, i) => ({
     sku: `GAF-${modelCode(m.slug)}-${String(i + 1).padStart(2, "0")}`,
     label: v.label,
@@ -114,6 +116,7 @@ const gafas: Product[] = gafasModels.map((m) => ({
     priceCents: (gafasPesos[m.slug] ?? 0) * 100,
     stock: 10,
     images: v.images.map((src, i) => ({ src, alt: `Gafas ${m.name} ${v.label}, foto ${i + 1}` })),
+    gallery: v.gallery.map((src, i) => ({ src, alt: `Gafas ${m.name} ${v.label}, con modelo ${i + 1}` })),
   })),
 }));
 
@@ -122,6 +125,10 @@ export const products: Product[] = [...tech, ...gafas];
 // ───────────── Categorías (árbol de dos niveles) ─────────────
 
 export type CategoryNode = {
+  /** Si es true, la lista muestra cada color de cada modelo como tarjeta propia. */
+  byColor?: boolean;
+  /** Dos fotos de la portada editorial (alta calidad); solo con `byColor`. */
+  cover?: { src: string; alt: string }[];
   slug: string;
   name: string;
   description: string;
@@ -140,6 +147,12 @@ export const categories: CategoryNode[] = [
   },
   {
     slug: "moda",
+    byColor: true,
+    // Portada de Moda (la misma para sus subcategorías; una categoría nueva, como Beanies, puede traer la suya).
+    cover: [
+      { src: "/moda/portada-1.webp", alt: "Modelo con gafas de animal print" },
+      { src: "/moda/portada-2.webp", alt: "Modelo con gafas negras" },
+    ],
     name: "Moda",
     description: "Gafas y accesorios con estilo.",
     children: [{ slug: "gafas", name: "Gafas" }],
@@ -181,13 +194,81 @@ export function findVariant(sku: string) {
   return undefined;
 }
 
+/** Moda usa el diseño editorial (fotos a ras, esquinas rectas, rótulos en mayúsculas). */
+export const isEditorial = (p: Product) => !!findCategory(p.category)?.parent?.byColor;
+
 /** Los productos sin precio (priceCents = 0) se muestran pero no se pueden comprar. */
 export const isPriced = (cents: number) => cents > 0;
 
 export const fromPrice = (p: Product) => Math.min(...p.variants.map((v) => v.priceCents));
 
+/** Fotos de la sección "Galería" para el color elegido: sus fotos de producto y las extras, sin repetir. */
+export function galleryImages(product: Product, sku?: string): ProductImage[] {
+  const v = product.variants.find((x) => x.sku === sku) ?? product.variants[0];
+  // Moda: la foto de portada de la tarjeta (la primera del color) no se repite en la galería.
+  if (isEditorial(product)) return [...(v?.images ?? []).slice(1), ...(v?.gallery ?? [])];
+  const own = [...(v?.images ?? []), ...(v?.gallery ?? [])];
+  // Producto de un solo color o sin fotos por color: la galería general.
+  const list = own.length > 0 && product.variants.length > 1 ? own : [...own, ...(product.images ?? [])];
+  return list.filter((im, i) => list.findIndex((x) => x.src === im.src) === i);
+}
+
+/**
+ * Familias de color de una variante, para filtrar y buscar. Una gafa puede tener varias:
+ * "Negras lente amarillo" cuenta como Negro y como Amarillo. Beige y Habano son una sola familia.
+ */
+const colorWords: Record<string, string> = {
+  negras: "Negro", negro: "Negro", negros: "Negro", blancas: "Blanco", blanco: "Blanco", blancos: "Blanco",
+  beige: "Beige", habanas: "Beige", habano: "Beige", cafes: "Café", cafe: "Café",
+  rosada: "Rosado", rosadas: "Rosado", rosado: "Rosado", rosados: "Rosado",
+  rojas: "Rojo", rojo: "Rojo", amarilla: "Amarillo", amarillas: "Amarillo", amarillo: "Amarillo",
+  azul: "Azul", azules: "Azul", grises: "Gris", gris: "Gris", animal: "Animal print", cebra: "Cebra",
+  ghost: "Transparente", vino: "Vino", verde: "Verde", naranja: "Naranja", morado: "Morado", lila: "Lila", dorado: "Dorado",
+};
+export function colorFamilies(label: string): string[] {
+  const words = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/);
+  const found = [...new Set(words.flatMap((w) => colorWords[w] ?? []))];
+  return found.length > 0 ? found : [label];
+}
+
 /** Imágenes del carrusel de la tarjeta y la cabecera: las de la variante, o la galería general. */
 export function variantImages(product: Product, sku?: string): ProductImage[] {
   const v = product.variants.find((x) => x.sku === sku) ?? product.variants[0];
   return v?.images ?? product.images ?? [];
+}
+
+// ───────────── Búsqueda ─────────────
+
+export type SearchEntry = { key: string; href: string; title: string; subtitle: string; image?: string; haystack: string };
+
+/** Texto sin tildes ni mayúsculas, para comparar. */
+export const normalizeText = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** Una entrada por producto, o por color cuando la categoría se lista por color (gafas). */
+export function buildSearchIndex(): SearchEntry[] {
+  return products.flatMap((p) => {
+    const cat = findCategory(p.category);
+    const catNames = [cat?.name, cat?.parent?.name].filter(Boolean).join(" ");
+    const specs = Object.entries(p.specs).filter(([k]) => k !== "Colores").map(([, v]) => v);
+    const base = [p.name, p.brand, p.tagline, catNames, ...(p.tags ?? []), ...specs].join(" ");
+    if (cat?.parent?.byColor) {
+      return p.variants.map((v) => ({
+        key: v.sku,
+        href: `/p/${p.slug}?color=${v.sku}`,
+        title: p.name,
+        subtitle: v.label,
+        image: v.images?.[0]?.src,
+        haystack: normalizeText(`${base} ${v.label} ${colorFamilies(v.label).join(" ")}`),
+      }));
+    }
+    const colors = `${p.description} ${p.variants.map((v) => `${v.label} ${colorFamilies(v.label).join(" ")}`).join(" ")}`;
+    return [{
+      key: p.slug,
+      href: `/p/${p.slug}`,
+      title: p.name,
+      subtitle: p.tagline,
+      image: variantImages(p)[0]?.src,
+      haystack: normalizeText(`${base} ${colors}`),
+    }];
+  });
 }

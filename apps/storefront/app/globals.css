@@ -80,6 +80,57 @@ p {
   }
 }
 
+/* Menú superior: al pasar el mouse cada elemento se ilumina y sube un poco. */
+.nav-fx {
+  opacity: 0.88;
+  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+}
+
+.nav-fx:hover,
+.nav-fx:focus-visible,
+.nav-fx[aria-expanded="true"] {
+  opacity: 1;
+  transform: translateY(-1px) scale(1.08);
+  filter: drop-shadow(0 0 7px rgb(255 255 255 / 0.75));
+}
+
+/* Enlaces de texto del menú: además, una línea que se dibuja debajo. */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms ease;
+}
+
+.nav-link:hover::after,
+.nav-link:focus-visible::after,
+.nav-link[aria-expanded="true"]::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-fx,
+  .nav-link::after {
+    transition: none;
+  }
+
+  .nav-fx:hover,
+  .nav-fx:focus-visible,
+  .nav-fx[aria-expanded="true"] {
+    transform: none;
+  }
+}
+
 /* Carrusel horizontal sin barra visible. */
 .snap-row {
   scroll-snap-type: x mandatory;

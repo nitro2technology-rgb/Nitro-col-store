@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Product } from "@nitro/shared";
+import type { Product, ProductImage } from "@nitro/shared";
 import { ProductArt } from "@/components/art/product-art";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -8,10 +8,30 @@ const isDev = process.env.NODE_ENV !== "production";
 const crops = ["50% 50%", "50% 12%", "50% 88%"];
 
 /** Carrusel de imágenes. Usa `product.images`; sin ellas, muestra recortes de la ilustración. */
-export function ProductGallery({ product }: { product: Product }) {
-  const images = product.images ?? [];
+export function ProductGallery({
+  product,
+  images = product.images ?? [],
+  editorial = false,
+}: {
+  product: Product;
+  images?: ProductImage[];
+  /** Diseño de Moda: cuadrícula a ras, fotos de esquinas rectas. */
+  editorial?: boolean;
+}) {
   const card =
     "relative aspect-square w-[84vw] max-w-[560px] shrink-0 glass overflow-hidden rounded-card md:w-[560px]";
+
+  if (editorial && images.length > 0) {
+    return (
+      <div className="-mx-6 grid grid-cols-2 gap-0 md:grid-cols-3 xl:grid-cols-4" aria-label="Galería de imágenes">
+        {images.map((img, i) => (
+          <div key={img.src} className="glass relative aspect-square overflow-hidden">
+            <Image src={img.src} alt={img.alt} fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" className="object-cover object-[50%_25%]" priority={i === 0} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="snap-row -mx-6 flex gap-4 overflow-x-auto px-6 pb-2" tabIndex={0} aria-label="Galería de imágenes">

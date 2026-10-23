@@ -5,6 +5,7 @@ import { Intro, INTRO_SCRIPT } from "@/components/intro";
 import { Foliage } from "@/components/foliage";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { BackButton } from "@/components/back-button";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const interTight = Inter_Tight({
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         {children}
         <SiteFooter />
+        <BackButton />
       </body>
     </html>
   );

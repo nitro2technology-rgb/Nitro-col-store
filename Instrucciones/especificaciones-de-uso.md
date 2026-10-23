@@ -1,7 +1,7 @@
 # Especificaciones de Uso — E-commerce (Tecnología y Hogar)
 
-**Versión:** 1.0
-**Fecha:** 21 de octubre de 2026
+**Versión:** 1.1
+**Fecha:** 23 de octubre de 2026 (v1.0: 21 de octubre)
 **Documento complementario de:** `especificaciones-tecnicas.md`
 
 ---
@@ -517,3 +517,39 @@ El MVP está listo para lanzamiento cuando se cumplen todos estos puntos:
 | 8 | Precios con o sin IVA en el panel | Finanzas |
 | 9 | Umbral de stock bajo por categoría | Operaciones |
 | 10 | Tiempos de reserva de stock y vencimiento de pagos en efectivo | Operaciones / Tecnología |
+
+---
+
+## 18. Cómo se usa la tienda hoy (actualizado el 23 de octubre de 2026)
+
+Esta sección describe lo que ya funciona en la tienda construida. Las demás secciones siguen siendo la especificación completa.
+
+### 18.1 Navegación
+
+- **Menú superior:** Inicio, Categorías, lupa y carrito. Al pasar el mouse sobre Categorías se abre el panel sin hacer clic; los elementos del menú se iluminan al pasar el mouse.
+- **Buscar:** la lupa abre un cuadro donde se escribe un nombre, un color o cualquier palabra clave ("negras", "reloj llamadas", "amarillo") y se ven resultados con foto. Entiende plurales.
+- **Carrito:** al pasar el mouse por el icono se muestra un resumen con los productos, cantidades y total; al hacer clic se abre el carrito completo.
+- **Volver:** en las fichas de producto, el carrito y las páginas informativas hay un botón redondo arriba a la izquierda que regresa a la pantalla anterior. No aparece en Inicio ni en las categorías.
+
+### 18.2 Categorías y filtros
+
+- **Tecnología** (Audífonos, Smartwatch): tarjetas por producto, con buscador y filtros por Color y Modelo.
+- **Moda → Gafas:** al entrar se ve una **portada** con dos fotos de modelos; al bajar, **cada color de cada modelo es una tarjeta** (hoy 70). Se puede buscar por nombre o color y filtrar por **Color** (una gafa "Negra lente amarillo" aparece tanto en Negro como en Amarillo), por **Modelo** y por **Tipo** (Deportivas: Impact y X-treme; Casuales: el resto). Se pueden marcar varias opciones en cada filtro.
+- Al pasar el mouse por una tarjeta de gafas se cambia de inmediato a su segunda foto; al salir vuelve a la primera.
+
+### 18.3 Ficha de producto
+
+- Se elige el **color** y cambian las fotos, el precio y la galería. Si se llega desde un filtro de color, ese color ya viene elegido.
+- En las **gafas**, la galería de abajo muestra solo las fotos del color elegido, grandes y completas, de a dos, con flechas para avanzar y volver. La foto que ya es portada de la tarjeta no se repite. Si un color no tiene fotos extra, no hay galería.
+- Un producto sin precio definido muestra "Precio por definir" y el botón "Próximamente" en lugar de comprar.
+
+### 18.4 Lo que todavía no se puede hacer
+
+- Pagar (checkout), crear cuenta o iniciar sesión, ver pedidos, y "Avísame cuando llegue". El carrito se guarda solo en el navegador.
+- Los precios de las gafas son provisionales. Los textos de ayuda, términos y privacidad están pendientes de revisión legal.
+
+### 18.5 Decisiones de negocio tomadas
+
+- **Habrá vendedores externos (marketplace):** cada producto y cada línea de pedido pertenece a un vendedor; la tienda propia es un vendedor más. Falta definir comisiones, liquidación y el panel para vendedores.
+- **Backend propio (NestJS)**, no Medusa.
+- **Próxima categoría de Moda:** Beanies, con su propia portada.

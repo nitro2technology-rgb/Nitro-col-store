@@ -2,6 +2,7 @@ import Link from "next/link";
 import { categories } from "@/lib/products";
 import { CategoryMenu } from "@/components/category-menu";
 import { CartLink } from "@/components/cart-link";
+import { SiteSearch } from "@/components/site-search";
 import { BrandMark } from "@/components/brand-mark";
 
 /** Barra de vidrio empañado a todo el ancho; el panel de categorías cuelga de ella. */
@@ -15,8 +16,16 @@ export function SiteHeader() {
         <Link href="/" aria-label="Nitro Col, inicio">
           <BrandMark className="h-9 w-[62px]" />
         </Link>
-        <CategoryMenu categories={categories} />
-        <CartLink />
+        <div className="flex items-center gap-7">
+          <Link href="/" className="nav-fx nav-link">
+            Inicio
+          </Link>
+          <CategoryMenu categories={categories} />
+        </div>
+        <div className="flex items-center gap-5">
+          <SiteSearch />
+          <CartLink />
+        </div>
       </nav>
     </header>
   );

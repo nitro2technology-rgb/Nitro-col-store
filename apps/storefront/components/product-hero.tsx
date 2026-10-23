@@ -8,10 +8,11 @@ import { formatCOP, formatPrice, type Product } from "@nitro/shared";
 import { Badge, Button } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
 import { ImageCarousel } from "@/components/image-carousel";
-import { categoryName, variantImages } from "@/lib/products";
+import { useVariant } from "@/components/variant-context";
+import { categoryName, isEditorial, variantImages } from "@/lib/products";
 
 export function ProductHero({ product }: { product: Product }) {
-  const [sku, setSku] = useState(() => (product.variants.find((v) => v.stock > 0) ?? product.variants[0]!).sku);
+  const { sku, setSku } = useVariant();
   const variant = product.variants.find((v) => v.sku === sku)!;
   const images = variantImages(product, sku);
   const soldOut = variant.stock === 0;
@@ -56,7 +57,7 @@ export function ProductHero({ product }: { product: Product }) {
         {/* Izquierda: fotos y, debajo, nombre y descripción. */}
         <div>
           {images.length > 0 ? (
-            <ImageCarousel images={images} className="mx-auto w-full max-w-[560px] md:mx-0" priority />
+            <ImageCarousel images={images} className="mx-auto w-full max-w-[560px] md:mx-0" priority editorial={isEditorial(product)} sizes="(min-width: 768px) 560px, 90vw" />
           ) : (
             <div className="flex justify-center">
               <ProductArt product={product} swatch={variant.swatch} className="h-[min(40vh,440px)] w-auto max-w-full" />

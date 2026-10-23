@@ -12,6 +12,18 @@ export function CategoryMenu({ categories }: { categories: CategoryNode[] }) {
 
   useEffect(() => setOpen(false), [pathname]);
 
+  // Se abre al pasar el mouse y se cierra poco después de salir (el retraso permite bajar al panel).
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hoverOpen = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const hoverClose = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  };
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -27,13 +39,14 @@ export function CategoryMenu({ categories }: { categories: CategoryNode[] }) {
   }, [open]);
 
   return (
-    <div ref={wrapRef}>
+    <div ref={wrapRef} onMouseEnter={hoverOpen} onMouseLeave={hoverClose}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls="category-panel"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 opacity-90 transition-opacity hover:opacity-100"
+        onFocus={hoverOpen}
+        className="nav-fx nav-link inline-flex items-center gap-1.5"
       >
         Categorías
         <svg

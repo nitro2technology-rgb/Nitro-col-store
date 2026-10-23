@@ -206,6 +206,8 @@ model Product {
   inBox        Json          @default("[]")
   /// [{ q, a }] — preguntas propias del producto
   faq          Json          @default("[]")
+  /// Etiquetas para filtrar y buscar (ej. "Deportivas")
+  tags         String[]      @default([])
   videoUrl     String?       @map("video_url")
   videoPoster  String?       @map("video_poster")
   seo          Json          @default("{}")
@@ -277,6 +279,8 @@ model ProductImage {
   variantId String?  @map("variant_id") @db.Uuid
   url       String
   alt       String
+  /// "card" = carrusel de la tarjeta/cabecera; "gallery" = sección Galería
+  kind      String   @default("gallery")
   position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
 

@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 22 de octubre de 2026 (vendedores externos en el esquema, páginas informativas, G-tide en 4 colores)
+**Última actualización:** 23 de octubre de 2026 (base de datos de Supabase migrada, gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -18,48 +18,57 @@ pnpm typecheck                          # tipos de todos los paquetes
 pnpm --filter @nitro/storefront build   # build de producción
 ```
 
-- Si el servidor de desarrollo muestra algo raro justo después de editar archivos, recarga la página (F5). Una vez dio un error transitorio "Unexpected end of JSON input" que se resolvió solo.
+- **Servidor de desarrollo raro** (pantalla "Application error", 404 inesperado o que no responde, sobre todo tras muchos cambios o al tocar `next.config.ts`): cerrar el servidor, **borrar `apps/storefront/.next`** y volver a iniciarlo. Si el puerto 3000 está ocupado, Next usa el siguiente (3001, 3002...): mira la línea "Local:" al arrancar.
 - pnpm bloquea los scripts de instalación de Prisma. Si una migración falla por eso: `pnpm approve-builds`.
+- **Base de datos:** `packages/db/.env` (no está en git) tiene `DATABASE_URL` (pooler, puerto 6543, `?pgbouncer=true`) y `DIRECT_URL` (puerto 5432). Si la contraseña tiene caracteres especiales (`#`, `@`...) va codificada en la URL (`#` → `%23`). Migraciones: `pnpm --filter @nitro/db exec prisma migrate dev`. Seed: `pnpm --filter @nitro/db seed` simula; con `-- --apply` escribe.
+- Excel de datos de productos: `Instrucciones/Datos de productos.xlsx` (pendiente de llenar por el dueño).
 
 ## 2. Estado actual
 
-Hecho (catálogo real de 3 productos en `lib/products.ts`, sin base de datos conectada):
+Hecho (el catálogo todavía se lee de `lib/products.ts`; la base de datos existe pero **está vacía**: el seed no se ha ejecutado):
 
 | Área | Estado |
 |---|---|
 | Monorepo (pnpm + Turborepo) | Listo: `apps/storefront`, `packages/{ui,shared,db,config}` |
-| Tienda (Next.js 15, Tailwind v4) | Portada, categorías, landing de producto, carrito |
-| Gafas (Moda) | 16 modelos / 70 colores con fotos (`lib/gafas-data.ts`, generado desde `Catálogo/Clothing/Gafas`), con **precios inventados** (provisionales) |
-| Catálogo real | Aurafit FW5 (azul/beige), G-tide L42 (negro/blanco/lila/rosado), Smartwatch X8 Pro, con fotos y video |
-| Esquema de base de datos (Prisma) | Escrito y validado, **sin migrar** |
-| Diseño visual | Blanco y negro con efecto vidrio (ver sección 4) |
-| Carrito | Funciona en el navegador (Zustand + localStorage) |
+| Tienda (Next.js 15, Tailwind v4) | Portada, categorías con filtros, ficha de producto, carrito, búsqueda, páginas informativas |
+| Tecnología | Aurafit FW5 (azul/beige), G-tide L42 (negro/blanco/lila/rosado), Smartwatch X8 Pro, con fotos y video |
+| Moda → Gafas | 16 modelos / 70 colores con fotos (`lib/gafas-data.ts`), **precios inventados** |
+| Base de datos (Supabase) | **Conectada y migrada** (4 migraciones, con RLS). Sin datos |
+| Seed | Escrito (`packages/db/prisma/seed.ts`), probado solo en simulación |
+| Diseño | Blanco y negro con vidrio; **diseño editorial solo para Moda** (sección 5) |
+| Carrito | Navegador (Zustand + localStorage); mini ventana al pasar el mouse por el icono |
+| Búsqueda | Lupa del menú: por nombre, color o palabra clave (cliente) |
+| Páginas | `/ayuda`, `/terminos`, `/privacidad`, `/ingresar`, `/cuenta` con texto provisional |
 
-**No existe todavía:** API NestJS (`apps/api`), panel de administración, autenticación, checkout, pagos, envíos, facturación electrónica, emails, búsqueda, cupones en el carrito, reseñas. Nada de esto está empezado.
+**No existe todavía:** API NestJS (`apps/api`), panel de administración, autenticación, checkout, pagos, envíos, facturación electrónica, emails, cupones en el carrito, reseñas. Nada de esto está empezado.
 
 ## 3. Estructura
 
 ```
 apps/storefront/
-  app/                 páginas: / · /c/[slug] · /p/[slug] · /carrito
-  components/          header, menú de categorías, hero de producto, tarjeta (product-tile), carrusel (image-carousel), carrito, follaje (foliage), intro del león (intro), portada (home-hero), ilustraciones (art/)
-  lib/products.ts      CATÁLOGO + árbol de categorías + helpers (variantImages)
+  app/                 páginas: / · /c/[slug] · /p/[slug] · /carrito · /ayuda · /terminos · /privacidad · /ingresar · /cuenta
+  components/          header, menú de categorías (category-menu), buscador (site-search), carrito del menú (cart-link),
+                       botón de volver (back-button), ficha (product-hero, variant-context, variant-gallery),
+                       lista con filtros (catalog-grid), tarjeta (product-tile), carrusel (image-carousel),
+                       portada y galería de Moda (moda-hero, editorial-gallery), follaje, intro del león, portada de inicio
+  lib/products.ts      CATÁLOGO + categorías + helpers (variantImages, galleryImages, colorFamilies, isEditorial, buildSearchIndex)
+  lib/gafas-data.ts    fotos de las gafas (generado desde Catálogo/Clothing/Gafas)
   lib/cart.ts          store del carrito (Zustand)
-  lib/faq.ts           preguntas frecuentes comunes
-  public/brand/        logo en PNG transparente (logo-mark.png, logo-full.png)
-  public/products/<slug>/  fotos y video de cada producto
-  public/brand/        también: portada-tarjeta.webp (banner transparente), intro-leon.mp4/.webp (intro)
+  public/brand/        logo, banner de portada, intro del león
+  public/moda/         portadas de Moda (portada-1.webp, portada-2.webp)
+  public/products/<slug>/  fotos y video de tecnología; public/products/gafas/<modelo>/ fotos de gafas
 packages/ui/           tokens de tema (theme.css), Button, Badge
-packages/shared/       tipos y esquemas zod del producto, formatCOP
-packages/db/           schema.prisma y cliente Prisma
-Instrucciones/         especificaciones, diseños de referencia, logo original
+packages/shared/       tipos y esquemas zod del producto, formatCOP, formatPrice
+packages/db/           schema.prisma, migraciones, seed.ts y cliente Prisma
+Instrucciones/         especificaciones, diseños de referencia, Excel de datos, logo original
+Catálogo/              fotos originales (NO está en git)
 ```
 
 ### Rutas
-- `/` portada · `/c/tecnologia` (categoría padre) · `/c/audifonos`, `/c/smartwatch` (hojas) · `/p/[slug]` producto · `/carrito`.
+- `/` portada · `/c/tecnologia`, `/c/audifonos`, `/c/smartwatch` · `/c/moda`, `/c/gafas` · `/p/[slug]` (acepta `?color=SKU`) · `/carrito` y las páginas informativas.
 
 ### Categorías
-Árbol de dos niveles en `lib/products.ts`: **Tecnología** (Audífonos, Smartwatch). Se quitó **Hogar** al no tener productos; si vuelve, agregarla al árbol y a `sampleSlugs` de `app/page.tsx`. Cada producto guarda el slug de su categoría **hoja**.
+Árbol de dos niveles en `lib/products.ts`: **Tecnología** (Audífonos, Smartwatch) y **Moda** (Gafas; próximamente Beanies). Se quitó **Hogar** al no tener productos. Cada producto guarda el slug de su categoría **hoja**. Una categoría con `byColor: true` (Moda) se lista por color, usa el diseño editorial y hereda su `cover` (portada).
 
 ### Productos destacados de la portada
 **La portada siempre muestra 3 destacados**, en una sola fila bajo el título "Productos destacados" (pedido del dueño). Hoy son los 3 productos reales (Aurafit 1, G-tide 2, X8 Pro 3). Los elige el campo `featuredRank` de cada producto (menor número = primero); se muestran los 3 primeros. En la base de datos ya existe `products.featured_rank`; cuando haya panel de administración será un campo editable.
@@ -101,34 +110,51 @@ Instrucciones/         especificaciones, diseños de referencia, logo original
 - **Imagen de la portada:** La imagen `public/brand/portada-tarjeta.webp` es el banner de `imagenes/portada/portada.png` con el centro (logo y textos) borrado, el fondo blanco vuelto transparente y la ramita dibujada eliminada, para que se vea el follaje detrás. El logo, "SINCE 2020" y el lema son HTML encima, animados. Si cambia el banner, hay que repetir ese proceso. Muestra laptop, hogar, moda, etc., que hoy no vendemos.
 - El logo en PNG mide ~640 px de ancho. Con un **SVG** se vería más nítido en pantallas de alta densidad.
 
-### Gafas (categoría Moda → Gafas)
-- Cada carpeta de modelo es un producto (`gafas-<modelo>`) y cada subcarpeta de color es una variante. Fotos cuadradas (de producto) = carrusel de la tarjeta; fotos verticales con modelo = galería. Los WebP están en `public/products/gafas/`.
-- **Impact y X-treme** no tenían carpetas de color: se agruparon por parejas de fotos y los nombres de color son provisionales. En Vintage, `55.jpg` y `57.jpg` estaban sueltas y fueron a la galería.
-- **Precios inventados** (39.900 a 59.900 COP según el modelo, tabla `gafasPesos` en `lib/products.ts`). `priceCents: 0` = "Precio por definir" y "Comprar" pasa a "Próximamente". Códigos: modelo `GAF-MIA`, color `GAF-MIA-01`.
-- **Excel `Instrucciones/Datos de productos.xlsx`:** hojas Productos y Variantes con códigos, precios, stock, peso y medidas. El dueño lo llena; después se carga a `lib/products.ts` y a la base con el seed. Faltan: precios reales, stock, peso, medidas, textos.
+## 5b. Moda → Gafas y diseño editorial
+
+- **Datos:** cada carpeta de modelo es un producto (`gafas-<modelo>`) y cada subcarpeta de color una variante. Códigos: modelo `GAF-MIA`, color `GAF-MIA-01`. Fotos cuadradas de producto = `variant.images` (la primera es la portada de la tarjeta); fotos con modelo = `variant.gallery`. Los WebP (1080 px, calidad 88) están en `public/products/gafas/`. Se regeneran desde `Catálogo/` con `python scripts/generar-gafas.py` (requiere Pillow; convierte, aplica el fondo gris, asigna fotos y reescribe `lib/gafas-data.ts`).
+- **Impact y X-treme** no tenían carpetas de color: se agruparon por parejas de fotos y los nombres de color son provisionales. En Vintage, `55.jpg` (Negras) y `57.jpg` (Blancas) estaban sueltas y se asignaron a su color.
+- **Precios inventados** (39.900 a 59.900 COP según el modelo, tabla `gafasPesos`). `priceCents: 0` = "Precio por definir" y "Comprar" pasa a "Próximamente". Faltan stock, peso, medidas y textos reales (descripciones y eslóganes son genéricos).
+- **Lista `/c/gafas`:** cada color de cada modelo es una tarjeta (70). Filtros: buscador por nombre/color, **Color** (familias; una gafa puede estar en varias: "Negras lente amarillo" = Negro + Amarillo; Beige = Habano), **Modelo** y **Tipo** (Deportivas = Impact y X-treme, Casuales = el resto; campo `tags`, columna `products.tags`). Cada tarjeta muestra la foto de producto y una foto con modelo (estable por SKU); al pasar el mouse salta de inmediato a la segunda foto y al salir vuelve a la primera.
+- **Fondo de las fotos de producto:** gris de Impact (248,248,246), aplicado al generar los WebP; las fotos con modelo no se tocan.
+- **Diseño editorial SOLO para Moda** (referencia `Diseños frontend/Para MOda`, estilo Acne Studios): fotos a ras, esquinas rectas, cuadrícula de 2/3/4 columnas sin separación y a todo el ancho, rótulos pequeños en mayúsculas. Las tarjetas siguen siendo de vidrio translúcido y el resto de la estética no cambia. Se activa con `isEditorial(product)` y la prop `editorial` de `ImageCarousel`.
+- **Portada de Moda** (`components/moda-hero.tsx`, en `/c/moda` y `/c/gafas`): dos fotos a todo el ancho y sin separación, **completas** (proporción 4:5, la portada es más alta que la pantalla), **sin texto encima**; flecha ↓ al pie. Fotos: `public/moda/portada-1.webp` (Barcelona Animal print 67.jpg) y `portada-2.webp` (Vintage Negras 34.jpg). Las originales miden solo 1080 px de ancho: se ampliaron 2x (Lanczos + afilado) y se sirven sin recomprimir. **Si el dueño tiene versiones de mayor resolución, reemplazarlas.** Se define en `cover` de la categoría; Beanies traerá la suya.
+- **Galería de la ficha (Moda)** (`components/editorial-gallery.tsx`): fotos grandes y completas (4:5, sin recortar), 2 a la vez con flechas ‹ ›; solo las del color elegido y sin repetir la foto de portada de la tarjeta; sin fotos extra no se muestra. El color elegido se comparte entre cabecera y galería con `variant-context.tsx`.
+
+## 5c. Navegación
+
+- **Menú superior:** Inicio · Categorías (se abre al pasar el mouse) · lupa · carrito. Todos tienen animación al pasar el mouse (`nav-fx` / `nav-link` en `globals.css`; se apaga con `prefers-reduced-motion`).
+- **Carrito del menú** (`components/cart-link.tsx`): al pasar el mouse se despliega un resumen (foto, nombre, color, cantidad, precio, total); el clic abre `/carrito`.
+- **Buscador** (`components/site-search.tsx`): compara raíces de palabras (plural/singular) contra nombre, marca, categoría, etiquetas, especificaciones y colores.
+- **Botón de volver** (`components/back-button.tsx`, en `layout.tsx`): flotante arriba a la izquierda, solo en fichas de producto, Carrito y páginas informativas; **no** en Inicio ni en categorías.
+- **Imágenes:** `next/image` con AVIF/WebP (`images` en `next.config.ts`); solo las portadas de Moda van sin recomprimir. La velocidad real se ve con `pnpm --filter @nitro/storefront build` y `start`; en `dev` compila cada página al abrirla.
 
 ## 6. Qué sigue (en este orden)
 
-1. **Conectar la base de datos (Supabase).**
-   - Crear el proyecto (o usar la CLI local con Docker). Copiar `packages/db/.env.example` a `.env` con `DATABASE_URL` (pooler, puerto 6543) y `DIRECT_URL` (conexión directa).
-   - Correr la primera migración con Prisma: `pnpm --filter @nitro/db migrate:dev`.
-   - Escribir las **políticas RLS** en SQL aparte (Prisma no las maneja): RLS activo en todas las tablas, catálogo público solo lectura, el cliente solo ve lo suyo.
-   - **Marketplace decidido (22 oct):** habrá vendedores externos. El esquema ya tiene `Seller` (la tienda propia es un vendedor con `isHouse`), `products.seller_id`, `order_items.seller_id` y el rol `seller`. Falta: RLS por vendedor y que el seed cree el vendedor de la casa.
-2. **Sembrar el catálogo** (seed) con las categorías y los 3 productos reales (incluyendo las imágenes por variante), y reemplazar `lib/products.ts` por lecturas a la base de datos.
+1. **Sembrar el catálogo** (`pnpm --filter @nitro/db seed -- --apply`, una sola vez, cuando el dueño entregue el Excel; es repetible) y **reemplazar `lib/products.ts` por lecturas a la base de datos**. Falta decidir cómo se mantienen `lib/gafas-data.ts` y los helpers de búsqueda cuando el catálogo venga de la base.
+2. **Cargar el Excel** `Datos de productos.xlsx` (precios reales, stock, peso, medidas, textos) a la base.
 3. **Capa de API** (NestJS según las especificaciones, o consultas desde el servidor de Next para empezar) con precios y stock validados en el servidor. El navegador nunca escribe pedidos, pagos ni inventario.
-4. **Carrito en el servidor** (hoy solo vive en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
-5. **Autenticación** con Supabase Auth (email y Google).
-6. **Checkout y pagos** (Wompi y/o Mercado Pago). Hoy el botón "Ir a pagar" está **desactivado a propósito**.
-7. **Panel de administración** (incluye elegir los productos destacados).
-8. Envíos, facturación electrónica, emails transaccionales, cupones, "Avísame cuando llegue", búsqueda.
+4. **Carrito en el servidor** (hoy solo en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
+5. **Autenticación** con Supabase Auth (activa `/ingresar` y `/cuenta`).
+6. **Checkout y pagos** (Wompi y/o Mercado Pago; el dueño debe elegir y crear cuenta de pruebas). Hoy "Ir a pagar" está **desactivado a propósito**.
+7. **Panel de administración** (subir productos, editar precios, elegir destacados) y **RLS por vendedor** para el marketplace.
+8. Envíos, facturación electrónica, emails transaccionales, cupones, "Avísame cuando llegue".
+9. **Beanies** (nueva categoría de Moda con su propia portada `cover`).
 
 ## 7. Pendiente que no depende del código
 
-- **Video del león (Hailuo AI, plan gratuito):** trae marca de agua "MINIMAX | Hailuo AI" (abajo a la derecha; detrás del vidrio casi no se ve, pero está). **Confirmar que el plan gratuito permite uso comercial** antes de publicar; si no, regenerar el video con un plan o herramienta que lo permita.
+- **Excel de productos** (`Instrucciones/Datos de productos.xlsx`): precio real, stock, peso, medidas, descripción, eslogan y marca real del reloj ("X8 Pro" figura como marca). Naranja = inventado por Claude, amarillo = falta, gris = código (no tocar).
+- **Contacto para la página de ayuda:** WhatsApp y correo de atención.
+- **Fotos de portada de Moda en mayor resolución** (las actuales miden 1080 px de ancho y se ven suaves en pantallas grandes).
+- **Video del león (Hailuo AI, plan gratuito):** trae marca de agua "MINIMAX | Hailuo AI". **Confirmar que el plan gratuito permite uso comercial** antes de publicar.
+- **Pasarela de pagos** (Wompi o Mercado Pago) y asesoría legal para términos y privacidad.
 
-Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (envíos, devoluciones, garantías, contra entrega, preventa, plazos de reserva de stock, etc.) y la decisión **NestJS propio vs. Medusa.js**: el dueño eligió **NestJS propio**.
+Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (envíos, devoluciones, garantías, contra entrega, preventa, plazos de reserva de stock, etc.). Decididas: **NestJS propio** (no Medusa) y **marketplace con vendedores externos** (esquema listo).
 
 ## 8. Qué NO funciona aún (para no perder tiempo)
 
-- Los botones **Comprar ahora** y **Agregar al carrito** sí funcionan (carrito local). **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía, y existen `/ayuda`, `/terminos`, `/privacidad`, `/ingresar` y `/cuenta`, pero con **texto provisional** (legal por revisar) y el formulario de ingreso está desactivado hasta tener Supabase Auth.
-- No se probó en celular real ni con lectores de pantalla; sí se verificó en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos.
+- **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía. El formulario de `/ingresar` está desactivado hasta tener Supabase Auth. `/ayuda`, `/terminos`, `/privacidad` tienen texto provisional (legal por revisar).
+- La base de datos está conectada pero **vacía**: la tienda no la lee todavía.
+- Las gafas tienen precios inventados; la tienda se puede navegar y comprar (carrito local) con ellos.
+- No se probó en celular real ni con lectores de pantalla; sí en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos. El hover (mini carrito, cambio de foto, menú) no existe en pantallas táctiles: allí el clic abre la página.
+- El carrito de prueba de un navegador se guarda en `localStorage` (clave `nitro-cart`).
