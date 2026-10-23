@@ -32,6 +32,12 @@ export function SiteFooter() {
           </p>
         </div>
       </div>
+      <nav aria-label="Información" className="mx-auto flex max-w-[1024px] flex-wrap gap-x-6 gap-y-2 px-6 pb-6 text-xs">
+        <Link href="/ayuda" className="hover:text-ink">Ayuda</Link>
+        <Link href="/terminos" className="hover:text-ink">Términos y condiciones</Link>
+        <Link href="/privacidad" className="hover:text-ink">Privacidad</Link>
+        <Link href="/cuenta" className="hover:text-ink">Mi cuenta</Link>
+      </nav>
       <p className="mx-auto max-w-[1024px] px-6 pb-12 text-xs">
         © {new Date().getFullYear()} Nitro Col Store. Precios en COP, IVA incluido.
       </p>

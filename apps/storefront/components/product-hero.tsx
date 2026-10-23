@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart";
-import { formatCOP, type Product } from "@nitro/shared";
+import { formatCOP, formatPrice, type Product } from "@nitro/shared";
 import { Badge, Button } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
 import { ImageCarousel } from "@/components/image-carousel";
@@ -15,6 +15,7 @@ export function ProductHero({ product }: { product: Product }) {
   const variant = product.variants.find((v) => v.sku === sku)!;
   const images = variantImages(product, sku);
   const soldOut = variant.stock === 0;
+  const priced = variant.priceCents > 0;
   const lowStock = !soldOut && variant.stock <= 5;
   const discount = variant.compareAtCents
     ? Math.round((1 - variant.priceCents / variant.compareAtCents) * 100)
@@ -108,7 +109,7 @@ export function ProductHero({ product }: { product: Product }) {
 
           <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-[32px] font-semibold tracking-[-0.02em]">
-              {formatCOP(variant.priceCents)}
+              {formatPrice(variant.priceCents)}
             </span>
             {variant.compareAtCents && (
               <>
@@ -130,6 +131,8 @@ export function ProductHero({ product }: { product: Product }) {
               </>
             ) : notice === "max" ? (
               "Ya tienes en el carrito todas las unidades disponibles."
+            ) : !priced ? (
+              "Precio por definir. Pronto estará disponible."
             ) : soldOut ? (
               "Agotado por ahora."
             ) : lowStock ? (
@@ -140,7 +143,9 @@ export function ProductHero({ product }: { product: Product }) {
           </p>
 
           <div ref={buyRef} className="mt-6 flex flex-wrap gap-3">
-            {soldOut ? (
+            {!priced ? (
+              <Button disabled>Próximamente</Button>
+            ) : soldOut ? (
               <Button variant="ghost">Avísame cuando llegue</Button>
             ) : (
               <>
@@ -164,10 +169,10 @@ export function ProductHero({ product }: { product: Product }) {
         <div className="flex items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold">{product.name}</p>
-            <p className="text-[15px] text-muted">{formatCOP(variant.priceCents)}</p>
+            <p className="text-[15px] text-muted">{formatPrice(variant.priceCents)}</p>
           </div>
-          <Button disabled={soldOut} onClick={buyNow} tabIndex={barVisible ? 0 : -1}>
-            {soldOut ? "Agotado" : "Comprar"}
+          <Button disabled={soldOut || !priced} onClick={buyNow} tabIndex={barVisible ? 0 : -1}>
+            {!priced ? "Próximamente" : soldOut ? "Agotado" : "Comprar"}
           </Button>
         </div>
       </div>

@@ -1,16 +1,17 @@
 import type { Product, ProductImage } from "@nitro/shared";
+import { gafasModels } from "@/lib/gafas-data";
 
 const photos = (dir: string, name: string, prefix: string, nums: number[], ext = "webp"): ProductImage[] =>
   nums.map((n) => ({ src: `/products/${dir}/${prefix}${n}.${ext}`, alt: `${name}, foto ${n}` }));
 
-const gtide: ProductImage[] = [
+const gtideGallery: ProductImage[] = [
   ...photos("gtide-l42", "G-tide L42", "", [1, 2, 3]),
   ...photos("gtide-l42", "G-tide L42", "", [4], "avif"),
 ];
 
 // Datos de ejemplo hasta conectar la API/BD. Precios en centavos de COP.
 // `featuredRank` decide qué productos salen en la portada (menor número = primero).
-export const products: Product[] = [
+const tech: Product[] = [
   {
     slug: "audifonos-aurafit-fw5",
     featuredRank: 1,
@@ -36,7 +37,7 @@ export const products: Product[] = [
       },
       {
         sku: "AURAFIT-FW5-BEI", label: "Beige", swatch: "#d9c7a8", priceCents: 6500000, stock: 10,
-        images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-", [1, 2, 3, 6]),
+        images: photos("aurafit-fw5", "Aurafit Aurabuds FW5 beige", "beige-principal-", [1, 2]),
       },
     ],
   },
@@ -46,13 +47,18 @@ export const products: Product[] = [
     name: "G-tide L42",
     brand: "G-tide",
     category: "audifonos",
-    tagline: "Sonido directo, en negro.",
-    description: "Audífonos inalámbricos pequeños en color negro.",
+    tagline: "Sonido directo, en cuatro colores.",
+    description: "Audífonos inalámbricos pequeños, disponibles en negro, blanco, lila y rosado.",
     theme: "light",
-    specs: { Conectividad: "Bluetooth", Color: "Negro" },
+    specs: { Conectividad: "Bluetooth", Colores: "Negro, Blanco, Lila, Rosado" },
     highlights: [{ title: "Compactos", body: "Livianos y fáciles de llevar a todas partes." }],
-    images: gtide,
-    variants: [{ sku: "GTIDE-L42-BLK", label: "Negro", swatch: "#1f2937", priceCents: 6990000, stock: 10, images: gtide }],
+    images: gtideGallery,
+    variants: [
+      { sku: "GTIDE-L42-BLK", label: "Negro", swatch: "#1f2937", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 negro", "negro-principal-", [1, 2]) },
+      { sku: "GTIDE-L42-WHT", label: "Blanco", swatch: "#f3f4f6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 blanco", "blanco-principal-", [1, 2]) },
+      { sku: "GTIDE-L42-LIL", label: "Lila", swatch: "#b7a3d6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 lila", "lila-principal-", [1]) },
+      { sku: "GTIDE-L42-ROS", label: "Rosado", swatch: "#f2b4c6", priceCents: 6990000, stock: 10, images: photos("gtide-l42", "G-tide L42 rosado", "rosado-principal-", [1]) },
+    ],
   },
   {
     slug: "smartwatch-x8-pro",
@@ -80,6 +86,39 @@ export const products: Product[] = [
   },
 ];
 
+// Gafas: una ficha por modelo y un color por variante. PRECIOS INVENTADOS (provisionales, en pesos):
+// el dueño los reemplaza con los reales. priceCents 0 se muestra como "Precio por definir".
+const gafasPesos: Record<string, number> = {
+  barcelona: 49900, berlin: 39900, brooklyn: 44900, cat: 39900, europe: 42900, impact: 54900,
+  malibu: 39900, miami: 42900, milan: 44900, moon: 39900, office: 39900, orlando: 42900,
+  paris: 45900, versace: 59900, vintage: 39900, "x-treme": 54900,
+};
+/** Código corto del modelo: primeras tres letras (MIA, PAR...). */
+const modelCode = (slug: string) => slug.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase();
+
+const gafas: Product[] = gafasModels.map((m) => ({
+  slug: `gafas-${m.slug}`,
+  name: `Gafas ${m.name}`,
+  brand: "Nitro Col",
+  category: "gafas",
+  tagline: `Modelo ${m.name}.`,
+  description: `Gafas de sol modelo ${m.name}, disponibles en ${m.variants.length} ${m.variants.length === 1 ? "color" : "colores"}.`,
+  theme: "light",
+  specs: { Modelo: m.name, Colores: m.variants.map((v) => v.label).join(", ") },
+  highlights: [],
+  images: m.gallery.map((src, i) => ({ src, alt: `Gafas ${m.name}, foto ${i + 1}` })),
+  variants: m.variants.map((v, i) => ({
+    sku: `GAF-${modelCode(m.slug)}-${String(i + 1).padStart(2, "0")}`,
+    label: v.label,
+    swatch: v.swatch,
+    priceCents: (gafasPesos[m.slug] ?? 0) * 100,
+    stock: 10,
+    images: v.images.map((src, i) => ({ src, alt: `Gafas ${m.name} ${v.label}, foto ${i + 1}` })),
+  })),
+}));
+
+export const products: Product[] = [...tech, ...gafas];
+
 // ───────────── Categorías (árbol de dos niveles) ─────────────
 
 export type CategoryNode = {
@@ -98,6 +137,12 @@ export const categories: CategoryNode[] = [
       { slug: "audifonos", name: "Audífonos" },
       { slug: "smartwatch", name: "Smartwatch" },
     ],
+  },
+  {
+    slug: "moda",
+    name: "Moda",
+    description: "Gafas y accesorios con estilo.",
+    children: [{ slug: "gafas", name: "Gafas" }],
   },
 ];
 
@@ -135,6 +180,9 @@ export function findVariant(sku: string) {
   }
   return undefined;
 }
+
+/** Los productos sin precio (priceCents = 0) se muestran pero no se pueden comprar. */
+export const isPriced = (cents: number) => cents > 0;
 
 export const fromPrice = (p: Product) => Math.min(...p.variants.map((v) => v.priceCents));
 

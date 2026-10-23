@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCOP, type Product } from "@nitro/shared";
+import { formatPrice, type Product } from "@nitro/shared";
 import { ImageCarousel } from "@/components/image-carousel";
 import { ProductArt } from "@/components/art/product-art";
 import { fromPrice, variantImages } from "@/lib/products";
@@ -26,7 +26,9 @@ export function ProductTile({ product }: { product: Product }) {
         <h3 className="text-[26px]">{product.name}</h3>
         <p className="mt-1 text-[17px] text-muted">{product.tagline}</p>
         <p className="mt-2 line-clamp-2 text-[15px] leading-[1.45] text-muted">{product.description}</p>
-        <p className="mt-4 text-[19px] font-semibold">Desde {formatCOP(fromPrice(product))}</p>
+        <p className="mt-4 text-[19px] font-semibold">
+          {fromPrice(product) > 0 ? `Desde ${formatPrice(fromPrice(product))}` : formatPrice(0)}
+        </p>
       </div>
     </Link>
   );

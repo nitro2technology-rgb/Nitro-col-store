@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 21 de octubre de 2026 (catálogo real, follaje inmersivo, intro del león y portada de vidrio)
+**Última actualización:** 22 de octubre de 2026 (vendedores externos en el esquema, páginas informativas, G-tide en 4 colores)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -29,7 +29,8 @@ Hecho (catálogo real de 3 productos en `lib/products.ts`, sin base de datos con
 |---|---|
 | Monorepo (pnpm + Turborepo) | Listo: `apps/storefront`, `packages/{ui,shared,db,config}` |
 | Tienda (Next.js 15, Tailwind v4) | Portada, categorías, landing de producto, carrito |
-| Catálogo real | Aurafit FW5 (azul/beige), G-tide L42, Smartwatch X8 Pro, con fotos y video |
+| Gafas (Moda) | 16 modelos / 70 colores con fotos (`lib/gafas-data.ts`, generado desde `Catálogo/Clothing/Gafas`), con **precios inventados** (provisionales) |
+| Catálogo real | Aurafit FW5 (azul/beige), G-tide L42 (negro/blanco/lila/rosado), Smartwatch X8 Pro, con fotos y video |
 | Esquema de base de datos (Prisma) | Escrito y validado, **sin migrar** |
 | Diseño visual | Blanco y negro con efecto vidrio (ver sección 4) |
 | Carrito | Funciona en el navegador (Zustand + localStorage) |
@@ -100,13 +101,19 @@ Instrucciones/         especificaciones, diseños de referencia, logo original
 - **Imagen de la portada:** La imagen `public/brand/portada-tarjeta.webp` es el banner de `imagenes/portada/portada.png` con el centro (logo y textos) borrado, el fondo blanco vuelto transparente y la ramita dibujada eliminada, para que se vea el follaje detrás. El logo, "SINCE 2020" y el lema son HTML encima, animados. Si cambia el banner, hay que repetir ese proceso. Muestra laptop, hogar, moda, etc., que hoy no vendemos.
 - El logo en PNG mide ~640 px de ancho. Con un **SVG** se vería más nítido en pantallas de alta densidad.
 
+### Gafas (categoría Moda → Gafas)
+- Cada carpeta de modelo es un producto (`gafas-<modelo>`) y cada subcarpeta de color es una variante. Fotos cuadradas (de producto) = carrusel de la tarjeta; fotos verticales con modelo = galería. Los WebP están en `public/products/gafas/`.
+- **Impact y X-treme** no tenían carpetas de color: se agruparon por parejas de fotos y los nombres de color son provisionales. En Vintage, `55.jpg` y `57.jpg` estaban sueltas y fueron a la galería.
+- **Precios inventados** (39.900 a 59.900 COP según el modelo, tabla `gafasPesos` en `lib/products.ts`). `priceCents: 0` = "Precio por definir" y "Comprar" pasa a "Próximamente". Códigos: modelo `GAF-MIA`, color `GAF-MIA-01`.
+- **Excel `Instrucciones/Datos de productos.xlsx`:** hojas Productos y Variantes con códigos, precios, stock, peso y medidas. El dueño lo llena; después se carga a `lib/products.ts` y a la base con el seed. Faltan: precios reales, stock, peso, medidas, textos.
+
 ## 6. Qué sigue (en este orden)
 
 1. **Conectar la base de datos (Supabase).**
    - Crear el proyecto (o usar la CLI local con Docker). Copiar `packages/db/.env.example` a `.env` con `DATABASE_URL` (pooler, puerto 6543) y `DIRECT_URL` (conexión directa).
    - Correr la primera migración con Prisma: `pnpm --filter @nitro/db migrate:dev`.
    - Escribir las **políticas RLS** en SQL aparte (Prisma no las maneja): RLS activo en todas las tablas, catálogo público solo lectura, el cliente solo ve lo suyo.
-   - **Decidir antes de migrar:** si habrá marketplace con vendedores externos, agregar `seller_id` a productos y pedidos ahora (ver riesgo #5 de las especificaciones técnicas).
+   - **Marketplace decidido (22 oct):** habrá vendedores externos. El esquema ya tiene `Seller` (la tienda propia es un vendedor con `isHouse`), `products.seller_id`, `order_items.seller_id` y el rol `seller`. Falta: RLS por vendedor y que el seed cree el vendedor de la casa.
 2. **Sembrar el catálogo** (seed) con las categorías y los 3 productos reales (incluyendo las imágenes por variante), y reemplazar `lib/products.ts` por lecturas a la base de datos.
 3. **Capa de API** (NestJS según las especificaciones, o consultas desde el servidor de Next para empezar) con precios y stock validados en el servidor. El navegador nunca escribe pedidos, pagos ni inventario.
 4. **Carrito en el servidor** (hoy solo vive en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
@@ -123,5 +130,5 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 
 ## 8. Qué NO funciona aún (para no perder tiempo)
 
-- Los botones **Comprar ahora** y **Agregar al carrito** sí funcionan (carrito local). **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía, y **no existen** las páginas de ayuda, términos, privacidad, cuenta ni inicio de sesión.
+- Los botones **Comprar ahora** y **Agregar al carrito** sí funcionan (carrito local). **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía, y existen `/ayuda`, `/terminos`, `/privacidad`, `/ingresar` y `/cuenta`, pero con **texto provisional** (legal por revisar) y el formulario de ingreso está desactivado hasta tener Supabase Auth.
 - No se probó en celular real ni con lectores de pantalla; sí se verificó en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos.

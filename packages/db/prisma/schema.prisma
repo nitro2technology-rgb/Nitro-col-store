@@ -16,6 +16,7 @@ datasource db {
 
 enum Role {
   customer
+  seller
   support
   catalog_manager
   marketing
@@ -83,6 +84,28 @@ enum LandingStatus {
 
 // ───────────── Usuarios ─────────────
 
+/// Vendedor del marketplace. La tienda propia es un vendedor más (isHouse).
+model Seller {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  name           String
+  slug           String    @unique
+  isHouse        Boolean   @default(false) @map("is_house")
+  /// Perfil del dueño/administrador del vendedor
+  ownerProfileId String?   @map("owner_profile_id") @db.Uuid
+  /// Comisión de la plataforma en puntos básicos (1000 = 10 %)
+  commissionBps  Int       @default(0) @map("commission_bps")
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  owner      Profile?    @relation(fields: [ownerProfileId], references: [id])
+  products   Product[]
+  orderItems OrderItem[]
+
+  @@map("sellers")
+}
+
 /// Perfil ligado a auth.users de Supabase (mismo id).
 model Profile {
   id         String    @id @db.Uuid
@@ -99,6 +122,7 @@ model Profile {
   orders    Order[]
   reviews   Review[]
   carts     Cart[]
+  sellers   Seller[]
 
   @@map("profiles")
 }
@@ -164,6 +188,7 @@ model Brand {
 model Product {
   id           String        @id @default(uuid(7)) @db.Uuid
   brandId      String?       @map("brand_id") @db.Uuid
+  sellerId     String        @map("seller_id") @db.Uuid
   name         String
   slug         String        @unique
   tagline      String?
@@ -175,12 +200,21 @@ model Product {
   theme        String        @default("light")
   /// Especificaciones de solo lectura que no se filtran
   specs        Json          @default("{}")
+  /// [{ title, body }] — sección "Lo principal"
+  highlights   Json          @default("[]")
+  /// Lista de textos de "En la caja"
+  inBox        Json          @default("[]")
+  /// [{ q, a }] — preguntas propias del producto
+  faq          Json          @default("[]")
+  videoUrl     String?       @map("video_url")
+  videoPoster  String?       @map("video_poster")
   seo          Json          @default("{}")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   deletedAt    DateTime?     @map("deleted_at")
 
   brand           Brand?                  @relation(fields: [brandId], references: [id])
+  seller          Seller                  @relation(fields: [sellerId], references: [id])
   variants        ProductVariant[]
   images          ProductImage[]
   categories      ProductCategory[]
@@ -190,6 +224,7 @@ model Product {
 
   @@index([status])
   @@index([brandId])
+  @@index([sellerId])
   @@map("products")
 }
 
@@ -211,6 +246,8 @@ model ProductVariant {
   sku            String    @unique
   gtin           String?
   label          String
+  /// Color de muestra en hex (opcional)
+  swatch         String?
   priceCents     Int       @map("price_cents")
   compareAtCents Int?      @map("compare_at_cents")
   currency       String    @default("COP")
@@ -225,6 +262,7 @@ model ProductVariant {
 
   product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   inventory  InventoryItem?
+  images     ProductImage[]
   cartItems  CartItem[]
   orderItems OrderItem[]
 
@@ -235,14 +273,18 @@ model ProductVariant {
 model ProductImage {
   id        String   @id @default(uuid(7)) @db.Uuid
   productId String   @map("product_id") @db.Uuid
+  /// Si tiene valor, la foto es del carrusel de esa variante; si no, de la galería general
+  variantId String?  @map("variant_id") @db.Uuid
   url       String
   alt       String
   position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@index([productId, position])
+  @@index([variantId])
   @@map("product_images")
 }
 
@@ -403,6 +445,8 @@ model OrderItem {
   id         String @id @default(uuid(7)) @db.Uuid
   orderId    String @map("order_id") @db.Uuid
   variantId  String @map("variant_id") @db.Uuid
+  /// Vendedor del producto al momento de la compra (cada vendedor despacha lo suyo)
+  sellerId   String @map("seller_id") @db.Uuid
   /// Nombre y SKU congelados: el catálogo puede cambiar después
   name       String
   sku        String
@@ -412,8 +456,10 @@ model OrderItem {
 
   order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant ProductVariant @relation(fields: [variantId], references: [id])
+  seller  Seller         @relation(fields: [sellerId], references: [id])
 
   @@index([orderId])
+  @@index([sellerId])
   @@map("order_items")
 }
 

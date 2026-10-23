@@ -9,6 +9,7 @@ import {
   featuredProducts,
   fromPrice,
   getProduct,
+  variantImages,
   type CategoryNode,
 } from "@/lib/products";
 
@@ -35,6 +36,7 @@ function Row({ products }: { products: Product[] }) {
 // Productos que ilustran cada categoría en la bienvenida.
 const sampleSlugs: Record<string, string[]> = {
   tecnologia: ["audifonos-aurafit-fw5", "smartwatch-x8-pro"],
+  moda: ["gafas-miami", "gafas-paris"],
 };
 
 function CategoryCard({ category }: { category: CategoryNode }) {
@@ -42,9 +44,15 @@ function CategoryCard({ category }: { category: CategoryNode }) {
   return (
     <section data-theme="light" className="glass rounded-card p-8 text-ink md:p-10">
       <div className="flex h-[170px] items-center justify-center gap-8">
-        {samples.map((p) => (
-          <ProductArt key={p.slug} product={p} swatch={p.variants[0]?.swatch} className="h-full w-auto" />
-        ))}
+        {samples.map((p) => {
+          const photo = variantImages(p)[0];
+          return photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={p.slug} src={photo.src} alt={photo.alt} className="h-full w-auto object-contain" />
+          ) : (
+            <ProductArt key={p.slug} product={p} swatch={p.variants[0]?.swatch} className="h-full w-auto" />
+          );
+        })}
       </div>
       <h3 className="mt-8 text-[clamp(32px,3.4vw,40px)]">{category.name}</h3>
       <p className="mt-2 text-[17px] text-muted">{category.description}</p>
@@ -89,7 +97,7 @@ export default function Home() {
         <div className="mx-auto max-w-[760px] text-center">
           <h2 className="text-[clamp(40px,6vw,72px)]">Todo lo que buscas, en un solo lugar.</h2>
           <p className="mt-6 text-[clamp(18px,2vw,21px)] leading-[1.47] text-muted">
-            Audio y relojes inteligentes. Elige una categoría y encuentra lo tuyo.
+            Audio, relojes inteligentes y gafas. Elige una categoría y encuentra lo tuyo.
           </p>
         </div>
         <div className="mt-16 grid gap-3 md:grid-cols-2 md:gap-4">
