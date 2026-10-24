@@ -1,34 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { buttonClasses } from "@nitro/ui";
+import { redirect } from "next/navigation";
+import { AuthForm } from "@/components/auth-form";
+import { authEnabled, currentUser } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Ingresar" };
+export const metadata: Metadata = { title: "Ingresar", robots: { index: false } };
+export const dynamic = "force-dynamic";
 
-const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] backdrop-blur-md";
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+  const { next = "/cuenta", error } = await searchParams;
+  const dest = next.startsWith("/") && !next.startsWith("//") ? next : "/cuenta";
+  if (await currentUser()) redirect(dest);
 
-/** Formulario sin conexión: se activa cuando exista Supabase Auth. */
-export default function SignInPage() {
   return (
     <main className="mx-auto max-w-[480px] px-6 pb-28 pt-16 md:pt-24">
-      <h1 className="text-[clamp(40px,7vw,64px)]">Ingresar</h1>
-      <form className="glass mt-10 space-y-5 rounded-card p-6 md:p-8" aria-describedby="auth-soon">
-        <label className="block text-sm">
-          Correo
-          <input type="email" autoComplete="email" className={field} disabled />
-        </label>
-        <label className="block text-sm">
-          Contraseña
-          <input type="password" autoComplete="current-password" className={field} disabled />
-        </label>
-        <button type="submit" className={buttonClasses("buy", "w-full")} disabled>
-          Ingresar
-        </button>
-        <p id="auth-soon" className="text-sm text-muted">
-          El ingreso con correo y Google estará disponible pronto.
+      <h1 className="text-[clamp(40px,7vw,64px)]">Mi cuenta</h1>
+      {error && (
+        <p role="alert" className="mt-6 text-[15px] text-red-600">
+          No se pudo completar el ingreso. Intenta de nuevo.
         </p>
-      </form>
+      )}
+      {authEnabled() ? (
+        <AuthForm next={dest} />
+      ) : (
+        <p className="mt-8 text-[17px] text-muted">El ingreso con correo y Google estará disponible pronto.</p>
+      )}
       <p className="mt-6 text-sm text-muted">
-        <Link href="/" className="hover:text-ink">Volver a la tienda</Link>
+        No necesitas cuenta para comprar. <Link href="/" className="hover:text-ink">Volver a la tienda</Link>
       </p>
     </main>
   );

@@ -1,6 +1,8 @@
 // Crea el pedido y devuelve la URL de pago de Wompi. El navegador solo envía SKU y cantidades:
 // precios, descuento, envío y stock se calculan aquí con los datos de la base.
 import { priceCart } from "@/lib/pricing";
+import { ensureProfile } from "@/lib/profile";
+import { currentUser } from "@/lib/supabase/server";
 import { checkoutUrl, orderReference } from "@/lib/wompi";
 
 export const dynamic = "force-dynamic";
@@ -63,8 +65,12 @@ export async function POST(req: Request) {
   }
 
   const totals = priceCart(rows.map((r) => ({ category: r.category, priceCents: r.v.priceCents, qty: r.qty })));
+  // Con sesión, el pedido queda en "Mi cuenta". Comprar sin cuenta sigue siendo posible.
+  const user = await currentUser().catch(() => null);
+  const profile = user ? await ensureProfile(user) : null;
   const order = await db.order.create({
     data: {
+      profileId: profile?.id,
       email,
       phone,
       subtotalCents: totals.subtotalCents,

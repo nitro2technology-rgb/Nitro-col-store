@@ -4,6 +4,7 @@ import { CategoryMenu } from "@/components/category-menu";
 import { CartLink } from "@/components/cart-link";
 import { SiteSearch } from "@/components/site-search";
 import { BrandMark } from "@/components/brand-mark";
+import { AccountLink } from "@/components/account-link";
 
 /** Barra de vidrio empañado a todo el ancho; el panel de categorías cuelga de ella. */
 export function SiteHeader() {
@@ -24,6 +25,7 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-5">
           <SiteSearch />
+          <AccountLink />
           <CartLink />
         </div>
       </nav>

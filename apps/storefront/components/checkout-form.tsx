@@ -11,7 +11,7 @@ import { priceCart } from "@/lib/pricing";
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
 const label = "block text-sm text-muted";
 
-export function CheckoutForm() {
+export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultEmail?: string; defaultName?: string }) {
   const hydrated = useHydrated();
   const lines = useCart((s) => s.lines);
   const findVariant = useVariantLookup();
@@ -69,11 +69,11 @@ export function CheckoutForm() {
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <label className={`${label} sm:col-span-2`}>
             Nombre completo
-            <input name="name" required minLength={2} maxLength={120} autoComplete="name" className={field} />
+            <input name="name" required minLength={2} maxLength={120} autoComplete="name" defaultValue={defaultName} className={field} />
           </label>
           <label className={label}>
             Correo
-            <input name="email" type="email" required maxLength={160} autoComplete="email" className={field} />
+            <input name="email" type="email" required maxLength={160} autoComplete="email" defaultValue={defaultEmail} className={field} />
           </label>
           <label className={label}>
             Teléfono / WhatsApp
