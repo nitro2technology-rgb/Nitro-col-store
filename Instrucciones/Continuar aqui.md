@@ -129,6 +129,18 @@ Catálogo/              fotos originales (NO está en git)
 - **Botón de volver** (`components/back-button.tsx`, en `layout.tsx`): flotante arriba a la izquierda, solo en fichas de producto, Carrito y páginas informativas; **no** en Inicio ni en categorías.
 - **Imágenes:** `next/image` con **loader propio** (`lib/image-loader.ts`) que sirve miniaturas `-480`/`-960` pregeneradas con `scripts/miniaturas.py` (ver 5d: el optimizador de Next tumbaba Render gratis). Las portadas de Moda van sin recomprimir. La velocidad real se ve con `pnpm --filter @nitro/storefront build` y `start`; en `dev` compila cada página al abrirla.
 
+## 5e. Fichas y listas por color (23 oct 2026)
+
+- **Moda y Tecnología** se listan **por color** (`byColor: true` en `lib/products.ts`; cada color es una tarjeta, con buscador y filtros). Tecnología no tiene portada de fotos (solo título); Moda sí (`cover`). `isEditorial(p)` ahora significa "categoría por color + ficha corta" y es verdadero para todos los productos actuales.
+- **Tarjeta** (`product-tile.tsx`): foto con **esquinas redondeadas** en todo (se quitó el diseño de esquinas rectas), rótulos pequeños en mayúsculas; gafas con foto "cover", tecnología con foto completa.
+- **Ficha de producto** (`app/p/[slug]/page.tsx`), igual para todos: cabecera → **reseñas** → **cuadrícula 2×2** (`product-story.tsx`, foto/texto/texto/foto a ras, paneles gris claro y negro) → video (solo si existe) → **recomendados** (`recommended.tsx`, Moda y Tecnología). Ya **no se muestran** especificaciones, "Lo principal", galería, "En la caja" ni preguntas frecuentes (los datos siguen en el código y `lib/faq.ts` alimenta `/ayuda`); se quitó el FAQ del JSON-LD.
+- **Cabecera** (`product-hero.tsx` + `product-photos.tsx`): foto principal con **miniaturas verticales a la izquierda** (en celular, en fila debajo); gafas 4 fotos (2 de producto + 2 con modelo), tecnología hasta 6. Colores como **miniaturas de foto** ("Color: X"). Gafas: título = modelo ("Barcelona"), lista fija de 5 características (`GAFAS_BULLETS`) y bloque **"Lleva más y ahorra dinero"** (`gafas-upsell.tsx`, 3 gafas recomendadas).
+- **Descuento por cantidad (solo gafas, de cualquier modelo/color):** 2 → 10 %, 3 → 15 %, 4 o más → 20 % (`lib/gafas-promo.ts`, **porcentajes provisionales**). Se calcula en el navegador (carrito y mini carrito); **hay que validarlo también en el servidor** al hacer el checkout.
+- **Reseñas** (`lib/reviews.ts`): si el producto no tiene, se muestra **una de ejemplo inventada** con 5 estrellas (textos distintos para gafas y tecnología). Son provisionales y **deben quitarse cuando haya reseñas reales**: mostrar opiniones falsas como reales puede ser publicidad engañosa (Estatuto del Consumidor, SIC).
+- **Textos provisionales:** los de la cuadrícula de gafas ("Sofisticación & estilo", "UV400") están en `product-story.tsx`; los de tecnología salen de `highlights`/`specs`. Confirmar con el proveedor que las gafas realmente tienen protección UV400 antes de afirmarlo.
+- Cada color usa **solo sus fotos** (G-tide lila y rosado tienen 1; la cuadrícula la repite). Si hay más fotos, agregarlas y correr `python scripts/miniaturas.py`.
+- Sin probar en celular real (el tamaño de ventana no se pudo reducir en la prueba automática).
+
 ## 5d. Catálogo desde la base de datos (23 oct 2026, en progreso)
 
 - **`lib/catalog.ts`** (servidor): `getProducts()`, `getSearchIndex()`, `getCartCatalog()`. Con `CATALOG_SOURCE=db` lee de Supabase (Prisma); sin esa variable usa el catálogo estático de `lib/products.ts` (hoy es el modo por defecto). En modo `db` un fallo **no** cae al estático: rompe el build o conserva la última página buena (ISR).

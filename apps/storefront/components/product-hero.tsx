@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -7,14 +8,18 @@ import { useCart } from "@/lib/cart";
 import { formatCOP, formatPrice, type Product } from "@nitro/shared";
 import { Badge, Button } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
-import { ImageCarousel } from "@/components/image-carousel";
+import { ProductPhotos } from "@/components/product-photos";
+import { GafasUpsell } from "@/components/gafas-upsell";
 import { useVariant } from "@/components/variant-context";
-import { categoryName, isEditorial, variantImages } from "@/lib/products";
+import { GAFAS_BULLETS, gafasModelName, mainPhotos, type Recommendation } from "@/lib/gafas-promo";
+import { categoryName, galleryImages } from "@/lib/products";
 
-export function ProductHero({ product }: { product: Product }) {
+export function ProductHero({ product, more = [] }: { product: Product; more?: Recommendation[] }) {
   const { sku, setSku } = useVariant();
   const variant = product.variants.find((v) => v.sku === sku)!;
-  const images = variantImages(product, sku);
+  const gafas = product.category === "gafas";
+  // Gafas: hasta 4 fotos del color (producto y con modelo). Resto: hasta 6 fotos del color elegido.
+  const images = gafas ? mainPhotos(product, sku) : galleryImages(product, sku).slice(0, 6);
   const soldOut = variant.stock === 0;
   const priced = variant.priceCents > 0;
   const lowStock = !soldOut && variant.stock <= 5;
@@ -57,7 +62,7 @@ export function ProductHero({ product }: { product: Product }) {
         {/* Izquierda: fotos y, debajo, nombre y descripción. */}
         <div>
           {images.length > 0 ? (
-            <ImageCarousel images={images} className="mx-auto w-full max-w-[560px] md:mx-0" priority editorial={isEditorial(product)} sizes="(min-width: 768px) 560px, 90vw" />
+            <ProductPhotos key={sku} images={images} cover={gafas} />
           ) : (
             <div className="flex justify-center">
               <ProductArt product={product} swatch={variant.swatch} className="h-[min(40vh,440px)] w-auto max-w-full" />
@@ -68,11 +73,24 @@ export function ProductHero({ product }: { product: Product }) {
         {/* Derecha: nombre, descripción y, debajo, color, precio y compra. */}
         <div>
           <p className="text-[17px] font-semibold text-eyebrow">{categoryName(product.category)}</p>
-          <h1 className="mt-3 text-[clamp(32px,4vw,52px)]">
-            <span className="mb-3 block text-[21px] tracking-[-0.012em]">{product.name}</span>
-            {product.tagline}
-          </h1>
-          <p className="mt-5 max-w-[34rem] text-[19px] leading-[1.47] text-muted">{product.description}</p>
+          {gafas ? (
+            <>
+              <h1 className="mt-3 text-[clamp(32px,4vw,52px)]">{gafasModelName(product)}</h1>
+              <ul className="mt-6 max-w-[34rem] list-disc space-y-2 pl-5 text-[17px] leading-[1.47] text-muted">
+                {GAFAS_BULLETS.map((b) => (
+                  <li key={b}>{b}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-3 text-[clamp(32px,4vw,52px)]">
+                <span className="mb-3 block text-[21px] tracking-[-0.012em]">{product.name}</span>
+                {product.tagline}
+              </h1>
+              <p className="mt-5 max-w-[34rem] text-[19px] leading-[1.47] text-muted">{product.description}</p>
+            </>
+          )}
 
           {product.variants.length > 1 && (
             <fieldset className="mt-9">
@@ -83,6 +101,25 @@ export function ProductHero({ product }: { product: Product }) {
               <div className="mt-3 flex flex-wrap gap-2">
                 {product.variants.map((v) => {
                   const selected = v.sku === sku;
+                  const thumb = v.images?.[0];
+                  if (thumb) {
+                    // El color se elige con una miniatura del producto en ese color.
+                    return (
+                      <button
+                        key={v.sku}
+                        type="button"
+                        aria-pressed={selected}
+                        aria-label={v.label}
+                        title={v.label}
+                        onClick={() => setSku(v.sku)}
+                        className={`relative size-16 overflow-hidden rounded-[12px] bg-soft transition-shadow ${
+                          selected ? "ring-2 ring-ink" : "ring-1 ring-ink/20 hover:ring-ink/60"
+                        } ${v.stock === 0 ? "opacity-50" : ""}`}
+                      >
+                        <Image src={thumb.src} alt="" fill sizes="64px" className={gafas ? "object-cover" : "object-contain"} />
+                      </button>
+                    );
+                  }
                   return (
                     <button
                       key={v.sku}
@@ -122,7 +159,9 @@ export function ProductHero({ product }: { product: Product }) {
             )}
           </div>
 
-          <p className="mt-2 text-[15px] text-muted" aria-live="polite">
+          {gafas && <GafasUpsell items={more} />}
+
+          <p className="mt-6 text-[15px] text-muted" aria-live="polite">
             {notice === "added" ? (
               <>
                 Agregado al carrito.{" "}

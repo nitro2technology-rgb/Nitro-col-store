@@ -26,15 +26,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <main
-      className={`relative px-6 pb-28 pt-16 md:pt-24 ${parent.byColor ? "" : "mx-auto max-w-[1440px] overflow-hidden"}`}
+      className={`relative px-6 pb-28 pt-16 md:pt-24 ${parent.cover ? "" : "mx-auto max-w-[1440px] overflow-hidden"}`}
     >
-      {parent.byColor ? (
-        <ModaHero title={found.name} panels={parent.cover ?? []} />
+      {parent.cover ? (
+        <ModaHero title={found.name} panels={parent.cover} />
       ) : (
         <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>
       )}
 
-      <div id="coleccion" className="scroll-mt-16 pt-10">
+      <div id="coleccion" className="mx-auto max-w-[1440px] scroll-mt-16 pt-10">
       <nav aria-label="Subcategorías" className="mt-8 flex flex-wrap gap-2">
         {chips.map((c) => {
           const active = c.slug === slug;

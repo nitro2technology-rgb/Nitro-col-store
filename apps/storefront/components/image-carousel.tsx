@@ -9,15 +9,15 @@ export function ImageCarousel({
   images,
   className = "",
   priority = false,
-  editorial = false,
+  cover = false,
   jumpTo,
   sizes = "(min-width: 768px) 420px, 90vw",
 }: {
   images: ProductImage[];
   className?: string;
   priority?: boolean;
-  /** Diseño de Moda: fotos que llenan el recuadro, sin esquinas redondeadas. */
-  editorial?: boolean;
+  /** Las fotos llenan el recuadro (fotos con modelo); si no, se ven completas. */
+  cover?: boolean;
   /** Si cambia, salta de inmediato a esa foto (la tarjeta lo usa al pasar el mouse). */
   jumpTo?: number;
   /** Ancho aproximado de la foto en pantalla, para pedir el tamaño justo. */
@@ -51,7 +51,7 @@ export function ImageCarousel({
     <div className={`group/car relative ${className}`}>
       <div
         ref={track}
-        className={`snap-row flex w-full overflow-x-auto ${editorial ? "aspect-square" : "aspect-square rounded-[20px]"}`}
+        className={`snap-row flex w-full overflow-x-auto aspect-square rounded-[20px]`}
         onScroll={(e) => {
           const el = e.currentTarget;
           setIndex(Math.round(el.scrollLeft / el.clientWidth));
@@ -67,7 +67,7 @@ export function ImageCarousel({
               sizes={sizes}
               draggable={false}
               priority={priority && i === 0}
-              className={editorial ? "object-cover object-[50%_25%]" : "object-contain"}
+              className={cover ? "object-cover object-[50%_25%]" : "object-contain"}
             />
           </div>
         ))}
@@ -83,7 +83,7 @@ export function ImageCarousel({
                 type="button"
                 aria-label={dir === "prev" ? "Foto anterior" : "Foto siguiente"}
                 onClick={(e) => go(e, to)}
-                className={`absolute top-1/2 grid size-9 -translate-y-1/2 place-items-center ${editorial ? "" : "rounded-full"} bg-black/55 text-lg text-white opacity-0 backdrop-blur transition-opacity focus-visible:opacity-100 group-hover/car:opacity-100 max-md:opacity-100 ${
+                className={`absolute top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-lg text-white opacity-0 backdrop-blur transition-opacity focus-visible:opacity-100 group-hover/car:opacity-100 max-md:opacity-100 ${
                   dir === "prev" ? "left-2" : "right-2"
                 }`}
               >

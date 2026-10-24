@@ -21,14 +21,13 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
   const images = extra ? [...base, extra] : base;
   const href = sku ? `/p/${product.slug}?color=${sku}` : `/p/${product.slug}`;
 
-  // Diseño editorial de Moda: la foto llena el recuadro, esquinas rectas, rótulos pequeños en mayúsculas.
-  // La tarjeta sigue siendo de vidrio translúcido, como en el resto de la tienda.
+  // Lista por color (Moda y Tecnología): foto redondeada y rótulos pequeños en mayúsculas.
   if (showColor && isEditorial(product) && chosen) {
     return (
       <Link
         href={href}
         data-theme={product.theme}
-        className="glass flex w-full flex-col text-ink"
+        className={`flex w-full flex-col rounded-card p-2.5 text-ink ${dark ? "stage-dark border border-white/10" : "glass"}`}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
@@ -36,14 +35,14 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
         <ImageCarousel
           key={sku}
           images={images}
-          editorial
+          cover={product.category === "gafas"}
           jumpTo={hover ? 1 : 0}
           sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
         />
-        <div className="flex items-start justify-between gap-3 px-3 py-3 text-[11px] uppercase leading-[1.3] tracking-[0.08em]">
+        <div className="flex items-start justify-between gap-3 px-2 pb-1 pt-3 text-[11px] uppercase leading-[1.3] tracking-[0.08em]">
           <p>
             {product.name}
-            <span className="block text-muted">{chosen.label}</span>
+            {product.variants.length > 1 && <span className="block text-muted">{chosen.label}</span>}
           </p>
           <p className="shrink-0 text-right">{formatPrice(chosen.priceCents)}</p>
         </div>

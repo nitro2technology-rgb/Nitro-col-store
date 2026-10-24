@@ -127,7 +127,7 @@ export const products: Product[] = [...tech, ...gafas];
 export type CategoryNode = {
   /** Si es true, la lista muestra cada color de cada modelo como tarjeta propia. */
   byColor?: boolean;
-  /** Dos fotos de la portada editorial (alta calidad); solo con `byColor`. */
+  /** Dos fotos de la portada de Moda (alta calidad); sin ellas, la categoría muestra solo su título. */
   cover?: { src: string; alt: string }[];
   slug: string;
   name: string;
@@ -138,6 +138,7 @@ export type CategoryNode = {
 export const categories: CategoryNode[] = [
   {
     slug: "tecnologia",
+    byColor: true,
     name: "Tecnología",
     description: "Audio y relojes para tu día a día.",
     children: [
@@ -195,7 +196,7 @@ export function findVariant(sku: string, list: Product[] = products) {
   return undefined;
 }
 
-/** Moda usa el diseño editorial (fotos a ras, esquinas rectas, rótulos en mayúsculas). */
+/** Moda y Tecnología se listan por color y usan la ficha corta (fotos, reseñas, recomendados). */
 export const isEditorial = (p: Product) => !!findCategory(p.category)?.parent?.byColor;
 
 /** Los productos sin precio (priceCents = 0) se muestran pero no se pueden comprar. */
@@ -257,7 +258,7 @@ export function buildSearchIndex(list: Product[] = products): SearchEntry[] {
         key: v.sku,
         href: `/p/${p.slug}?color=${v.sku}`,
         title: p.name,
-        subtitle: v.label,
+        subtitle: p.variants.length > 1 ? v.label : p.tagline,
         image: v.images?.[0]?.src,
         haystack: normalizeText(`${base} ${v.label} ${colorFamilies(v.label).join(" ")}`),
       }));

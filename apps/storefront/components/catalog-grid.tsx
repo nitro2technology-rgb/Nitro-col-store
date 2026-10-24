@@ -86,7 +86,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
   const [types, setTypes] = useState<Set<string>>(new Set());
 
   const colorOptions = useMemo(
-    () => [...new Set(products.flatMap((p) => p.variants.flatMap((v) => colorFamilies(v.label))))].sort((a, b) => a.localeCompare(b, "es")),
+    () => [...new Set(products.filter((p) => p.variants.length > 1).flatMap((p) => p.variants.flatMap((v) => colorFamilies(v.label))))].sort((a, b) => a.localeCompare(b, "es")),
     [products],
   );
   const typeOptions = useMemo(() => [...new Set(products.flatMap((p) => p.tags ?? []))].sort((a, b) => a.localeCompare(b, "es")), [products]);
@@ -120,7 +120,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ej. Vintage"
+            placeholder={`Ej. ${products[0]?.name ?? ""}`}
             className="mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md"
           />
         </label>
@@ -136,7 +136,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
       <section
         className={
           byColor
-            ? "-mx-6 mt-6 grid grid-cols-2 gap-0 md:grid-cols-3 xl:grid-cols-4"
+            ? "mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 xl:grid-cols-4"
             : "mt-6 flex flex-wrap gap-6"
         }
       >

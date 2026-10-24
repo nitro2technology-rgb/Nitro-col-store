@@ -6,6 +6,7 @@ import { Button, buttonClasses } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
 import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
+import { gafasDiscount } from "@/lib/gafas-promo";
 import { categories } from "@/lib/products";
 
 export function CartView() {
@@ -36,7 +37,9 @@ export function CartView() {
     );
   }
 
-  const total = rows.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0);
+  const subtotal = rows.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0);
+  const promo = gafasDiscount(rows);
+  const total = subtotal - promo.cents;
   const units = rows.reduce((n, r) => n + r.qty, 0);
 
   return (
@@ -117,8 +120,14 @@ export function CartView() {
             <dt className="text-muted">
               Subtotal ({units} {units === 1 ? "unidad" : "unidades"})
             </dt>
-            <dd>{formatCOP(total)}</dd>
+            <dd>{formatCOP(subtotal)}</dd>
           </div>
+          {promo.cents > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted">Descuento por {promo.units} gafas ({promo.pct}%)</dt>
+              <dd>−{formatCOP(promo.cents)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted">Envío</dt>
             <dd>Se calcula al pagar</dd>

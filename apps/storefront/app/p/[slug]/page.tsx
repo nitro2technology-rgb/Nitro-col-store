@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { Foliage } from "@/components/foliage";
 import { ProductHero } from "@/components/product-hero";
 import { ProductVideo } from "@/components/product-media";
-import { VariantGallery } from "@/components/variant-gallery";
+import { ProductStory } from "@/components/product-story";
+import { Recommended } from "@/components/recommended";
+import { Reviews } from "@/components/reviews";
 import { VariantProvider } from "@/components/variant-context";
-import { ProductTile } from "@/components/product-tile";
-import { commonFaq } from "@/lib/faq";
 import { getProducts } from "@/lib/catalog";
-import { categoryName, getProduct, isEditorial } from "@/lib/products";
+import { recommendationsFor } from "@/lib/gafas-promo";
+import { getProduct, productsIn } from "@/lib/products";
+import { reviewsFor } from "@/lib/reviews";
 
 export const revalidate = 300;
 
@@ -33,37 +35,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = getProduct((await params).slug, products);
   if (!product) notFound();
 
-  const related = products
-    .filter((p) => p.slug !== product.slug)
-    .sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category))
-    .slice(0, 2);
-  const faq = [...(product.faq ?? []), ...commonFaq];
+  const gafas = product.category === "gafas";
+  const others = products.filter((p) => p.slug !== product.slug);
+  // Recomendados: Moda y Tecnología. En las gafas, primero las del mismo tipo (casuales/deportivas).
+  const moda = others
+    .filter((p) => p.category === "gafas")
+    .sort((a, b) => Number(b.tags?.[0] === product.tags?.[0]) - Number(a.tags?.[0] === product.tags?.[0]))
+    .slice(0, 4);
+  const tech = productsIn("tecnologia", others).slice(0, 3);
 
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: product.name,
-      description: product.description,
-      brand: { "@type": "Brand", name: product.brand },
-      offers: product.variants.map((v) => ({
-        "@type": "Offer",
-        sku: v.sku,
-        priceCurrency: "COP",
-        price: v.priceCents / 100,
-        availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      })),
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faq.map((f) => ({
-        "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a },
-      })),
-    },
-  ];
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    brand: { "@type": "Brand", name: product.brand },
+    offers: product.variants.map((v) => ({
+      "@type": "Offer",
+      sku: v.sku,
+      priceCurrency: "COP",
+      price: v.priceCents / 100,
+      availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    })),
+  };
 
   return (
     <VariantProvider product={product}>
@@ -75,109 +69,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* Escenario del producto en su tema (claro u oscuro): compra primero, detalle después. */}
       <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark isolate" : ""}`}>
         {product.theme === "dark" && <Foliage tone="night" />}
-        <ProductHero product={product} />
+        <ProductHero product={product} more={gafas ? recommendationsFor(product, products) : undefined} />
 
-        <section className="mx-auto max-w-[1024px] px-6 pb-28">
-          <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
-            <h2 className={h2}>Especificaciones.</h2>
-            <dl className="divide-y divide-muted/20 self-end">
-              {Object.entries(product.specs).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-6 py-4 text-[17px]">
-                  <dt className="text-muted">{k}</dt>
-                  <dd className="text-right">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
+        <Reviews reviews={reviewsFor(product)} titleClass={h2} />
+        <ProductStory product={product} />
 
-        <section className="mx-auto max-w-[1440px] px-6 pb-28">
-          <h2 className={h2}>Lo principal.</h2>
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {product.highlights.map((h) => (
-              <article
-                key={h.title}
-                className="flex min-h-[320px] flex-col justify-end glass rounded-card p-8 md:min-h-[440px] md:p-10"
-              >
-                <h3 className="max-w-[16ch] text-[clamp(28px,3.4vw,40px)]">{h.title}</h3>
-                <p className="mt-4 max-w-[34ch] text-[17px] leading-[1.47] text-muted">{h.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {isEditorial(product) ? (
-          <VariantGallery product={product} titleClass={h2} />
-        ) : (
-          <section className="mx-auto max-w-[1440px] overflow-hidden px-6 pb-28">
-            <h2 className={h2}>Galería.</h2>
-            <div className="mt-10">
-              <VariantGallery product={product} />
-            </div>
-          </section>
-        )}
-
-        {(product.videoUrl || process.env.NODE_ENV !== "production") && (
-          <section className="mx-auto max-w-[1440px] px-6 pb-32">
+        {product.videoUrl && (
+          <section className="mx-auto max-w-[1440px] px-6 py-28">
             <h2 className={h2}>En acción.</h2>
-            <div className="mt-10 mx-auto max-w-[1100px]">
+            <div className="mx-auto mt-10 max-w-[1100px]">
               <ProductVideo product={product} />
             </div>
           </section>
         )}
+
+        <Recommended
+          groups={
+            gafas
+              ? [{ title: "Moda", products: moda }, { title: "Tecnología", products: tech }]
+              : [{ title: "Tecnología", products: tech }, { title: "Moda", products: moda }]
+          }
+        />
       </div>
-
-      {/* Banda clara: especificaciones, contenido de la caja y preguntas. */}
-      <section data-theme="light" className="glass-band text-ink">
-        <div className="mx-auto max-w-[1024px] px-6 py-24 md:py-32">
-          {product.inBox && product.inBox.length > 0 && (
-            <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
-              <h2 className="text-[clamp(28px,4vw,40px)]">En la caja</h2>
-              <ul className="space-y-3 text-[17px]">
-                {product.inBox.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="mt-24 grid gap-12 md:grid-cols-[1fr_1.4fr]">
-            <h2 className="text-[clamp(28px,4vw,40px)]">Preguntas frecuentes</h2>
-            <div>
-              {faq.map((f) => (
-                <details key={f.q} className="group py-4">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[19px] font-semibold marker:content-none">
-                    {f.q}
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 14 14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      aria-hidden="true"
-                      className="shrink-0 transition-transform group-open:rotate-45"
-                    >
-                      <path d="M7 1v12M1 7h12" />
-                    </svg>
-                  </summary>
-                  <p className="mt-3 max-w-[52ch] text-[17px] leading-[1.47] text-muted">{f.a}</p>
-                </details>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-[1440px] px-6 py-24">
-        <h2 className="text-[clamp(28px,4vw,40px)]">También te puede gustar</h2>
-        <div className="mt-8 flex flex-wrap gap-6">
-          {related.map((p) => (
-            <ProductTile key={p.slug} product={p} />
-          ))}
-        </div>
-      </section>
     </VariantProvider>
   );
 }
