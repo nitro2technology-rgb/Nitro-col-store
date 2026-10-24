@@ -151,7 +151,8 @@ Catálogo/              fotos originales (NO está en git)
 - **Wompi bloquea (403) un `redirect-url` hacia `localhost`:** en local no se envía; Wompi muestra su página final y el pedido se consulta en `/pedido/NC-<n>`.
 - **Probado (sandbox):** pedido real en la base, totales correctos, webhook con firma falsa (401) y válida (200), repetición sin doble descuento, Wompi abre en "MODO DE PRUEBAS" con el monto correcto. **Sin probar:** un pago aprobado completo en Wompi. Tarjetas de prueba de Wompi: `4242 4242 4242 4242` aprobada, `4111 1111 1111 1111` rechazada.
 - **Limpieza de pruebas:** los pedidos de prueba quedan en la base real; borrar los de `prueba@example.com` y las pruebas propias, y devolver el inventario que descontaron.
-- **Pendiente:** pago provisional por WhatsApp (faltan el número y los datos de la cuenta), emails de confirmación, facturación electrónica, pasar a llaves de producción, y que el descuento por cantidad ya se valida en el servidor (hecho en `priceCart`).
+- **Correos de pedido (Resend):** `lib/mail.ts`, llamado desde `applyTransaction` una sola vez, cuando el pedido pasa a pagado. Envía aviso al dueño (`ORDER_NOTIFY_EMAIL`, con `reply_to` al cliente) y confirmación al cliente. Un fallo se registra con prefijo `[mail]` y no afecta el pago. Variables en Render: `RESEND_API_KEY`, `MAIL_FROM` (`Nitro Col Store <pedidos@nitro2tech.com>`, dominio verificado en Resend), `ORDER_NOTIFY_EMAIL`. Sin llave no envía nada. Resend solo envía: para recibir respuestas en `pedidos@` hace falta reenvío (Namecheap Email Forwarding).
+- **Pendiente:** pago provisional por WhatsApp (faltan el número y los datos de la cuenta), vista simple de pedidos, facturación electrónica, pasar a llaves de producción, y que el descuento por cantidad ya se valida en el servidor (hecho en `priceCart`).
 
 ## 5d. Catálogo desde la base de datos (23 oct 2026, en progreso)
 

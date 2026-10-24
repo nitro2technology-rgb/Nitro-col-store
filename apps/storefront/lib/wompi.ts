@@ -2,6 +2,7 @@
 // (que Wompi diseñó para ser pública). WOMPI_ENV=production usa el entorno real; cualquier otro valor, el sandbox.
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Prisma } from "@nitro/db";
+import { sendOrderEmails } from "./mail";
 
 export const wompiApi = () =>
   process.env.WOMPI_ENV === "production" ? "https://production.wompi.co/v1" : "https://sandbox.wompi.co/v1";
@@ -92,6 +93,7 @@ export async function applyTransaction(tx: WompiTransaction) {
   }
 
   const status = paymentStatus[tx.status as keyof typeof paymentStatus] ?? "pending";
+  let paidNow = false;
   await db.$transaction(async (t) => {
     const payment = order.payments[0];
     if (payment && payment.status !== "approved") {
@@ -105,6 +107,7 @@ export async function applyTransaction(tx: WompiTransaction) {
     // Solo una llamada logra pasar el pedido de pendiente a pagado; así el inventario se descuenta una vez.
     const moved = await t.order.updateMany({ where: { id: order.id, status: "pending_payment" }, data: { status: "paid" } });
     if (moved.count === 0) return;
+    paidNow = true;
     await t.orderStatusHistory.create({ data: { orderId: order.id, fromStatus: "pending_payment", toStatus: "paid", reason: "Pago aprobado en Wompi" } });
     for (const item of order.items) {
       const dec = await t.inventoryItem.updateMany({
@@ -114,5 +117,14 @@ export async function applyTransaction(tx: WompiTransaction) {
       if (dec.count === 0) console.error(`[wompi] Sin inventario suficiente para ${item.sku} en el pedido NC-${order.number}: revisar a mano`);
     }
   });
+  // Los correos salen una sola vez: solo quien logró pasar el pedido a "paid". Un fallo no afecta el pago.
+  if (paidNow) {
+    try {
+      const paid = await db.order.findUnique({ where: { number }, include: { items: true } });
+      if (paid) await sendOrderEmails(paid);
+    } catch (error) {
+      console.error(`[mail] No se pudieron preparar los correos de NC-${number}:`, error);
+    }
+  }
   return { number, status };
 }
