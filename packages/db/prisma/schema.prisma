@@ -439,6 +439,7 @@ model Order {
   history      OrderStatusHistory[]
   reservations StockReservation[]
   redemptions  CouponRedemption[]
+  reviews      Review[]
 
   @@index([profileId])
   @@index([status, createdAt])
@@ -560,18 +561,28 @@ model CouponRedemption {
 // ───────────── Reseñas ─────────────
 
 model Review {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  productId String   @map("product_id") @db.Uuid
-  profileId String   @map("profile_id") @db.Uuid
-  rating    Int
-  title     String?
-  body      String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid(7)) @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  /// Cuenta de quien reseña (cuando existan cuentas); hoy las reseñas llegan con el pedido
+  profileId  String?  @map("profile_id") @db.Uuid
+  /// Pedido pagado que respalda la reseña (compra verificada): una reseña por producto y pedido
+  orderId    String?  @map("order_id") @db.Uuid
+  /// Nombre público, ej. "Camila R." (sale del pedido, no de lo que escriba la persona)
+  authorName String?  @map("author_name")
+  rating     Int
+  title      String?
+  body       String?
+  /// false oculta la reseña sin borrarla (moderación)
+  published  Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  profile Profile @relation(fields: [profileId], references: [id])
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  profile Profile? @relation(fields: [profileId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@unique([productId, profileId])
+  @@unique([productId, orderId])
+  @@index([productId, published, createdAt])
   @@map("reviews")
 }
 

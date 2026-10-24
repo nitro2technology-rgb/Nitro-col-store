@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InfoPage, InfoSection } from "@/components/info-page";
+import { BUSINESS, biz } from "@/lib/business";
 import { commonFaq } from "@/lib/faq";
 
 export const metadata: Metadata = { title: "Ayuda" };
@@ -13,7 +14,9 @@ export default function HelpPage() {
         </InfoSection>
       ))}
       <InfoSection title="¿Necesitas hablar con nosotros?">
-        <p>Los canales de atención (WhatsApp y correo) se publicarán aquí.</p>
+        <p>
+          Escríbenos a {BUSINESS.email} o por WhatsApp al {biz("whatsapp")}.
+        </p>
       </InfoSection>
     </InfoPage>
   );

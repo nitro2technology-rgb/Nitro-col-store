@@ -2,8 +2,8 @@ import { gafasDiscountPct } from "./gafas-promo";
 
 /** Envío gratis desde $150.000 COP (centavos), ya descontado el descuento por cantidad. */
 export const FREE_SHIPPING_FROM_CENTS = 15_000_000;
-/** Costo de envío por debajo de ese monto. PROVISIONAL ($12.000): el dueño define las tarifas reales. */
-export const SHIPPING_FLAT_CENTS = 1_200_000;
+/** Costo de envío por debajo de ese monto: $15.000 fijo para todo el país (definido por el dueño). */
+export const SHIPPING_FLAT_CENTS = 1_500_000;
 
 export type PriceRow = { category: string; priceCents: number; qty: number };
 

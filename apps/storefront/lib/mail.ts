@@ -66,7 +66,8 @@ export function customerEmail(order: MailOrder) {
       `<p style="line-height:1.5">Tu pago fue aprobado. Pedido <b>NC-${order.number}</b>. Te escribiremos para coordinar el envío.</p>
        ${table(order)}
        <h2 style="font-size:16px;margin:24px 0 8px">Dirección de envío</h2>
-       <p style="margin:0;line-height:1.5">${esc(a.line)}<br>${esc(a.city)}, ${esc(a.department)}</p>`,
+       <p style="margin:0;line-height:1.5">${esc(a.line)}<br>${esc(a.city)}, ${esc(a.department)}</p>
+       <p style="margin-top:24px;line-height:1.5;color:#555">Cuando recibas tu pedido, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña con el número <b>NC-${order.number}</b> y este correo.</p>`,
     ),
   };
 }

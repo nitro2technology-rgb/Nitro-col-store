@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { missingBusinessData } from "@/lib/business";
 
 /** Contenedor común de las páginas informativas (ayuda, términos, privacidad). */
 export function InfoPage({ title, intro, children }: { title: string; intro?: string; children: ReactNode }) {
@@ -20,11 +21,15 @@ export function InfoSection({ title, children }: { title: string; children: Reac
   );
 }
 
-/** Aviso de texto pendiente de revisión legal. */
+/** Aviso visible solo mientras falten datos del negocio (ver lib/business.ts). */
 export function DraftNotice() {
+  const missing = missingBusinessData();
+  if (missing.length === 0) return null;
   return (
     <p className="rounded-card border border-ink/20 p-4 text-sm text-muted">
-      Texto provisional: pendiente de revisión por el dueño y asesoría legal antes de publicar.
+      Texto en revisión: faltan datos del negocio por completar ({missing.join(", ")}).
     </p>
   );
 }
+
+export const List = ({ children }: { children: ReactNode }) => <ul className="list-disc space-y-2 pl-5">{children}</ul>;

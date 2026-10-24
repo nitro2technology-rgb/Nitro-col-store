@@ -10,7 +10,7 @@ import { VariantProvider } from "@/components/variant-context";
 import { getProducts } from "@/lib/catalog";
 import { recommendationsFor } from "@/lib/gafas-promo";
 import { getProduct, productsIn } from "@/lib/products";
-import { reviewsFor } from "@/lib/reviews";
+import { getReviews } from "@/lib/reviews";
 
 export const revalidate = 300;
 
@@ -44,12 +44,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .slice(0, 4);
   const tech = productsIn("tecnologia", others).slice(0, 3);
 
+  const reviews = await getReviews(product.slug);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description,
     brand: { "@type": "Brand", name: product.brand },
+    ...(reviews.length > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: Number((reviews.reduce((s, r) => s + r.stars, 0) / reviews.length).toFixed(1)),
+        reviewCount: reviews.length,
+      },
+    }),
     offers: product.variants.map((v) => ({
       "@type": "Offer",
       sku: v.sku,
@@ -71,7 +79,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         {product.theme === "dark" && <Foliage tone="night" />}
         <ProductHero product={product} more={gafas ? recommendationsFor(product, products) : undefined} />
 
-        <Reviews reviews={reviewsFor(product)} titleClass={h2} />
+        <Reviews reviews={reviews} slug={product.slug} titleClass={h2} />
         <ProductStory product={product} />
 
         {product.videoUrl && (

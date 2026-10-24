@@ -28,7 +28,7 @@ export function SiteFooter() {
         <div>
           <p className="font-semibold text-ink">Tu compra</p>
           <p className="mt-3 leading-relaxed">
-            Cinco días hábiles para ejercer el derecho de retracto. Factura electrónica en cada pedido.
+            Cinco días hábiles para ejercer el derecho de retracto.
           </p>
         </div>
       </div>
