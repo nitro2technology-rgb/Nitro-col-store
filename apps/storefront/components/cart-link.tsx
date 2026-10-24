@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatCOP } from "@nitro/shared";
 import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
-import { gafasDiscount } from "@/lib/gafas-promo";
+import { priceCart } from "@/lib/pricing";
 import { variantImages } from "@/lib/products";
 
 const MAX_ROWS = 4;
@@ -38,7 +38,8 @@ export function CartLink() {
     return found ? [{ ...found, qty: Math.min(l.qty, found.variant.stock) }] : [];
   });
   const shown = hydrated ? rows.reduce((n, r) => n + r.qty, 0) : 0;
-  const total = rows.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0) - gafasDiscount(rows).cents;
+  const priced = priceCart(rows.map((r) => ({ category: r.product.category, priceCents: r.variant.priceCents, qty: r.qty })));
+  const total = priced.subtotalCents - priced.discountCents;
 
   return (
     <div className="relative flex h-14 items-center" onMouseEnter={hoverOpen} onMouseLeave={hoverClose}>

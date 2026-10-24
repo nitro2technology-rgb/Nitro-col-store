@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { formatCOP } from "@nitro/shared";
-import { Button, buttonClasses } from "@nitro/ui";
+import { buttonClasses } from "@nitro/ui";
 import { ProductArt } from "@/components/art/product-art";
 import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
-import { gafasDiscount } from "@/lib/gafas-promo";
+import { priceCart } from "@/lib/pricing";
 import { categories } from "@/lib/products";
 
 export function CartView() {
@@ -37,9 +37,7 @@ export function CartView() {
     );
   }
 
-  const subtotal = rows.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0);
-  const promo = gafasDiscount(rows);
-  const total = subtotal - promo.cents;
+  const t = priceCart(rows.map((r) => ({ category: r.product.category, priceCents: r.variant.priceCents, qty: r.qty })));
   const units = rows.reduce((n, r) => n + r.qty, 0);
 
   return (
@@ -120,29 +118,31 @@ export function CartView() {
             <dt className="text-muted">
               Subtotal ({units} {units === 1 ? "unidad" : "unidades"})
             </dt>
-            <dd>{formatCOP(subtotal)}</dd>
+            <dd>{formatCOP(t.subtotalCents)}</dd>
           </div>
-          {promo.cents > 0 && (
+          {t.discountCents > 0 && (
             <div className="flex justify-between">
-              <dt className="text-muted">Descuento por {promo.units} gafas ({promo.pct}%)</dt>
-              <dd>−{formatCOP(promo.cents)}</dd>
+              <dt className="text-muted">Descuento por {t.gafasUnits} gafas ({t.discountPct}%)</dt>
+              <dd>−{formatCOP(t.discountCents)}</dd>
             </div>
           )}
           <div className="flex justify-between">
             <dt className="text-muted">Envío</dt>
-            <dd>Se calcula al pagar</dd>
+            <dd>{t.shippingFree ? "Gratis" : formatCOP(t.shippingCents)}</dd>
           </div>
           <div className="flex justify-between pt-3 text-[21px] font-semibold">
             <dt>Total</dt>
-            <dd>{formatCOP(total)}</dd>
+            <dd>{formatCOP(t.totalCents)}</dd>
           </div>
         </dl>
-        <p className="mt-2 text-[13px] text-muted">Precios en COP, IVA incluido.</p>
+        {t.missingForFreeCents > 0 && (
+          <p className="mt-3 text-[14px]">Te faltan {formatCOP(t.missingForFreeCents)} para el envío gratis.</p>
+        )}
+        <p className="mt-2 text-[13px] text-muted">Precios en COP, IVA incluido. Envío gratis desde $150.000.</p>
 
-        <Button disabled className="mt-6 w-full">
+        <Link href="/checkout" className={buttonClasses("buy", "mt-6 w-full")}>
           Ir a pagar
-        </Button>
-        <p className="mt-3 text-[13px] text-muted">El pago se activa al conectar la pasarela.</p>
+        </Link>
 
         <button type="button" onClick={clear} className="mt-6 text-[15px] text-link hover:underline">
           Vaciar carrito

@@ -141,6 +141,18 @@ Catálogo/              fotos originales (NO está en git)
 - Cada color usa **solo sus fotos** (G-tide lila y rosado tienen 1; la cuadrícula la repite). Si hay más fotos, agregarlas y correr `python scripts/miniaturas.py`.
 - Sin probar en celular real (el tamaño de ventana no se pudo reducir en la prueba automática).
 
+## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
+
+- **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.
+- **Referencia del pedido:** `NC-<Order.number>`. **El pago solo se confirma por el webhook (o por la consulta directa a Wompi), nunca por lo que diga el navegador.** El monto de Wompi debe coincidir con el del pedido.
+- **Variables de entorno** (Render → Environment; en local `apps/storefront/.env.local`, ignorado por git): `WOMPI_ENV` (`sandbox` o `production`), `WOMPI_PUBLIC_KEY`, `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET`, y `SITE_URL=https://nitrocol.nitro2tech.com`. En el panel de Wompi hay que configurar la **URL de eventos** `https://nitrocol.nitro2tech.com/api/webhooks/wompi` (una para el modo pruebas y otra para producción). Las llaves de producción **nunca** van en el repo ni en el chat; **no dejarlas en `packages/db/.env`** (Prisma lo carga siempre).
+- **Envío:** gratis desde $150.000 COP (después del descuento por cantidad); por debajo, **$12.000 fijo PROVISIONAL** (`lib/pricing.ts`). Pendiente: tarifas reales por peso/destino.
+- **Inventario:** no se reserva al crear el pedido; se descuenta al aprobarse el pago. Si dos clientes pagan lo último que queda, un log de error avisa para revisarlo a mano. Pendiente: reservas con vencimiento (la columna `reserved` existe) y una tarea que cancele pedidos pendientes viejos.
+- **Wompi bloquea (403) un `redirect-url` hacia `localhost`:** en local no se envía; Wompi muestra su página final y el pedido se consulta en `/pedido/NC-<n>`.
+- **Probado (sandbox):** pedido real en la base, totales correctos, webhook con firma falsa (401) y válida (200), repetición sin doble descuento, Wompi abre en "MODO DE PRUEBAS" con el monto correcto. **Sin probar:** un pago aprobado completo en Wompi. Tarjetas de prueba de Wompi: `4242 4242 4242 4242` aprobada, `4111 1111 1111 1111` rechazada.
+- **Limpieza de pruebas:** los pedidos de prueba quedan en la base real; borrar los de `prueba@example.com` y las pruebas propias, y devolver el inventario que descontaron.
+- **Pendiente:** pago provisional por WhatsApp (faltan el número y los datos de la cuenta), emails de confirmación, facturación electrónica, pasar a llaves de producción, y que el descuento por cantidad ya se valida en el servidor (hecho en `priceCart`).
+
 ## 5d. Catálogo desde la base de datos (23 oct 2026, en progreso)
 
 - **`lib/catalog.ts`** (servidor): `getProducts()`, `getSearchIndex()`, `getCartCatalog()`. Con `CATALOG_SOURCE=db` lee de Supabase (Prisma); sin esa variable usa el catálogo estático de `lib/products.ts` (hoy es el modo por defecto). En modo `db` un fallo **no** cae al estático: rompe el build o conserva la última página buena (ISR).
@@ -197,7 +209,7 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 
 ## 8. Qué NO funciona aún (para no perder tiempo)
 
-- **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía. El formulario de `/ingresar` está desactivado hasta tener Supabase Auth. `/ayuda`, `/terminos`, `/privacidad` tienen texto provisional (legal por revisar).
+- **"Avísame cuando llegue"** no hace nada todavía. "Ir a pagar" lleva a `/checkout` (Wompi, hoy en modo pruebas). El formulario de `/ingresar` está desactivado hasta tener Supabase Auth. `/ayuda`, `/terminos`, `/privacidad` tienen texto provisional (legal por revisar).
 - La base tiene el catálogo, pero la tienda **no la lee por defecto** (hay que definir `CATALOG_SOURCE=db`; el mapeo no se ha probado con datos reales). En producción, comprobar qué tiene el panel de Render.
 - Las gafas tienen precios inventados; la tienda se puede navegar y comprar (carrito local) con ellos.
 - No se probó en celular real ni con lectores de pantalla; sí en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos. El hover (mini carrito, cambio de foto, menú) no existe en pantallas táctiles: allí el clic abre la página.
