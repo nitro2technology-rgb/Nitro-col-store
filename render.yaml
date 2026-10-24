@@ -7,7 +7,7 @@ services:
     plan: free
     region: oregon
     branch: main
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @nitro/db generate && pnpm --filter @nitro/storefront build
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @nitro/db generate && pnpm --filter @nitro/storefront build
     startCommand: pnpm --filter @nitro/storefront start
     healthCheckPath: /api/health
     envVars:
