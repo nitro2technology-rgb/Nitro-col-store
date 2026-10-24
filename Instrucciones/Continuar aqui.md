@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 23 de octubre de 2026 (base de Supabase migrada **y sembrada**, capa de lectura del catálogo desde la base, gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
+**Última actualización:** 23 de octubre de 2026 (**tienda en vivo en Render** en `https://nitrocol.nitro2tech.com`, rama `main`; base de Supabase migrada y sembrada; gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -19,7 +19,7 @@ pnpm --filter @nitro/storefront build   # build de producción
 ```
 
 - **Servidor de desarrollo raro** (pantalla "Application error", 404 inesperado o que no responde, sobre todo tras muchos cambios o al tocar `next.config.ts`): cerrar el servidor, **borrar `apps/storefront/.next`** y volver a iniciarlo. Si el puerto 3000 está ocupado, Next usa el siguiente (3001, 3002...): mira la línea "Local:" al arrancar.
-- pnpm bloquea los scripts de instalación de Prisma. Si una migración falla por eso: `pnpm approve-builds`.
+- pnpm bloquea los scripts de instalación de Prisma salvo los aprobados en `allowBuilds` de `pnpm-workspace.yaml` (ya están). Si aparece un paquete nuevo bloqueado: `pnpm approve-builds`.
 - **Base de datos:** `packages/db/.env` (no está en git) tiene `DATABASE_URL` (pooler, puerto 6543, `?pgbouncer=true`) y `DIRECT_URL` (puerto 5432). Si la contraseña tiene caracteres especiales (`#`, `@`...) va codificada en la URL (`#` → `%23`). Migraciones: `pnpm --filter @nitro/db exec prisma migrate dev`. Seed: `pnpm --filter @nitro/db seed` simula; con `-- --apply` escribe.
 - Excel de datos de productos: `Instrucciones/Datos de productos.xlsx` (pendiente de llenar por el dueño).
 
@@ -127,7 +127,7 @@ Catálogo/              fotos originales (NO está en git)
 - **Carrito del menú** (`components/cart-link.tsx`): al pasar el mouse se despliega un resumen (foto, nombre, color, cantidad, precio, total); el clic abre `/carrito`.
 - **Buscador** (`components/site-search.tsx`): compara raíces de palabras (plural/singular) contra nombre, marca, categoría, etiquetas, especificaciones y colores.
 - **Botón de volver** (`components/back-button.tsx`, en `layout.tsx`): flotante arriba a la izquierda, solo en fichas de producto, Carrito y páginas informativas; **no** en Inicio ni en categorías.
-- **Imágenes:** `next/image` con AVIF/WebP (`images` en `next.config.ts`); solo las portadas de Moda van sin recomprimir. La velocidad real se ve con `pnpm --filter @nitro/storefront build` y `start`; en `dev` compila cada página al abrirla.
+- **Imágenes:** `next/image` con **loader propio** (`lib/image-loader.ts`) que sirve miniaturas `-480`/`-960` pregeneradas con `scripts/miniaturas.py` (ver 5d: el optimizador de Next tumbaba Render gratis). Las portadas de Moda van sin recomprimir. La velocidad real se ve con `pnpm --filter @nitro/storefront build` y `start`; en `dev` compila cada página al abrirla.
 
 ## 5d. Catálogo desde la base de datos (23 oct 2026, en progreso)
 
@@ -138,17 +138,30 @@ Catálogo/              fotos originales (NO está en git)
 - **Falta verificar (requiere salir de la red que bloquea el puerto, p. ej. internet del celular):** arrancar con `CATALOG_SOURCE=db` y comparar la tienda con el modo estático (precios, fotos por color, orden de variantes, destacados). El mapeo de `loadFromDb` aún no se ha corrido con datos reales.
 - **Hosting recomendado: Vercel** (plan Hobby gratis; es para uso no comercial, al cobrar hay que pasar a Pro). Render gratis duerme el servicio a los 15 min. Para Vercel: ejecutar `prisma generate` antes del build y definir `DATABASE_URL`, `DIRECT_URL` y `CATALOG_SOURCE=db`. Pagos futuros: Wompi o Mercado Pago (webhooks como rutas de Next).
 
-### Despliegue en Render (decidido el 23 oct 2026; en curso)
+### Despliegue en Render (EN VIVO desde el 23 oct 2026)
 
-- **Decisión del dueño:** Render gratis + un monitor externo (UptimeRobot o cron-job.org, cada 5 min) que llama a `/api/health`. Esa ruta hace `select 1` en la base, así que mantiene despiertos Render (que duerme a los 15 min) y Supabase (que se pausa a los 7 días). No usar GitHub Actions para el ping.
-- **Listo en el repo:** `render.yaml` (Blueprint, rama `feat/storefront-inicial`, plan free) y `apps/storefront/app/api/health/route.ts`. No se ha probado en Render todavía.
-- **Pasos del dueño:** cuenta en render.com con GitHub → New → Blueprint → repo `Nitro-col-store` → pegar `DATABASE_URL` y `DIRECT_URL` desde `packages/db/.env` → crear el monitor con la URL `https://<servicio>.onrender.com/api/health`.
-- **Riesgos conocidos:** (1) 512 MB pueden no alcanzar para compilar Next (se limitó el heap con `NODE_OPTIONS`; si falla, pasar al plan de ~7 USD o compilar fuera); (2) Render quizá no reconozca `pnpm@12.14.0` de `packageManager`; (3) Supabase gratis **no hace copias de seguridad**: resolver antes de recibir pedidos reales; (4) Render gratis permite uso comercial, Vercel Hobby no.
-- **Primera tarea de mañana:** ver el log del primer despliegue, corregir lo que falle, y con la base alcanzable (otra red) comparar la tienda en modo `db` contra el catálogo estático.
+- **URL:** `https://nitrocol.nitro2tech.com` (dominio definitivo). También responde `https://nitro-col-store.onrender.com`.
+- **Rama de producción: `main`** (se fusionó `feat/storefront-inicial`). Cada `git push origin main` redespliega solo.
+- **El servicio se creó a mano (Web Service), no con el Blueprint**, por eso `render.yaml` **no se aplica**: los comandos y variables viven en el panel de Render (Settings). Si se recrea con New → Blueprint, toma `render.yaml`.
+  - Language: **Node** (no Docker). Branch: `main`. Health Check Path: `/api/health`.
+  - **Build Command:** `pnpm install --frozen-lockfile && pnpm --filter @nitro/db generate && pnpm --filter @nitro/storefront build`
+  - **Start Command:** `pnpm --filter @nitro/storefront start`
+  - Cada comando va en su propio campo, y hay que pulsar *Save Changes* antes de *Manual Deploy*.
+  - **No usar `corepack enable`**: el sistema de archivos de Render es de solo lectura y falla (`EROFS`). pnpm ya viene instalado. El log dice `yarn@pnpm@12.14.0` al leer `packageManager`; es inofensivo si los comandos usan `pnpm`.
+- **Variables de entorno (panel de Render → Environment):** `DATABASE_URL` (pooler 6543) y `DIRECT_URL` (5432), copiadas de `packages/db/.env`; `NODE_OPTIONS=--max-old-space-size=400`; `CATALOG_SOURCE` (`db` lee de Supabase, vacío usa el catálogo estático; **verificar cuál tiene el panel** y que el modo `db` se probó, ver "Falta verificar" arriba). `NODE_VERSION=22` recomendado (Render usa 24 por defecto y funciona).
+- **Arreglos hechos al desplegar (no deshacer):**
+  - `pnpm-workspace.yaml` tiene `allowBuilds` para `@prisma/client`, `@prisma/engines`, `prisma` y `esbuild`; sin eso `pnpm install` falla con `ERR_PNPM_IGNORED_BUILDS`.
+  - `apps/storefront/package.json` tiene `prebuild` que corre `prisma generate`; sin eso Next no encuentra `.prisma/client`.
+  - **Memoria (512 MB):** el plan gratis se caía con *"Ran out of memory"* por el optimizador de imágenes de Next (AVIF). Ahora **no se usa el optimizador**: `next.config.ts` tiene un loader propio (`lib/image-loader.ts`) que sirve miniaturas pregeneradas `*-480.webp` y `*-960.webp` junto a cada foto de `public/products/`. **Al agregar fotos nuevas hay que correr `python scripts/miniaturas.py`** (requiere Pillow, es repetible) y subir las miniaturas; si no, esa foto sale en tamaño original (más pesada).
+  - `next.config.ts` añade `Cache-Control: public, max-age=31536000, immutable` a `/products`, `/moda` y `/brand`. **Al reemplazar una foto, ponle otro nombre**; si no, los visitantes verán la anterior.
+- **Monitor (pendiente de confirmar que existe):** UptimeRobot o cron-job.org cada 5 min a `https://nitrocol.nitro2tech.com/api/health`. Esa ruta hace `select 1` en la base, así mantiene despiertos Render (duerme a los 15 min; la primera visita tras dormir tarda 30–50 s) y Supabase (se pausa a los 7 días). No usar GitHub Actions para el ping.
+- **Rendimiento medido (23 oct):** `/c/gafas` ~0,5 s; 40 miniaturas nuevas en paralelo ≤0,5 s; HTML de categoría 138 KB comprimido. Aun así el dueño reporta que las fotos del catálogo y `Categorías → Moda` (~6 s) tardan en la primera carga. Sin diagnosticar: pedir la pestaña Network de Chrome (F12). Candidatas: portada de Moda (`moda/portada-1.webp` 445 KB y `portada-2.webp` 301 KB, sin optimizar y con `priority`; generar versión de ~1000 px), CPU del navegador (follaje animado y efecto vidrio), servicio dormido por falta de monitor.
+- **Riesgos:** (1) Supabase gratis **no hace copias de seguridad**: resolver antes de recibir pedidos reales; (2) Render gratis permite uso comercial, Vercel Hobby no; (3) 512 MB es justo: si vuelve a aparecer *Out of memory*, pasar al plan Starter (~7 USD/mes, 2 GB).
 
 ## 6. Qué sigue (en este orden)
 
-1. **Probar la lectura desde la base** (`CATALOG_SOURCE=db`, sección 5d), activarla y desplegar en Vercel. Después, retirar `lib/products.ts`/`gafas-data.ts` como fuente (quedan solo para el seed) y decidir dónde viven las categorías (`cover`, `byColor`).
+0. **Terminar el despliegue en Render:** confirmar el monitor de `/api/health`, diagnosticar la lentitud de Moda/fotos (sección 5d) y confirmar qué valor tiene `CATALOG_SOURCE` en el panel.
+1. **Probar la lectura desde la base** (`CATALOG_SOURCE=db`, sección 5d) y dejarla activa en producción (ya no se piensa en Vercel salvo que se necesite uso comercial gratis). Después, retirar `lib/products.ts`/`gafas-data.ts` como fuente (quedan solo para el seed) y decidir dónde viven las categorías (`cover`, `byColor`).
 2. **Cargar el Excel** `Datos de productos.xlsx` (precios reales, stock, peso, medidas, textos) a la base.
 3. **Capa de API** (NestJS según las especificaciones, o consultas desde el servidor de Next para empezar) con precios y stock validados en el servidor. El navegador nunca escribe pedidos, pagos ni inventario.
 4. **Carrito en el servidor** (hoy solo en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
@@ -165,13 +178,15 @@ Catálogo/              fotos originales (NO está en git)
 - **Fotos de portada de Moda en mayor resolución** (las actuales miden 1080 px de ancho y se ven suaves en pantallas grandes).
 - **Video del león (Hailuo AI, plan gratuito):** trae marca de agua "MINIMAX | Hailuo AI". **Confirmar que el plan gratuito permite uso comercial** antes de publicar.
 - **Pasarela de pagos** (Wompi o Mercado Pago) y asesoría legal para términos y privacidad.
+- **Cookies:** hoy no hace falta aviso (solo se usa `localStorage` funcional: carrito e intro). Cuando se agregue analítica o publicidad (Google Analytics, Meta Pixel) habrá que añadir banner de consentimiento. En Colombia aplica la Ley 1581 de 2012 (habeas data, SIC): al haber registro y checkout, política de privacidad real y consentimiento explícito para marketing.
+- **Dominio:** `nitrocol.nitro2tech.com` ya apunta a Render.
 
 Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (envíos, devoluciones, garantías, contra entrega, preventa, plazos de reserva de stock, etc.). Decididas: **NestJS propio** (no Medusa) y **marketplace con vendedores externos** (esquema listo).
 
 ## 8. Qué NO funciona aún (para no perder tiempo)
 
 - **"Ir a pagar"** y **"Avísame cuando llegue"** no hacen nada todavía. El formulario de `/ingresar` está desactivado hasta tener Supabase Auth. `/ayuda`, `/terminos`, `/privacidad` tienen texto provisional (legal por revisar).
-- La base tiene el catálogo, pero la tienda **no la lee por defecto** (hay que definir `CATALOG_SOURCE=db`; el mapeo no se ha probado con datos reales).
+- La base tiene el catálogo, pero la tienda **no la lee por defecto** (hay que definir `CATALOG_SOURCE=db`; el mapeo no se ha probado con datos reales). En producción, comprobar qué tiene el panel de Render.
 - Las gafas tienen precios inventados; la tienda se puede navegar y comprar (carrito local) con ellos.
 - No se probó en celular real ni con lectores de pantalla; sí en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos. El hover (mini carrito, cambio de foto, menú) no existe en pantallas táctiles: allí el clic abre la página.
 - El carrito de prueba de un navegador se guarda en `localStorage` (clave `nitro-cart`).
