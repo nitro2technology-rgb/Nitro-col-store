@@ -1,29 +1,44 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { getCover } from "@/lib/covers";
+import { getCover, type CoverMedia } from "@/lib/covers";
 import { storageConfigured } from "@/lib/storage";
 import { removeCover, saveCover } from "../actions";
 import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../ui";
 
 export const metadata = { title: "Portadas" };
 
+function Preview({ m }: { m?: CoverMedia }) {
+  if (!m) return <span className="grid size-full place-items-center text-[13px] text-[#a0a0b2]">Sin portada</span>;
+  return m.type === "video" ? (
+    <video src={m.url} muted loop playsInline autoPlay className="size-full object-cover" />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={m.url} alt="" className="size-full object-cover" />
+  );
+}
+
 export default async function CoversAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   await requireAdmin("/admin/portadas");
   const { ok, error } = await searchParams;
   const { db } = await import("@nitro/db");
-  const cats = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true, parentId: true } });
+  const cats = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true } });
   const covers = await Promise.all(cats.map((c) => getCover(c.slug, true)));
   const enabled = storageConfigured();
 
   return (
     <>
-      <PageTitle sub="Cada página de categoría puede tener su propia portada: foto grande, título, frase y botón.">Portadas</PageTitle>
+      <PageTitle sub="La portada de cada página es una imagen, un GIF o un video a todo el ancho de la página, con una altura moderada. Si lleva texto, va dentro de la imagen.">
+        Portadas
+      </PageTitle>
       {!enabled && (
         <p className="mt-6 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] text-amber-900">
           Para guardar portadas falta la variable <code>SUPABASE_SERVICE_ROLE_KEY</code> en el servidor.
         </p>
       )}
       <Notice ok={ok} error={error} />
+      <p className="mt-4 text-[14px] text-[#6b6b80]">
+        Medida recomendada para computador: <b>2600 × 1000 px</b> (proporción 2,6 : 1). Para celular, vertical <b>1080 × 1350 px</b>. JPG, PNG, WebP, GIF, MP4 o WebM de menos de 20 MB.
+      </p>
 
       <div className="mt-6 space-y-5">
         {cats.map((c, i) => {
@@ -31,64 +46,55 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
           return (
             <section key={c.slug} className={card}>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <CardHead
-                  title={c.name}
-                  sub={cover ? "Tiene portada propia." : "Sin portada propia: usa el diseño de siempre."}
-                />
+                <CardHead title={c.name} sub={cover ? "Tiene portada propia." : "Sin portada propia: usa el diseño de siempre."} />
                 <Link href={`/c/${c.slug}`} target="_blank" className="text-[14px] font-semibold text-[#5b4fe0] underline">
                   Ver página
                 </Link>
               </div>
-              <form action={saveCover} className="mt-4 grid gap-4 md:grid-cols-[200px_1fr]">
+              <form action={saveCover} className="mt-4 space-y-4">
                 <input type="hidden" name="slug" value={c.slug} />
-                <div className="aspect-[4/3] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
-                  {cover?.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cover.image} alt="" className="size-full object-cover" />
-                  )}
+                <div className="grid gap-4 md:grid-cols-[1fr_140px]">
+                  <div className="aspect-[2.6/1] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
+                    <Preview m={cover?.media} />
+                  </div>
+                  <div className="hidden aspect-[4/5] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8] md:block">
+                    <Preview m={cover?.mobile} />
+                  </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className={label}>
-                    Título
-                    <input name="title" required maxLength={80} defaultValue={cover?.title ?? c.name} className={`${field} mt-1`} />
+                    Portada para computador <span className="font-normal text-[#a0a0b2]">— imagen, GIF o video</span>
+                    <input type="file" name="media" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" className="mt-1 block w-full text-[13px]" />
                   </label>
                   <label className={label}>
-                    Texto del botón
-                    <input name="cta" maxLength={30} defaultValue={cover?.cta ?? "Ver colección"} className={`${field} mt-1`} />
-                  </label>
-                  <label className={`${label} sm:col-span-2`}>
-                    Frase debajo del título
-                    <input name="subtitle" maxLength={140} defaultValue={cover?.subtitle ?? ""} className={`${field} mt-1`} />
-                  </label>
-                  <label className={label}>
-                    Foto para computador <span className="font-normal text-[#a0a0b2]">— horizontal, la más grande</span>
-                    <input type="file" name="image" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-[13px]" />
-                  </label>
-                  <label className={label}>
-                    Foto para celular <span className="font-normal text-[#a0a0b2]">— opcional, vertical</span>
-                    <input type="file" name="mobile" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-[13px]" />
-                    {cover?.mobileImage && (
+                    Portada para celular <span className="font-normal text-[#a0a0b2]">— opcional</span>
+                    <input type="file" name="mobile" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" className="mt-1 block w-full text-[13px]" />
+                    {cover?.mobile && (
                       <span className="mt-1 flex items-center gap-2 text-[12px] font-normal">
-                        <input type="checkbox" name="dropMobile" /> Quitar la foto de celular actual
+                        <input type="checkbox" name="dropMobile" /> Quitar la portada de celular actual
                       </span>
                     )}
                   </label>
-                  <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-                    <button type="submit" disabled={!enabled} className={primaryBtn}>
-                      Guardar portada
+                  <label className={`${label} sm:col-span-2`}>
+                    Enlace al tocar la portada <span className="font-normal text-[#a0a0b2]">— opcional, ej. /p/aurafit o /c/gafas</span>
+                    <input name="href" maxLength={200} defaultValue={cover?.href ?? ""} className={`${field} mt-1`} />
+                  </label>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="submit" disabled={!enabled} className={primaryBtn}>
+                    Guardar portada
+                  </button>
+                  {cover && (
+                    <button
+                      type="submit"
+                      formAction={removeCover}
+                      formNoValidate
+                      disabled={!enabled}
+                      className="rounded-[10px] border border-red-300 px-4 py-2 text-[14px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Quitar portada
                     </button>
-                    {cover && (
-                      <button
-                        type="submit"
-                        formAction={removeCover}
-                        formNoValidate
-                        disabled={!enabled}
-                        className="rounded-[10px] border border-red-300 px-4 py-2 text-[14px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
-                      >
-                        Quitar portada
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </form>
             </section>

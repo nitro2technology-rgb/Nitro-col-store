@@ -1,17 +1,23 @@
 // Portada propia de cada página de categoría (Tecnología, Audífonos, Moda, Gafas…). Se edita en el panel (/admin/portadas).
-// Los textos y las fotos viven en Supabase Storage (bucket público "portadas"), sin tabla nueva: un JSON por categoría.
-// Sin portada guardada, cada página conserva su diseño de siempre.
+// La portada es solo un medio —imagen, GIF o video— a todo el ancho de la página y de altura moderada, como la de
+// inicio de la referencia: los textos, si los hay, van dentro de la imagen o el video. Se guarda en Supabase Storage
+// (bucket público "portadas"), sin tabla nueva: un JSON por categoría. Sin portada guardada, la página conserva su diseño.
 export const COVERS = "portadas";
 
+export type CoverMedia = { url: string; type: "image" | "video" };
+
 export type Cover = {
-  title: string;
-  subtitle: string;
-  /** Texto del botón (baja a los productos). */
-  cta: string;
-  /** Foto para computador. */
-  image?: string;
-  /** Foto para celular (opcional; si falta se usa la de computador). */
-  mobileImage?: string;
+  /** Para computador. */
+  media: CoverMedia;
+  /** Para celular (opcional; si falta se usa el de computador). */
+  mobile?: CoverMedia;
+  /** Enlace opcional al tocar la portada (ej. /p/mi-producto o /c/gafas). */
+  href?: string;
+};
+
+const parseMedia = (m: unknown): CoverMedia | undefined => {
+  const x = m as Partial<CoverMedia> | undefined;
+  return x && typeof x.url === "string" && (x.type === "image" || x.type === "video") ? { url: x.url, type: x.type } : undefined;
 };
 
 /** Lee la portada de una categoría. Nunca rompe la página: ante cualquier fallo devuelve null. */
@@ -24,14 +30,9 @@ export async function getCover(slug: string, fresh = false): Promise<Cover | nul
     const res = await fetch(fresh ? `${url}?t=${Date.now()}` : url, fresh ? { cache: "no-store" } : { next: { revalidate: 60 } });
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<Cover>;
-    if (typeof data.title !== "string" || !data.title) return null;
-    return {
-      title: data.title,
-      subtitle: typeof data.subtitle === "string" ? data.subtitle : "",
-      cta: typeof data.cta === "string" && data.cta ? data.cta : "Ver colección",
-      image: typeof data.image === "string" ? data.image : undefined,
-      mobileImage: typeof data.mobileImage === "string" ? data.mobileImage : undefined,
-    };
+    const media = parseMedia(data.media);
+    if (!media) return null;
+    return { media, mobile: parseMedia(data.mobile), href: typeof data.href === "string" && data.href ? data.href : undefined };
   } catch {
     return null;
   }

@@ -2,7 +2,7 @@
 // Usa la llave de servicio (SUPABASE_SERVICE_ROLE_KEY, SECRETA: nunca con NEXT_PUBLIC_ ni en el navegador).
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
-import { COVERS, type Cover } from "./covers";
+import { COVERS, type Cover, type CoverMedia } from "./covers";
 
 export const BUCKET = "productos";
 export const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -26,7 +26,7 @@ async function ensureBucket(c: ReturnType<typeof client>, name: string = BUCKET)
   const { error } =
     name === BUCKET
       ? await c.storage.createBucket(name, { public: true, fileSizeLimit: "5MB", allowedMimeTypes: ["image/webp"] })
-      : await c.storage.createBucket(name, { public: true, fileSizeLimit: "10MB" });
+      : await c.storage.createBucket(name, { public: true, fileSizeLimit: "50MB" });
   if (error && !/already exists|duplicate/i.test(error.message)) throw new Error(error.message);
   ready.add(name);
 }
@@ -62,15 +62,37 @@ export async function deletePhoto(url: string) {
 
 // ───────────── Portadas de categoría (bucket "portadas": fotos y un JSON con los textos por categoría) ─────────────
 
-/** Sube la foto de una portada (WebP, más ancha que las de producto) y devuelve su dirección pública. */
-export async function uploadCoverImage(input: Buffer, slug: string, width: number) {
+export const COVER_MAX_BYTES = 20 * 1024 * 1024;
+const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/webm": "webm" };
+
+/**
+ * Sube el medio de una portada y devuelve su dirección pública y su tipo. Las fotos (JPG, PNG, WebP) se convierten a
+ * WebP ancho; los GIF y los videos (MP4, WebM) se suben tal cual para no perder la animación.
+ */
+export async function uploadCoverMedia(file: File, slug: string, width: number): Promise<CoverMedia> {
   const c = client();
   await ensureBucket(c, COVERS);
-  const out = await sharp(input, { failOn: "none", limitInputPixels: 80_000_000 }).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
-  const path = `${slug}-${crypto.randomUUID()}.webp`;
-  const { error } = await c.storage.from(COVERS).upload(path, out, { contentType: "image/webp", cacheControl: "31536000" });
+  const input = Buffer.from(await file.arrayBuffer());
+  let body: Buffer = input;
+  let ext: string;
+  let contentType = file.type;
+  let type: CoverMedia["type"] = "image";
+  if (VIDEO_TYPES[file.type]) {
+    ext = VIDEO_TYPES[file.type]!;
+    type = "video";
+  } else if (file.type === "image/gif") {
+    ext = "gif";
+  } else if (["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    body = await sharp(input, { failOn: "none", limitInputPixels: 80_000_000 }).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
+    ext = "webp";
+    contentType = "image/webp";
+  } else {
+    throw new Error("Formato no permitido");
+  }
+  const path = `${slug}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await c.storage.from(COVERS).upload(path, body, { contentType, cacheControl: "31536000" });
   if (error) throw new Error(error.message);
-  return c.storage.from(COVERS).getPublicUrl(path).data.publicUrl;
+  return { url: c.storage.from(COVERS).getPublicUrl(path).data.publicUrl, type };
 }
 
 export async function saveCover(slug: string, cover: Cover) {

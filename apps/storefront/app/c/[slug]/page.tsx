@@ -35,7 +35,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     >
       {cover ? (
         <>
-          <CategoryCover cover={cover} />
+          <CategoryCover cover={cover} title={found.name} />
           <div className="-mx-6">
             <PromiseStrip />
           </div>
