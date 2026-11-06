@@ -453,3 +453,161 @@ export async function movePhoto(form: FormData) {
   revalidatePath("/", "layout");
   back(path, { ok: "Orden actualizado." });
 }
+
+// ───────────── Productos y colores nuevos ─────────────
+
+const slugify = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+/** Código único para un color: prefijo del producto + número (ej. AURAFIT-03). */
+async function nextSku(t: Prisma.TransactionClient, slug: string) {
+  const prefix = slug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PROD";
+  for (let n = 1; n < 1000; n++) {
+    const sku = `${prefix}-${String(n).padStart(2, "0")}`;
+    if (!(await t.productVariant.findUnique({ where: { sku }, select: { id: true } }))) return sku;
+  }
+  throw new Error("Sin códigos libres");
+}
+
+type VariantInput = { label: string; regular: number; offer: number; cost: number | null; stock: number; lowAt: number; weight: number };
+
+/** Lee y valida los campos de un color; devuelve el texto del error si algo está mal. */
+function readVariant(form: FormData): VariantInput | string {
+  const label = str(form, "label").slice(0, 60);
+  const regular = int(str(form, "price"));
+  const offerRaw = str(form, "offer");
+  const offer = offerRaw ? int(offerRaw) : 0;
+  const costRaw = str(form, "cost");
+  const cost = costRaw ? int(costRaw) : null;
+  const stock = int(str(form, "stock") || "0");
+  const lowAt = int(str(form, "lowAt") || "3");
+  const weight = int(str(form, "weight") || "200");
+  if (!label) return "Falta el nombre del color o versión.";
+  if (regular === null || offer === null || stock === null || lowAt === null || weight === null || (costRaw && cost === null))
+    return "Revisa los números (solo dígitos, sin decimales).";
+  if (regular < 1000 || regular > MAX_PRICE_PESOS || offer > MAX_PRICE_PESOS || (cost ?? 0) > MAX_PRICE_PESOS || stock > MAX_STOCK || lowAt > 1000 || weight < 1 || weight > 50_000)
+    return "Algún valor está fuera de rango.";
+  if (offer > 0 && offer >= regular) return "El precio de oferta debe ser menor que el precio normal (o déjalo vacío).";
+  return { label, regular, offer, cost, stock, lowAt, weight };
+}
+
+async function createVariant(t: Prisma.TransactionClient, productId: string, slug: string, v: VariantInput, actorId: string) {
+  const sku = await nextSku(t, slug);
+  const last = await t.productVariant.aggregate({ where: { productId }, _max: { position: true } });
+  const row = await t.productVariant.create({
+    data: {
+      productId,
+      sku,
+      label: v.label,
+      priceCents: (v.offer > 0 ? v.offer : v.regular) * 100,
+      compareAtCents: v.offer > 0 ? v.regular * 100 : null,
+      weightGrams: v.weight,
+      lengthMm: 100,
+      widthMm: 100,
+      heightMm: 100,
+      position: (last._max.position ?? -1) + 1,
+      inventory: { create: { onHand: v.stock, lowStockAt: v.lowAt, unitCostCents: v.cost === null ? null : v.cost * 100 } },
+    },
+    include: { inventory: true },
+  });
+  if (v.stock > 0)
+    await t.stockMovement.create({ data: { inventoryItemId: row.inventory!.id, delta: v.stock, reason: "Stock inicial", actorId } });
+  await t.auditLog.create({ data: { actorId, action: "variant.create", entity: "product_variant", entityId: row.id, changes: { sku, ...v } } });
+  return sku;
+}
+
+export async function createProduct(form: FormData) {
+  const user = await requireAdmin("/admin/productos/nuevo");
+  const name = str(form, "name").slice(0, 120);
+  const description = str(form, "description").slice(0, 5000);
+  const tagline = str(form, "tagline").slice(0, 200);
+  const brandName = str(form, "brand").slice(0, 80);
+  const categoryId = str(form, "category");
+  const variant = readVariant(form);
+  const fail = (error: string): never => back("/admin/productos/nuevo", { error });
+  if (name.length < 2) fail("Escribe el nombre del producto.");
+  if (description.length < 10) fail("La descripción debe tener 10 letras o más.");
+  if (typeof variant === "string") fail(`Primer color: ${variant}`);
+  const v = variant as VariantInput;
+
+  const d = await db();
+  const [category, seller] = await Promise.all([
+    d.category.findFirst({ where: { id: categoryId, deletedAt: null, children: { none: {} } } }),
+    d.seller.findFirst({ orderBy: { createdAt: "asc" } }),
+  ]);
+  if (!category) fail("Elige una categoría.");
+  if (!seller) fail("No hay vendedor configurado en la base.");
+
+  const baseSlug = slugify(name);
+  if (!baseSlug) fail("El nombre debe tener letras o números.");
+  const created = await d.$transaction(async (t) => {
+    let slug = baseSlug;
+    for (let n = 2; await t.product.findUnique({ where: { slug }, select: { id: true } }); n++) slug = `${baseSlug}-${n}`;
+    let brand = brandName ? await t.brand.findFirst({ where: { name: { equals: brandName, mode: "insensitive" } } }) : null;
+    if (brandName && !brand) {
+      const bs = slugify(brandName) || "marca";
+      let slugB = bs;
+      for (let n = 2; await t.brand.findUnique({ where: { slug: slugB }, select: { id: true } }); n++) slugB = `${bs}-${n}`;
+      brand = await t.brand.create({ data: { name: brandName, slug: slugB } });
+    }
+    const p = await t.product.create({
+      data: {
+        name,
+        slug,
+        tagline: tagline || null,
+        description,
+        status: "draft",
+        sellerId: seller!.id,
+        brandId: brand?.id ?? null,
+        categories: { create: { categoryId: category!.id } },
+      },
+    });
+    await createVariant(t, p.id, slug, v, user.id);
+    await t.auditLog.create({ data: { actorId: user.id, action: "product.create", entity: "product", entityId: p.id, changes: { slug, name } } });
+    return slug;
+  });
+  revalidatePath("/", "layout");
+  back(`/admin/productos/${created}`, { ok: "Producto creado. Está oculto: sube las fotos, revisa los datos y cámbialo a «Visible en la tienda»." });
+}
+
+export async function addVariant(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const v = readVariant(form);
+  if (typeof v === "string") return back(path, { error: `Color nuevo: ${v}` });
+  const d = await db();
+  const sku = await d.$transaction(async (t) => {
+    const p = await t.product.findUnique({ where: { slug }, select: { id: true } });
+    return p ? createVariant(t, p.id, slug, v, user.id) : null;
+  });
+  if (!sku) return back("/admin/productos", { error: "Producto no encontrado." });
+  revalidatePath("/", "layout");
+  back(path, { ok: `Color «${v.label}» agregado (${sku}). Ahora sube sus fotos.` });
+}
+
+/** Quita un color de la tienda (no borra el historial: los pedidos viejos lo conservan). No se puede quitar el último. */
+export async function removeVariant(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const sku = str(form, "sku");
+  const d = await db();
+  const res = await d.$transaction(async (t) => {
+    const v = await t.productVariant.findFirst({ where: { sku, deletedAt: null, product: { slug } } });
+    if (!v) return "Ese color ya no existe.";
+    const left = await t.productVariant.count({ where: { productId: v.productId, deletedAt: null } });
+    if (left <= 1) return "No puedes quitar el único color. Si no quieres vender el producto, ponlo como «Oculto».";
+    await t.productVariant.update({ where: { id: v.id }, data: { deletedAt: new Date() } });
+    await t.auditLog.create({ data: { actorId: user.id, action: "variant.delete", entity: "product_variant", entityId: v.id, changes: { sku, label: v.label } } });
+    return null;
+  });
+  revalidatePath("/", "layout");
+  back(path, res ? { error: res } : { ok: `Color ${sku} quitado.` });
+}

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { updateProduct } from "../../actions";
+import { addVariant, removeVariant, updateProduct } from "../../actions";
 import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } from "../../ui";
 import { storageConfigured } from "@/lib/storage";
+import { ColorFields } from "../color-fields";
 import { VariantForm, type VariantRow } from "../variant-form";
 import { PhotoManager, type PhotoGroup } from "./photos";
 
@@ -136,6 +137,40 @@ export default async function ProductEdit({
           ))}
         </div>
       </section>
+
+      <form action={addVariant} className={`${card} mt-6`}>
+        <input type="hidden" name="slug" value={p.slug} />
+        <CardHead title="Agregar un color o versión" sub="Después de crearlo, sube sus fotos en la sección Fotos." />
+        <ColorFields />
+        <div className="mt-5">
+          <button type="submit" className={primaryBtn}>
+            Agregar color
+          </button>
+        </div>
+      </form>
+
+      {rows.length > 1 && (
+        <details className="mt-4 text-[14px]">
+          <summary className="cursor-pointer text-[#6b6b80] hover:text-[#5b4fe0]">Quitar un color de la tienda</summary>
+          <form action={removeVariant} className="mt-3 flex flex-wrap items-center gap-3">
+            <input type="hidden" name="slug" value={p.slug} />
+            <select name="sku" required defaultValue="" className={`${field} max-w-xs`}>
+              <option value="" disabled>
+                Elige el color…
+              </option>
+              {rows.map((v) => (
+                <option key={v.sku} value={v.sku}>
+                  {v.label} ({v.sku})
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="rounded-[10px] border border-red-300 px-4 py-2 font-semibold text-red-700 hover:bg-red-50">
+              Quitar color
+            </button>
+            <span className="text-[13px] text-[#6b6b80]">Deja de venderse; los pedidos anteriores no se afectan.</span>
+          </form>
+        </details>
+      )}
 
       <PhotoManager slug={p.slug} groups={groups} enabled={storageConfigured()} />
 

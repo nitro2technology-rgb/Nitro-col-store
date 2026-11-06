@@ -59,7 +59,10 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageTitle sub="Toca un producto para cambiar textos, precios, oferta, costo y stock.">Productos</PageTitle>
-        <form action="/admin/productos" className="flex gap-2">
+        <form action="/admin/productos" className="flex flex-wrap gap-2">
+          <Link href="/admin/productos/nuevo" className="inline-flex items-center rounded-[10px] bg-[#5b4fe0] px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#4a3fd0]">
+            + Producto nuevo
+          </Link>
           <input type="hidden" name="ver" value={ver} />
           <input
             name="q"

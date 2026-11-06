@@ -180,6 +180,13 @@ Catálogo/              fotos originales (NO está en git)
 - Las fotos antiguas (`/products/...` del código) también se pueden ordenar/eliminar (solo se borra la fila; el archivo queda en el repo). Requiere `CATALOG_SOURCE=db` para verse en la tienda.
 - **Sin probar:** la subida real (falta la llave). Probar con un producto de prueba y revisar memoria en Render (sharp con fotos grandes).
 
+### 5k. Productos y colores nuevos desde el panel (6 nov 2026, código listo, sin probar con sesión)
+
+- **`/admin/productos/nuevo`** (botón «+ Producto nuevo»): nombre, categoría (solo categorías hoja de la base), marca opcional (se crea si no existe), frase, descripción y el **primer color** (nombre, precio, oferta, costo, stock, aviso, peso). Se crea **oculto** (`draft`) con el vendedor de la casa, tema claro y slug derivado del nombre (sin tildes, único); luego redirige a la ficha para subir fotos y publicarlo. Acción `createProduct`.
+- **Colores:** en la ficha, «Agregar un color o versión» (`addVariant`; SKU automático `PREFIJO-NN` único, posición al final, inventario y movimiento de «Stock inicial») y «Quitar un color» (`removeVariant`; borrado lógico con `deletedAt`, no deja quitar el último). Campos compartidos en `app/admin/productos/color-fields.tsx`. Dimensiones fijas 100 mm (el envío es fijo; no se piden).
+- Las **categorías** no se crean desde el panel (siguen estáticas en `lib/products.ts` para portada/diseño): una categoría nueva requiere código. Un producto en una categoría de la base que no exista en `lib/products.ts` puede no mostrarse bien en la tienda.
+- **Sin probar:** crear un producto real, agregar y quitar un color. Hacerlo y luego ocultar el de prueba.
+
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
 - **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.
@@ -240,7 +247,7 @@ Catálogo/              fotos originales (NO está en git)
 2. **Que el dueño registre el costo** de cada producto en el panel (filtro «Sin costo»). Sin eso no hay ganancia en el resumen.
 3. **Probar devoluciones** con un pedido de prueba: registrar, recibir con reingreso al stock, cerrar con reembolso y con 0.
 4. **Fotos desde el panel:** código listo (5j); falta poner `SUPABASE_SERVICE_ROLE_KEY` en Render y probar la subida. Después, conectar las imágenes nuevas de `imagenes/productos/<slug>/` (prompts en `Instrucciones/productos/`).
-5. **Crear productos y colores nuevos desde el panel** (hoy solo se editan los existentes).
+5. **Probar** crear producto / agregar y quitar color (5k) y la subida de fotos (5j).
 6. **Precios reales de gafas** (Excel `Datos de productos.xlsx`) y limpieza de pedidos de prueba (NC-4 en adelante, devolviendo el inventario).
 7. **Operación:** respaldos de Supabase, monitor de `/api/health`, reservas de stock con vencimiento y cancelar pedidos pendientes viejos, llaves de Wompi de producción, prueba en celular real.
 8. Más adelante: cupones, exportar pedidos, facturación electrónica, roles por vendedor (marketplace), Beanies.
