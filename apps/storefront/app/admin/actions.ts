@@ -349,3 +349,107 @@ export async function rejectReturn(form: FormData) {
   revalidatePath("/admin", "layout");
   back("/admin/devoluciones", done ? { ok: "Devolución rechazada; el pedido vuelve a Entregado." } : { error: "La devolución ya cambió de estado." });
 }
+
+// ───────────── Fotos ─────────────
+
+const MAX_PHOTOS_PER_SEND = 3;
+
+/** Sube hasta 3 fotos a un grupo: principales de un color (card), galería de un color (gallery) o generales del producto. */
+export async function uploadPhotos(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const sku = str(form, "sku");
+  const kind = str(form, "kind") === "card" ? "card" : "gallery";
+  const { storageConfigured, uploadPhoto, MAX_FILE_BYTES } = await import("@/lib/storage");
+  if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para poder subir fotos." });
+
+  const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) back(path, { error: "Elige al menos una foto." });
+  if (files.length > MAX_PHOTOS_PER_SEND) back(path, { error: `Sube máximo ${MAX_PHOTOS_PER_SEND} fotos por vez.` });
+  if (files.some((f) => f.size > MAX_FILE_BYTES)) back(path, { error: "Cada foto debe pesar menos de 8 MB." });
+
+  const d = await db();
+  const product = await d.product.findUnique({
+    where: { slug },
+    select: { id: true, name: true, variants: { where: { deletedAt: null }, select: { id: true, sku: true, label: true } } },
+  });
+  if (!product) back("/admin/productos", { error: "Producto no encontrado." });
+  const variant = sku ? product!.variants.find((v) => v.sku === sku) : undefined;
+  if (sku && !variant) back(path, { error: "Color no encontrado." });
+
+  let done = 0;
+  try {
+    for (const f of files) {
+      const url = await uploadPhoto(Buffer.from(await f.arrayBuffer()), slug);
+      const last = await d.productImage.aggregate({ where: { productId: product!.id }, _max: { position: true } });
+      const img = await d.productImage.create({
+        data: {
+          productId: product!.id,
+          variantId: variant?.id ?? null,
+          url,
+          alt: variant ? `${product!.name} ${variant.label}` : product!.name,
+          kind: variant ? kind : "gallery",
+          position: (last._max.position ?? -1) + 1,
+        },
+      });
+      await d.auditLog.create({
+        data: { actorId: user.id, action: "photo.add", entity: "product_image", entityId: img.id, changes: { slug, sku: sku || null, kind: img.kind, url } },
+      });
+      done++;
+    }
+  } catch (e) {
+    console.error("[fotos] subida", e);
+    revalidatePath("/", "layout");
+    back(path, { error: `No se pudo subir la foto${done ? ` (se subieron ${done})` : ""}. Revisa que sea JPG, PNG o WebP.` });
+  }
+  revalidatePath("/", "layout");
+  back(path, { ok: done === 1 ? "Foto subida." : `${done} fotos subidas.` });
+}
+
+export async function deletePhotoAction(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const d = await db();
+  const img = await d.productImage.findFirst({ where: { id: str(form, "id"), product: { slug } } });
+  if (!img) back(path, { error: "La foto ya no existe." });
+  await d.productImage.delete({ where: { id: img!.id } });
+  await d.auditLog.create({
+    data: { actorId: user.id, action: "photo.delete", entity: "product_image", entityId: img!.id, changes: { slug, url: img!.url } },
+  });
+  try {
+    const { deletePhoto } = await import("@/lib/storage");
+    await deletePhoto(img!.url);
+  } catch (e) {
+    console.error("[fotos] borrar archivo", e);
+  }
+  revalidatePath("/", "layout");
+  back(path, { ok: "Foto eliminada." });
+}
+
+/** Sube o baja una foto dentro de su grupo (mismo color y tipo, o las generales). */
+export async function movePhoto(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const dir = str(form, "dir") === "up" ? -1 : 1;
+  const d = await db();
+  const img = await d.productImage.findFirst({ where: { id: str(form, "id"), product: { slug } } });
+  if (!img) back(path, { error: "La foto ya no existe." });
+  const group = await d.productImage.findMany({
+    where: { productId: img!.productId, variantId: img!.variantId, kind: img!.kind },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+  const i = group.findIndex((g) => g.id === img!.id);
+  const j = i + dir;
+  if (j < 0 || j >= group.length) back(path, {});
+  [group[i], group[j]] = [group[j]!, group[i]!];
+  await d.$transaction(group.map((g, n) => d.productImage.update({ where: { id: g.id }, data: { position: n } })));
+  await d.auditLog.create({
+    data: { actorId: user.id, action: "photo.move", entity: "product_image", entityId: img!.id, changes: { slug, dir } },
+  });
+  revalidatePath("/", "layout");
+  back(path, { ok: "Orden actualizado." });
+}

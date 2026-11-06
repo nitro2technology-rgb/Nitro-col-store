@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { updateProduct } from "../../actions";
 import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } from "../../ui";
+import { storageConfigured } from "@/lib/storage";
 import { VariantForm, type VariantRow } from "../variant-form";
+import { PhotoManager, type PhotoGroup } from "./photos";
 
 const SOLD = ["paid", "processing", "shipped", "delivered", "return_requested"] as const;
 const pesos = (cents: number) => Math.round(cents / 100);
@@ -28,7 +30,7 @@ export default async function ProductEdit({
     where: { slug },
     include: {
       categories: { include: { category: { select: { name: true } } } },
-      images: { orderBy: { position: "asc" }, select: { url: true, alt: true, variantId: true, kind: true } },
+      images: { orderBy: { position: "asc" }, select: { id: true, url: true, alt: true, variantId: true, kind: true } },
       variants: { where: { deletedAt: null }, orderBy: [{ position: "asc" }, { sku: "asc" }], include: { inventory: true } },
     },
   });
@@ -62,6 +64,35 @@ export default async function ProductEdit({
     .join("\n");
   const highlights = ((p.highlights ?? []) as { title: string; body: string }[]).map((h) => `${h.title} | ${h.body}`).join("\n");
   const inBox = ((p.inBox ?? []) as string[]).join("\n");
+
+  const groups: PhotoGroup[] = [
+    ...p.variants.flatMap((v): PhotoGroup[] => [
+      {
+        key: `${v.sku}-card`,
+        title: `${v.label} · fotos principales`,
+        hint: "Carrusel de la tarjeta y de la cabecera. La primera es la portada de este color.",
+        sku: v.sku,
+        kind: "card",
+        photos: p.images.filter((im) => im.variantId === v.id && im.kind === "card"),
+      },
+      {
+        key: `${v.sku}-gallery`,
+        title: `${v.label} · galería`,
+        hint: "Fotos adicionales de este color (por ejemplo, con modelo).",
+        sku: v.sku,
+        kind: "gallery",
+        photos: p.images.filter((im) => im.variantId === v.id && im.kind === "gallery"),
+      },
+    ]),
+    {
+      key: "general",
+      title: "Fotos generales del producto",
+      hint: "No pertenecen a un color en particular.",
+      sku: "",
+      kind: "gallery",
+      photos: p.images.filter((im) => im.variantId === null),
+    },
+  ];
 
   return (
     <>
@@ -105,6 +136,8 @@ export default async function ProductEdit({
           ))}
         </div>
       </section>
+
+      <PhotoManager slug={p.slug} groups={groups} enabled={storageConfigured()} />
 
       <form action={updateProduct} className={`${card} mt-10`}>
         <input type="hidden" name="slug" value={p.slug} />
@@ -160,7 +193,7 @@ export default async function ProductEdit({
           <button type="submit" className={primaryBtn}>
             Guardar información
           </button>
-          <p className="text-[13px] text-[#6b6b80]">La dirección de la página (/p/{p.slug}) no cambia aunque cambies el título. Las fotos se cambian aparte, por ahora en el código.</p>
+          <p className="text-[13px] text-[#6b6b80]">La dirección de la página (/p/{p.slug}) no cambia aunque cambies el título.</p>
         </div>
       </form>
     </>

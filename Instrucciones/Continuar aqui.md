@@ -172,6 +172,14 @@ Catálogo/              fotos originales (NO está en git)
 - **Sin probar todavía:** guardar un producto o un color (y verlo en la tienda), y el flujo completo de una devolución (registrar → recibir → cerrar). Hacerlo con un pedido de prueba, no con uno real.
 - **Falta en Render:** `ADMIN_EMAILS=nitro.2technology@gmail.com` y confirmar `CATALOG_SOURCE=db`.
 
+### 5j. Fotos desde el panel (6 nov 2026, código listo, sin probar la subida)
+
+- En `/admin/productos/[slug]` hay una sección **Fotos** por color (principales = carrusel de tarjeta/cabecera, la primera es la portada; galería) y generales. Se pueden **subir** (hasta 3 por vez, 8 MB c/u; JPG/PNG/WebP), **reordenar** (← →) y **eliminar** (✕). Acciones `uploadPhotos`, `movePhoto`, `deletePhotoAction` en `app/admin/actions.ts`; interfaz en `app/admin/productos/[slug]/photos.tsx`.
+- `lib/storage.ts`: convierte con **sharp** a WebP en 3 tamaños (1600, `-960`, `-480`) y los sube al bucket público **`productos`** de Supabase Storage (se crea solo la primera vez). `lib/image-loader.ts` y `thumb()` entienden esas direcciones y sirven la miniatura adecuada. Cada foto lleva nombre único (caché de un año).
+- **Necesita la variable `SUPABASE_SERVICE_ROLE_KEY`** (llave `service_role`/secret de Supabase → Project Settings → API Keys). Es SECRETA: solo en Render y `apps/storefront/.env.local`, nunca con `NEXT_PUBLIC_`. Sin ella el panel avisa y deja solo ordenar/eliminar. Next permite 26 MB por envío (`serverActions.bodySizeLimit`).
+- Las fotos antiguas (`/products/...` del código) también se pueden ordenar/eliminar (solo se borra la fila; el archivo queda en el repo). Requiere `CATALOG_SOURCE=db` para verse en la tienda.
+- **Sin probar:** la subida real (falta la llave). Probar con un producto de prueba y revisar memoria en Render (sharp con fotos grandes).
+
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
 - **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.
@@ -231,7 +239,7 @@ Catálogo/              fotos originales (NO está en git)
 1. **Verificar el despliegue del panel v2** tras el push: en Render poner `ADMIN_EMAILS` y confirmar `CATALOG_SOURCE=db`; entrar a `https://nitrocol.nitro2tech.com/admin`, guardar un precio de prueba y ver que cambia en la tienda.
 2. **Que el dueño registre el costo** de cada producto en el panel (filtro «Sin costo»). Sin eso no hay ganancia en el resumen.
 3. **Probar devoluciones** con un pedido de prueba: registrar, recibir con reingreso al stock, cerrar con reembolso y con 0.
-4. **Fotos desde el panel:** subir/ordenar/borrar fotos por color con Supabase Storage (hoy las fotos viven en `public/products` y en `product_images`). Conectar las imágenes nuevas de `imagenes/productos/<slug>/` (prompts en `Instrucciones/productos/`).
+4. **Fotos desde el panel:** código listo (5j); falta poner `SUPABASE_SERVICE_ROLE_KEY` en Render y probar la subida. Después, conectar las imágenes nuevas de `imagenes/productos/<slug>/` (prompts en `Instrucciones/productos/`).
 5. **Crear productos y colores nuevos desde el panel** (hoy solo se editan los existentes).
 6. **Precios reales de gafas** (Excel `Datos de productos.xlsx`) y limpieza de pedidos de prueba (NC-4 en adelante, devolviendo el inventario).
 7. **Operación:** respaldos de Supabase, monitor de `/api/health`, reservas de stock con vencimiento y cancelar pedidos pendientes viejos, llaves de Wompi de producción, prueba en celular real.

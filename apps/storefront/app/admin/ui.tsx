@@ -16,7 +16,9 @@ export const pct = (n: number) => `${n.toLocaleString("es-CO", { maximumFraction
 
 /** Miniatura pregenerada (ver lib/image-loader.ts) para no bajar la foto grande en las listas. */
 export const thumb = (src: string | undefined) =>
-  src && src.startsWith("/products/") && src.endsWith(".webp") ? `${src.slice(0, -5)}-480.webp` : src;
+  src && (src.startsWith("/products/") || src.includes("/storage/v1/object/public/productos/")) && src.endsWith(".webp")
+    ? `${src.slice(0, -5)}-480.webp`
+    : src;
 
 /** Mensaje tras una acción (?ok= / ?error= en la dirección). */
 export function Notice({ ok, error }: { ok?: string; error?: string }) {
