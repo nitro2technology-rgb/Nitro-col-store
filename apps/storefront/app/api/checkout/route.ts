@@ -1,6 +1,7 @@
 // Crea el pedido y devuelve la URL de pago de Wompi. El navegador solo envía SKU y cantidades:
 // precios, descuento, envío y stock se calculan aquí con los datos de la base.
 import { priceCart } from "@/lib/pricing";
+import { requestOrigin } from "@/lib/site";
 import { ensureProfile } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
 import { checkoutUrl, orderReference } from "@/lib/wompi";
@@ -12,9 +13,7 @@ const text = (v: unknown, min: number, max: number) => (typeof v === "string" &&
 
 function siteOrigin(req: Request) {
   if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  const proto = req.headers.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
+  return requestOrigin(req);
 }
 
 export async function POST(req: Request) {
