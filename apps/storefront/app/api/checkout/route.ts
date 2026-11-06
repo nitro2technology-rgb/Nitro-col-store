@@ -84,6 +84,8 @@ export async function POST(req: Request) {
           name: `${r.v.product.name} ${r.v.label}`,
           sku: r.v.sku,
           unitCents: r.v.priceCents,
+          // Costo de ese momento: la ganancia del pedido no cambia si después se edita el costo
+          unitCostCents: r.v.inventory?.unitCostCents ?? null,
           quantity: r.qty,
           totalCents: r.v.priceCents * r.qty,
         })),

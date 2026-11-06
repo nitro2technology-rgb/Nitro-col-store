@@ -334,6 +334,8 @@ model InventoryItem {
   /// Unidades reservadas por pagos en curso
   reserved   Int      @default(0)
   lowStockAt Int      @default(5) @map("low_stock_at")
+  /// Lo que costó cada unidad (para calcular ganancia). Va aquí y no en la variante: esta tabla no es pública.
+  unitCostCents Int?  @map("unit_cost_cents")
   /// Bloqueo optimista
   version    Int      @default(0)
   updatedAt  DateTime @updatedAt @map("updated_at")
@@ -442,6 +444,7 @@ model Order {
   reservations StockReservation[]
   redemptions  CouponRedemption[]
   reviews      Review[]
+  returns      OrderReturn[]
 
   @@index([profileId])
   @@index([status, createdAt])
@@ -458,6 +461,8 @@ model OrderItem {
   name       String
   sku        String
   unitCents  Int    @map("unit_cents")
+  /// Costo unitario congelado al comprar; el cliente no puede leer esta columna
+  unitCostCents Int? @map("unit_cost_cents")
   quantity   Int
   totalCents BigInt @map("total_cents")
 
@@ -468,6 +473,38 @@ model OrderItem {
   @@index([orderId])
   @@index([sellerId])
   @@map("order_items")
+}
+
+enum ReturnStatus {
+  requested
+  received
+  refunded
+  rejected
+}
+
+/// Devolución o garantía de un pedido entregado. El reembolso se hace a mano (Wompi o transferencia) y aquí se anota.
+model OrderReturn {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  orderId     String       @map("order_id") @db.Uuid
+  status      ReturnStatus @default(requested)
+  /// "retracto" | "garantia" | "otro"
+  kind        String
+  reason      String
+  /// [{ variantId, sku, name, quantity }]
+  items       Json
+  refundCents BigInt       @default(0) @map("refund_cents")
+  /// Si las unidades volvieron al inventario al recibirlas
+  restocked   Boolean      @default(false)
+  notes       String?
+  actorId     String?      @map("actor_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status, createdAt])
+  @@map("order_returns")
 }
 
 model OrderStatusHistory {

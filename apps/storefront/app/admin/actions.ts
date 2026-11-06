@@ -44,8 +44,8 @@ async function moveOrder(
   actorId: string,
   reason: string,
   extra?: (t: Prisma.TransactionClient, orderId: string) => Promise<void>,
+  from: OrderStatus[] = ALLOWED_FROM[to] ?? [],
 ) {
-  const from = ALLOWED_FROM[to] ?? [];
   return (await db()).$transaction(async (t) => {
     const order = await t.order.findUnique({ where: { number }, select: { id: true, status: true } });
     if (!order || !from.includes(order.status)) return null;
@@ -101,59 +101,251 @@ export async function shipOrder(form: FormData) {
 
 // ───────────── Productos ─────────────
 
+/** Una entrada por línea, separada por `sep` ("Clave: valor"); conserva el orden. null si alguna línea no cumple. */
+function parsePairs(text: string, sep: RegExp) {
+  const out: [string, string][] = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const m = sep.exec(line);
+    if (!m) return null;
+    const k = line.slice(0, m.index).trim();
+    const v = line.slice(m.index + m[0].length).trim();
+    if (!k || !v) return null;
+    out.push([k.slice(0, 120), v.slice(0, 600)]);
+  }
+  return out;
+}
+
+const lines = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+export async function updateProduct(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const name = str(form, "name").slice(0, 120);
+  const tagline = str(form, "tagline").slice(0, 200);
+  const description = str(form, "description").slice(0, 5000);
+  const status = str(form, "status");
+  const rankRaw = str(form, "rank");
+  const rank = rankRaw ? int(rankRaw) : null;
+  const tags = [...new Set(str(form, "tags").split(",").map((t) => t.trim().slice(0, 40)).filter(Boolean))].slice(0, 20);
+  const videoUrl = str(form, "videoUrl").slice(0, 500);
+  const specs = parsePairs(str(form, "specs"), /:\s*/);
+  const highlights = parsePairs(str(form, "highlights"), /\s*\|\s*/);
+  const inBox = lines(str(form, "inBox")).map((l) => l.slice(0, 200)).slice(0, 30);
+
+  if (name.length < 2 || description.length < 10) back(path, { error: "El nombre y la descripción son obligatorios (descripción de 10 letras o más)." });
+  if (status !== "published" && status !== "draft") back(path, { error: "Disponibilidad inválida." });
+  if (rankRaw && (rank === null || rank < 1 || rank > 99)) back(path, { error: "El orden de destacado va de 1 a 99 (vacío = no destacado)." });
+  if (videoUrl && !/^(https:\/\/|\/)\S+$/i.test(videoUrl)) back(path, { error: "El video debe ser un enlace https:// o una ruta que empiece por /." });
+  if (!specs) back(path, { error: "Especificaciones: una por línea con el formato «Nombre: valor»." });
+  if (!highlights) back(path, { error: "Lo principal: una por línea con el formato «Título | texto»." });
+
+  const after = {
+    name,
+    tagline: tagline || null,
+    description,
+    status: status as "published" | "draft",
+    featuredRank: rank,
+    tags,
+    videoUrl: videoUrl || null,
+    specs: Object.fromEntries(specs!),
+    highlights: highlights!.map(([title, body]) => ({ title, body })),
+    inBox,
+  };
+  const found = await (await db()).$transaction(async (t) => {
+    const p = await t.product.findUnique({ where: { slug } });
+    if (!p) return false;
+    await t.product.update({ where: { id: p.id }, data: after });
+    const before = Object.fromEntries(Object.keys(after).map((k) => [k, p[k as keyof typeof p]]));
+    await t.auditLog.create({
+      data: { actorId: user.id, action: "product.update", entity: "product", entityId: p.id, changes: JSON.parse(JSON.stringify({ slug, before, after })) },
+    });
+    return true;
+  });
+  if (!found) back("/admin/productos", { error: "Producto no encontrado." });
+  revalidatePath("/", "layout");
+  back(path, { ok: after.status === "published" ? "Producto guardado." : "Producto guardado. Está oculto: no aparece en la tienda." });
+}
+
 export async function updateVariant(form: FormData) {
-  const user = await requireAdmin("/admin/productos");
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
   const sku = str(form, "sku");
-  const price = int(str(form, "price"));
-  const compareRaw = str(form, "compareAt");
-  const compareAt = compareRaw ? int(compareRaw) : 0;
+  const label = str(form, "label").slice(0, 60);
+  const regular = int(str(form, "price"));
+  const offerRaw = str(form, "offer");
+  const offer = offerRaw ? int(offerRaw) : 0;
+  const costRaw = str(form, "cost");
+  const cost = costRaw ? int(costRaw) : null;
   const stock = int(str(form, "stock"));
-  const path = "/admin/productos";
+  const lowAt = int(str(form, "lowAt") || "3");
 
-  if (!sku || price === null || compareAt === null || stock === null) back(path, { error: `${sku}: revisa los números (solo dígitos).` });
-  if (price! > MAX_PRICE_PESOS || compareAt! > MAX_PRICE_PESOS || stock! > MAX_STOCK) back(path, { error: `${sku}: el valor es demasiado alto.` });
-  if (compareAt! > 0 && compareAt! <= price!) back(path, { error: `${sku}: el precio anterior debe ser mayor que el precio actual (o déjalo vacío).` });
+  if (!sku || label.length < 1) back(path, { error: "Falta el nombre del color o versión." });
+  if (regular === null || offer === null || stock === null || lowAt === null || (costRaw && cost === null))
+    back(path, { error: `${sku}: revisa los números (solo dígitos, sin decimales).` });
+  if (regular! < 1000 || regular! > MAX_PRICE_PESOS || offer! > MAX_PRICE_PESOS || (cost ?? 0) > MAX_PRICE_PESOS || stock! > MAX_STOCK || lowAt! > 1000)
+    back(path, { error: `${sku}: algún valor está fuera de rango.` });
+  if (offer! > 0 && offer! >= regular!) back(path, { error: `${sku}: el precio de oferta debe ser menor que el precio normal (o déjalo vacío).` });
 
+  // En la tienda, priceCents es lo que se cobra y compareAtCents el precio tachado.
+  const charged = offer! > 0 ? offer! : regular!;
   const ok = await (await db()).$transaction(async (t) => {
-    const v = await t.productVariant.findUnique({ where: { sku }, include: { inventory: true } });
-    if (!v) return false;
-    const before = { priceCents: v.priceCents, compareAtCents: v.compareAtCents, onHand: v.inventory?.onHand ?? 0 };
-    const after = { priceCents: price! * 100, compareAtCents: compareAt! > 0 ? compareAt! * 100 : null, onHand: stock! };
-    await t.productVariant.update({ where: { id: v.id }, data: { priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
+    const v = await t.productVariant.findUnique({ where: { sku }, include: { inventory: true, product: { select: { slug: true } } } });
+    if (!v || v.product.slug !== slug) return false;
+    const before = {
+      label: v.label,
+      priceCents: v.priceCents,
+      compareAtCents: v.compareAtCents,
+      unitCostCents: v.inventory?.unitCostCents ?? null,
+      onHand: v.inventory?.onHand ?? 0,
+      lowStockAt: v.inventory?.lowStockAt ?? null,
+    };
+    const after = {
+      label,
+      priceCents: charged * 100,
+      compareAtCents: offer! > 0 ? regular! * 100 : null,
+      unitCostCents: cost === null ? null : cost * 100,
+      onHand: stock!,
+      lowStockAt: lowAt!,
+    };
+    await t.productVariant.update({ where: { id: v.id }, data: { label, priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
     const inv = await t.inventoryItem.upsert({
       where: { variantId: v.id },
-      update: { onHand: after.onHand, version: { increment: 1 } },
-      create: { variantId: v.id, onHand: after.onHand },
+      update: { onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt, version: { increment: 1 } },
+      create: { variantId: v.id, onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt },
     });
     const delta = after.onHand - before.onHand;
     if (delta !== 0) await t.stockMovement.create({ data: { inventoryItemId: inv.id, delta, reason: "Ajuste manual en el panel", actorId: user.id } });
     await t.auditLog.create({ data: { actorId: user.id, action: "variant.update", entity: "product_variant", entityId: v.id, changes: { sku, before, after } } });
     return true;
   });
-  if (!ok) back(path, { error: `No existe el producto ${sku}.` });
+  if (!ok) back(path, { error: `No existe ${sku} en este producto.` });
   // Las páginas de la tienda se regeneran con los datos nuevos (solo se nota con CATALOG_SOURCE=db).
   revalidatePath("/", "layout");
-  back(path, { ok: `${sku} actualizado.` });
+  back(path, { ok: `${label} (${sku}) guardado.` });
 }
 
-export async function updateFeatured(form: FormData) {
-  const user = await requireAdmin("/admin/productos");
-  const slug = str(form, "slug");
-  const raw = str(form, "rank");
-  const rank = raw ? int(raw) : null;
-  const path = "/admin/productos";
-  if (!slug || (raw && (rank === null || rank < 1 || rank > 99))) back(path, { error: "El orden de destacado va de 1 a 99 (vacío = no destacado)." });
+// ───────────── Devoluciones ─────────────
 
-  const found = await (await db()).$transaction(async (t) => {
-    const p = await t.product.findUnique({ where: { slug }, select: { id: true, featuredRank: true } });
-    if (!p) return false;
-    await t.product.update({ where: { id: p.id }, data: { featuredRank: rank } });
-    await t.auditLog.create({
-      data: { actorId: user.id, action: "product.featured", entity: "product", entityId: p.id, changes: { slug, from: p.featuredRank, to: rank } },
+const RETURN_KINDS = ["retracto", "garantia", "otro"];
+
+export async function createReturn(form: FormData) {
+  const number = int(str(form, "number"));
+  const path = `/admin/pedidos/${number}`;
+  const user = await requireAdmin(path);
+  const kind = str(form, "kind");
+  const reason = str(form, "reason").slice(0, 1000);
+  if (number === null) back("/admin/pedidos", { error: "Solicitud inválida." });
+  if (!RETURN_KINDS.includes(kind)) back(path, { error: "Elige el tipo de devolución." });
+  if (reason.length < 3) back(path, { error: "Escribe el motivo de la devolución." });
+
+  const order = await (await db()).order.findUnique({ where: { number: number! }, include: { items: true } });
+  if (!order) back("/admin/pedidos", { error: "Pedido no encontrado." });
+  const items = order!.items
+    .map((i) => ({ variantId: i.variantId, sku: i.sku, name: i.name, quantity: Math.min(int(str(form, `qty-${i.id}`)) ?? 0, i.quantity) }))
+    .filter((i) => i.quantity > 0);
+  if (items.length === 0) back(path, { error: "Indica cuántas unidades devuelve de al menos un producto." });
+
+  const done = await moveOrder(
+    number!,
+    "return_requested",
+    user.id,
+    `Devolución (${kind}): ${reason}`,
+    async (t, orderId) => {
+      const r = await t.orderReturn.create({ data: { orderId, kind, reason, items, actorId: user.id } });
+      await t.auditLog.create({ data: { actorId: user.id, action: "return.create", entity: "order_return", entityId: r.id, changes: { number, kind, items } } });
+    },
+    ["delivered", "shipped"],
+  );
+  revalidatePath("/admin", "layout");
+  if (!done) back(path, { error: "Solo se registran devoluciones de pedidos enviados o entregados (y sin otra devolución abierta)." });
+  back("/admin/devoluciones", { ok: `Devolución de NC-${number} registrada. Cuando recibas el producto, márcalo aquí.` });
+}
+
+type ReturnLine = { variantId: string; sku: string; name: string; quantity: number };
+
+/** Cambia una devolución de estado solo si sigue en el estado esperado, y mueve el pedido en la misma transacción. */
+async function moveReturn(
+  id: string,
+  from: "requested" | "received",
+  to: "received" | "refunded" | "rejected",
+  actorId: string,
+  orderTo: OrderStatus,
+  orderFrom: OrderStatus[],
+  data: Prisma.OrderReturnUpdateManyMutationInput,
+  extra?: (t: Prisma.TransactionClient, items: ReturnLine[]) => Promise<void>,
+) {
+  try {
+    return await (await db()).$transaction(async (t) => {
+      const r = await t.orderReturn.findUnique({ where: { id }, include: { order: { select: { id: true, number: true, status: true } } } });
+      if (!r || r.status !== from || !orderFrom.includes(r.order.status)) return null;
+      const moved = await t.orderReturn.updateMany({ where: { id, status: from }, data: { ...data, status: to } });
+      const orderMoved = await t.order.updateMany({ where: { id: r.order.id, status: r.order.status }, data: { status: orderTo } });
+      // Alguien la cambió al mismo tiempo: se deshace todo.
+      if (moved.count === 0 || orderMoved.count === 0) throw new Error("conflicto");
+      const reason = { received: "Devolución recibida", refunded: "Devolución cerrada", rejected: "Devolución rechazada" }[to];
+      await t.orderStatusHistory.create({ data: { orderId: r.order.id, fromStatus: r.order.status, toStatus: orderTo, reason, actorId } });
+      await t.auditLog.create({
+        data: { actorId, action: `return.${to}`, entity: "order_return", entityId: id, changes: JSON.parse(JSON.stringify({ number: r.order.number, ...data }, (_k, v) => (typeof v === "bigint" ? Number(v) : v))) },
+      });
+      if (extra) await extra(t, r.items as ReturnLine[]);
+      return r;
     });
-    return true;
+  } catch {
+    return null;
+  }
+}
+
+export async function receiveReturn(form: FormData) {
+  const user = await requireAdmin("/admin/devoluciones");
+  const id = str(form, "id");
+  const restock = form.get("restock") === "on";
+  const notes = str(form, "notes").slice(0, 1000);
+  const done = await moveReturn(id, "requested", "received", user.id, "returned", ["return_requested"], { restocked: restock, ...(notes ? { notes } : {}) }, async (t, items) => {
+    if (!restock) return;
+    for (const i of items) {
+      const inv = await t.inventoryItem.upsert({
+        where: { variantId: i.variantId },
+        update: { onHand: { increment: i.quantity }, version: { increment: 1 } },
+        create: { variantId: i.variantId, onHand: i.quantity },
+      });
+      await t.stockMovement.create({ data: { inventoryItemId: inv.id, delta: i.quantity, reason: "Devolución recibida en buen estado", actorId: user.id } });
+    }
   });
-  if (!found) back(path, { error: "Producto no encontrado." });
-  revalidatePath("/", "layout");
-  back(path, { ok: rank ? `Destacado en la posición ${rank}.` : "Ya no está destacado." });
+  revalidatePath(restock ? "/" : "/admin", "layout");
+  back("/admin/devoluciones", done ? { ok: restock ? "Recibida. Las unidades volvieron al inventario." : "Recibida (sin volver al inventario)." } : { error: "La devolución ya cambió de estado." });
+}
+
+export async function closeReturn(form: FormData) {
+  const user = await requireAdmin("/admin/devoluciones");
+  const id = str(form, "id");
+  const amount = int(str(form, "refund") || "0");
+  const notes = str(form, "notes").slice(0, 1000);
+  if (amount === null || amount > MAX_PRICE_PESOS) back("/admin/devoluciones", { error: "Escribe el valor reembolsado en pesos (0 si fue cambio o reparación)." });
+  const r = await (await db()).orderReturn.findUnique({ where: { id }, include: { order: { select: { totalCents: true } } } });
+  if (r && BigInt(amount!) * 100n > r.order.totalCents) back("/admin/devoluciones", { error: "El reembolso no puede ser mayor que el total del pedido." });
+  // Con reembolso el pedido queda "Reembolsado"; sin reembolso (cambio o reparación) la venta se mantiene y vuelve a "Entregado".
+  const orderTo: OrderStatus = amount! > 0 ? "refunded" : "delivered";
+  const done = await moveReturn(id, "received", "refunded", user.id, orderTo, ["returned"], { refundCents: BigInt(amount!) * 100n, ...(notes ? { notes } : {}) });
+  revalidatePath("/admin", "layout");
+  back(
+    "/admin/devoluciones",
+    done ? { ok: amount! > 0 ? "Reembolso anotado. Recuerda hacerlo en Wompi o por transferencia." : "Devolución cerrada sin reembolso." } : { error: "La devolución ya cambió de estado." },
+  );
+}
+
+export async function rejectReturn(form: FormData) {
+  const user = await requireAdmin("/admin/devoluciones");
+  const id = str(form, "id");
+  const notes = str(form, "notes").slice(0, 1000);
+  if (notes.length < 3) back("/admin/devoluciones", { error: "Escribe por qué se rechaza (queda en el historial)." });
+  const done = await moveReturn(id, "requested", "rejected", user.id, "delivered", ["return_requested"], { notes });
+  revalidatePath("/admin", "layout");
+  back("/admin/devoluciones", done ? { ok: "Devolución rechazada; el pedido vuelve a Entregado." } : { error: "La devolución ya cambió de estado." });
 }
