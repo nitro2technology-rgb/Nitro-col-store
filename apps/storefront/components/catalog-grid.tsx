@@ -21,7 +21,7 @@ function FilterGroup({
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
 }) {
-  if (options.length < 2) return null;
+  if (options.length < 1) return null;
   const toggle = (o: string) => {
     const next = new Set(selected);
     if (next.has(o)) next.delete(o);
@@ -29,7 +29,7 @@ function FilterGroup({
     onChange(next);
   };
   return (
-    <details open className="group border-t border-ink/20 py-4">
+    <details className="group border-t border-ink/20 py-4">
       <summary className="flex cursor-pointer list-none items-center justify-between text-[17px] [&::-webkit-details-marker]:hidden">
         {title}
         {selected.size > 0 && <span className="ml-2 text-[13px] text-muted">({selected.size})</span>}
@@ -69,7 +69,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
 
   const colorOptions = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const p of products) if (p.variants.length > 1) for (const v of p.variants) for (const c of colorFamilies(v.label)) counts.set(c, (counts.get(c) ?? 0) + 1);
+    for (const p of products) for (const v of p.variants) for (const c of colorFamilies(v.label)) counts.set(c, (counts.get(c) ?? 0) + 1);
     return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name, "es"));
   }, [products]);
   const typeOptions = useMemo(() => {
@@ -112,7 +112,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
     setTypes(new Set());
     setQuery("");
   };
-  const hasFilters = colorOptions.length > 1 || modelOptions.length > 1 || typeOptions.length > 1;
+  const hasFilters = products.length > 0;
 
   return (
     <div className="mt-8">

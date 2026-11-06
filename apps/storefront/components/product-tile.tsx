@@ -45,12 +45,13 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
             <span className="pointer-events-none absolute right-3 top-3 rounded-[6px] bg-black px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.05em] text-white">Oferta</span>
           ) : null}
         </div>
-        <div className="flex items-start justify-between gap-3 px-2 pb-1 pt-3 text-[11px] uppercase leading-[1.3] tracking-[0.08em]">
-          <p>
+        <div className="min-w-0 px-2 pb-1 pt-3 text-[11px] uppercase leading-[1.3] tracking-[0.08em]">
+          <p className="break-words">
             {product.name}
             {product.variants.length > 1 && <span className="block text-muted">{chosen.label}</span>}
           </p>
-          <p className="shrink-0 text-right"><PriceTag priceCents={chosen.priceCents} compareAtCents={chosen.compareAtCents} className="justify-end" /></p>
+          {/* El precio va debajo del nombre y puede pasar a otra línea: así la oferta nunca se sale de la tarjeta. */}
+          <PriceTag priceCents={chosen.priceCents} compareAtCents={chosen.compareAtCents} className="mt-1.5 max-w-full text-[13px] font-semibold" />
         </div>
       </Link>
     );

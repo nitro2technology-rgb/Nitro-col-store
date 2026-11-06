@@ -4,6 +4,9 @@ import { getExtraCategories, getProducts } from "@/lib/catalog";
 import { allCategorySlugs, findCategory, productsIn } from "@/lib/products";
 import { CatalogGrid } from "@/components/catalog-grid";
 import { ModaHero } from "@/components/moda-hero";
+import { CategoryCover } from "@/components/category-cover";
+import { PromiseStrip } from "@/components/home-blocks";
+import { getCover } from "@/lib/covers";
 
 export const revalidate = 300;
 
@@ -24,12 +27,20 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     ...parent.children,
   ];
   const items = productsIn(slug, await getProducts());
+  const cover = await getCover(slug); // portada propia editada en el panel; sin ella, el diseño de siempre
 
   return (
     <main
-      className={`relative px-6 pb-28 pt-16 md:pt-24 ${parent.cover ? "" : "mx-auto max-w-[1440px] overflow-hidden"}`}
+      className={`relative px-6 pb-28 pt-16 md:pt-24 ${parent.cover || cover ? "" : "mx-auto max-w-[1440px] overflow-hidden"}`}
     >
-      {parent.cover ? (
+      {cover ? (
+        <>
+          <CategoryCover cover={cover} />
+          <div className="-mx-6">
+            <PromiseStrip />
+          </div>
+        </>
+      ) : parent.cover ? (
         <ModaHero title={found.name} panels={parent.cover} />
       ) : (
         <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>

@@ -662,3 +662,58 @@ export async function deleteCategory(form: FormData) {
   revalidatePath("/", "layout");
   back(path, { ok: `Categoría «${c!.name}» borrada.` });
 }
+
+// ───────────── Portadas de categoría ─────────────
+
+export async function saveCover(form: FormData) {
+  const path = "/admin/portadas";
+  const user = await requireAdmin(path);
+  const slug = str(form, "slug");
+  const title = str(form, "title").slice(0, 80);
+  const subtitle = str(form, "subtitle").slice(0, 140);
+  const cta = (str(form, "cta") || "Ver colección").slice(0, 30);
+  const { storageConfigured, uploadCoverImage, saveCover: put, removeCoverFiles } = await import("@/lib/storage");
+  const { getCover } = await import("@/lib/covers");
+  if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para guardar portadas." });
+  if (title.length < 2) back(path, { error: "Escribe el título de la portada." });
+  const d = await db();
+  if (!(await d.category.findFirst({ where: { slug, deletedAt: null }, select: { id: true } }))) back(path, { error: "Categoría no encontrada." });
+
+  const file = (k: string) => {
+    const f = form.get(k);
+    return f instanceof File && f.size > 0 ? f : null;
+  };
+  const desktop = file("image");
+  const mobile = file("mobile");
+  if ((desktop && desktop.size > 12 * 1024 * 1024) || (mobile && mobile.size > 12 * 1024 * 1024)) back(path, { error: "Cada foto debe pesar menos de 12 MB." });
+
+  try {
+    const before = await getCover(slug, true);
+    const image = desktop ? await uploadCoverImage(Buffer.from(await desktop.arrayBuffer()), slug, 2400) : before?.image;
+    const dropMobile = form.get("dropMobile") === "on";
+    const mobileImage = mobile ? await uploadCoverImage(Buffer.from(await mobile.arrayBuffer()), slug, 1100) : dropMobile ? undefined : before?.mobileImage;
+    await put(slug, { title, subtitle, cta, image, mobileImage });
+    // Borra las fotos que se reemplazaron o quitaron.
+    await removeCoverFiles(slug, [desktop ? before?.image : undefined, mobile || dropMobile ? before?.mobileImage : undefined], false);
+    await d.auditLog.create({ data: { actorId: user.id, action: "cover.save", entity: "category", entityId: slug, changes: { slug, title } } });
+  } catch (e) {
+    console.error("[portadas] guardar", e);
+    back(path, { error: "No se pudo guardar la portada. Revisa que la foto sea JPG, PNG o WebP." });
+  }
+  revalidatePath("/", "layout");
+  back(path, { ok: `Portada de «${title}» guardada.` });
+}
+
+export async function removeCover(form: FormData) {
+  const path = "/admin/portadas";
+  const user = await requireAdmin(path);
+  const slug = str(form, "slug");
+  const { storageConfigured, removeCoverFiles } = await import("@/lib/storage");
+  const { getCover } = await import("@/lib/covers");
+  if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor." });
+  const before = await getCover(slug, true);
+  await removeCoverFiles(slug, [before?.image, before?.mobileImage], true);
+  await (await db()).auditLog.create({ data: { actorId: user.id, action: "cover.remove", entity: "category", entityId: slug, changes: { slug } } });
+  revalidatePath("/", "layout");
+  back(path, { ok: "Portada quitada: la página vuelve a su diseño de siempre." });
+}

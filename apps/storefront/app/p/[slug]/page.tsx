@@ -1,28 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CtaBand } from "@/components/buy-cta";
-import { Foliage } from "@/components/foliage";
+import { ProductLanding } from "@/components/product-landing";
 import { BenefitsMarquee, ProductAccordion, QualityMarquee, TrustStrip } from "@/components/product-extras";
-import { ProductGallery } from "@/components/product-gallery";
-import { ProductHero } from "@/components/product-hero";
-import { ProductVideo } from "@/components/product-media";
-import { ProductStory } from "@/components/product-story";
 import { Recommended } from "@/components/recommended";
 import { Reviews } from "@/components/reviews";
-import { ShowcaseCloseLook, ShowcaseHero, ShowcaseHighlights, ShowcaseNav, type ShowcaseTone } from "@/components/showcase";
-import { ShowcaseInfo } from "@/components/showcase-info";
 import { VariantProvider } from "@/components/variant-context";
 import { getProducts } from "@/lib/catalog";
-import { recommendationsFor } from "@/lib/gafas-promo";
 import { getProduct, productsIn } from "@/lib/products";
 import { getReviews } from "@/lib/reviews";
 
 export const revalidate = 300;
 
 const h2 = "text-[clamp(32px,5vw,56px)]";
-
-// Fichas con el estilo de "Diseños frontend": el reloj en negro y los audífonos en gris niebla.
-const SHOWCASE: Record<string, ShowcaseTone> = { smartwatch: "dark", audifonos: "light" };
 
 export async function generateStaticParams() {
   return (await getProducts()).map((p) => ({ slug: p.slug }));
@@ -53,18 +43,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const tech = productsIn("tecnologia", others).slice(0, 3);
 
   const reviews = await getReviews(product.slug);
+  const rating = reviews.length > 0 ? { avg: reviews.reduce((s, r) => s + r.stars, 0) / reviews.length, count: reviews.length } : undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description,
     brand: { "@type": "Brand", name: product.brand },
-    ...(reviews.length > 0 && {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: Number((reviews.reduce((s, r) => s + r.stars, 0) / reviews.length).toFixed(1)),
-        reviewCount: reviews.length,
-      },
+    ...(rating && {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: Number(rating.avg.toFixed(1)), reviewCount: rating.count },
     }),
     offers: product.variants.map((v) => ({
       "@type": "Offer",
@@ -75,87 +62,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     })),
   };
 
-  const ld = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />;
-  const recommended = (
-    <Recommended
-      groups={
-        gafas
-          ? [{ title: "Moda", products: moda }, { title: "Tecnología", products: tech }]
-          : [{ title: "Tecnología", products: tech }, { title: "Moda", products: moda }]
-      }
-    />
-  );
-
-  const tone = SHOWCASE[product.category];
-  if (tone) {
-    const sections = [
-      { id: "resumen", label: "Resumen" },
-      { id: "de-cerca", label: "De cerca" },
-      ...(product.videoUrl ? [{ id: "video", label: "Video" }] : []),
-      { id: "resenas", label: "Reseñas" },
-    ];
-    return (
-      <VariantProvider product={product}>
-        {ld}
-        <div data-theme={tone} className={`showcase-${tone} isolate bg-[var(--sc-page)] text-ink`}>
-          <ShowcaseNav product={product} sections={sections} />
-          <ShowcaseHero product={product} tone={tone} />
-          <ShowcaseHighlights product={product} />
-          <ShowcaseCloseLook product={product} />
-          <ProductGallery product={product} titleClass="text-[clamp(32px,5vw,56px)] font-semibold tracking-[-0.009em] text-[var(--sc-text)]" />
-          {product.videoUrl && (
-            <section id="video" className="mx-auto max-w-[1024px] scroll-mt-28 px-6 py-24">
-              <h2 className="text-[clamp(32px,5vw,56px)] font-semibold tracking-[-0.009em] text-[var(--sc-text)]">En acción.</h2>
-              <div className="mt-10 overflow-hidden rounded-[28px] bg-black">
-                <ProductVideo product={product} />
-              </div>
-            </section>
-          )}
-          <BenefitsMarquee product={product} />
-          <CtaBand product={product} />
-          <ProductAccordion product={product} />
-          <TrustStrip />
-          {/* Reseñas y recomendados usan la misma columna de 1024 px que el resto de esta ficha. */}
-          <div id="resenas" className="scroll-mt-28 pt-12 [&>section]:max-w-[1024px]">
-            <Reviews reviews={reviews} slug={product.slug} titleClass={`${h2} font-semibold tracking-[-0.009em]`} />
-          </div>
-          <CtaBand product={product} />
-          <QualityMarquee />
-          <ShowcaseInfo />
-          <div className="[&>section]:max-w-[1024px]">{recommended}</div>
-        </div>
-      </VariantProvider>
-    );
-  }
-
   return (
     <VariantProvider product={product}>
-      {ld}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Escenario del producto en su tema (claro u oscuro): compra primero, detalle después. */}
+      {/* La misma estructura para todos los productos; el tema (claro u oscuro) es el de cada producto. */}
       <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark isolate" : ""}`}>
-        {product.theme === "dark" && <Foliage tone="night" />}
-        <ProductHero product={product} more={gafas ? recommendationsFor(product, products) : undefined} />
-
-        <Reviews reviews={reviews} slug={product.slug} titleClass={h2} />
-        <ProductStory product={product} />
-
-        {product.videoUrl && (
-          <section className="mx-auto max-w-[1440px] px-6 py-28">
-            <h2 className={h2}>En acción.</h2>
-            <div className="mx-auto mt-10 max-w-[1100px]">
-              <ProductVideo product={product} />
-            </div>
-          </section>
-        )}
+        <ProductLanding product={product} rating={rating} />
 
         <BenefitsMarquee product={product} />
         <CtaBand product={product} />
         <ProductAccordion product={product} />
         <TrustStrip />
+
+        <div id="resenas" className="scroll-mt-28 pt-12">
+          <Reviews reviews={reviews} slug={product.slug} titleClass={h2} />
+        </div>
+        <CtaBand product={product} />
         <QualityMarquee />
 
-        {recommended}
+        <Recommended
+          groups={
+            gafas
+              ? [{ title: "Moda", products: moda }, { title: "Tecnología", products: tech }]
+              : [{ title: "Tecnología", products: tech }, { title: "Moda", products: moda }]
+          }
+        />
       </div>
     </VariantProvider>
   );

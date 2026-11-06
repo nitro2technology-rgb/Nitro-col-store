@@ -1,18 +1,21 @@
 "use client";
 
-// «Completa tu pedido»: ventana de compra rápida que abre «Quiero el mío ahora». Elige color y cantidad, ofrece
-// sumar otro producto, pide los datos de envío y lleva al pago seguro de Wompi. Los precios, el descuento por
-// cantidad, el envío y el stock se muestran con los mismos cálculos que la tienda y el servidor los vuelve a calcular.
+// «Completa tu pedido»: ventana de compra rápida que abre «Quiero el mío ahora». Con 2 o 3 unidades se elige, unidad por
+// unidad, el modelo y el color (de la misma categoría); ofrece sumar otro producto, pide los datos de envío y lleva al
+// pago seguro de Wompi. Precios, descuento por cantidad, envío y stock se muestran con los mismos cálculos que la tienda
+// y el servidor los vuelve a calcular al crear el pedido.
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { formatCOP, type Product, type Variant } from "@nitro/shared";
 import { useCatalog, useVariantLookup } from "@/lib/catalog-client";
+import { gafasDiscountPct } from "@/lib/gafas-promo";
 import { useOrderModal } from "@/lib/order-modal";
 import { priceCart } from "@/lib/pricing";
 import { findCategory } from "@/lib/products";
 
 const input = "mt-1 w-full rounded-[12px] border border-ink/25 bg-canvas px-3 py-2.5 text-[16px] text-ink outline-none focus:border-ink";
 const lbl = "block text-[13px] font-semibold text-ink";
+const MAX_UNITS = 3;
 
 function Check({ children }: { children: React.ReactNode }) {
   return (
@@ -37,28 +40,36 @@ function Thumb({ product, variant }: { product: Product; variant: Variant }) {
   );
 }
 
+const firstAvailable = (p: Product) => p.variants.find((v) => v.stock > 0 && v.priceCents > 0);
+
 function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => void }) {
   const { products } = useCatalog();
   const findVariant = useVariantLookup();
-  const [sku, setSku] = useState(initialSku);
   const [qty, setQty] = useState(1);
+  // Un SKU por unidad: las nuevas unidades empiezan con el mismo color que la primera y se pueden cambiar.
+  const [picks, setPicks] = useState<string[]>(() => Array.from({ length: MAX_UNITS }, () => initialSku));
   const [upsell, setUpsell] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const found = findVariant(sku);
-  const product = found?.product;
-  const variant = found?.variant;
+  const first = findVariant(initialSku);
+  const category = first?.product.category;
 
-  // Otro producto para sumar: de la misma familia (Moda o Tecnología) si hay, y con stock.
+  // Modelos entre los que se puede elegir: los de la misma categoría con algo disponible.
+  const models = useMemo(
+    () => (category ? products.filter((p) => p.category === category && firstAvailable(p)) : []),
+    [products, category],
+  );
+
+  // Otro producto para sumar: de la misma familia (Moda o Tecnología) si hay, de otra categoría.
   const extra = useMemo(() => {
-    if (!product) return null;
-    const parent = findCategory(product.category)?.parent?.slug;
-    const pool = products.filter((p) => p.slug !== product.slug && p.variants.some((v) => v.stock > 0 && v.priceCents > 0));
+    if (!first) return null;
+    const parent = findCategory(first.product.category)?.parent?.slug;
+    const pool = products.filter((p) => p.category !== first.product.category && firstAvailable(p));
     const pick = pool.find((p) => findCategory(p.category)?.parent?.slug === parent) ?? pool[0];
-    const v = pick?.variants.find((x) => x.stock > 0 && x.priceCents > 0);
+    const v = pick && firstAvailable(pick);
     return pick && v ? { product: pick, variant: v } : null;
-  }, [products, product]);
+  }, [products, first]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -71,16 +82,33 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
     };
   }, [onClose]);
 
-  if (!product || !variant) return null;
-  const maxQty = Math.min(3, variant.stock);
-  const q = Math.min(qty, Math.max(maxQty, 1));
-  const rowOf = (p: Product, v: Variant, n: number) => ({ category: p.category, priceCents: v.priceCents, qty: n });
-  const rows = [rowOf(product, variant, q), ...(upsell && extra ? [rowOf(extra.product, extra.variant, 1)] : [])];
+  if (!first) return null;
+
+  const units = picks.slice(0, qty).flatMap((sku) => {
+    const f = findVariant(sku);
+    return f ? [f] : [];
+  });
+  const rowOf = (p: Product, v: Variant) => ({ category: p.category, priceCents: v.priceCents, qty: 1 });
+  const rows = [...units.map((u) => rowOf(u.product, u.variant)), ...(upsell && extra ? [rowOf(extra.product, extra.variant)] : [])];
   const totals = priceCart(rows);
-  const pack = (n: number) => priceCart([rowOf(product, variant, n)]);
+  const packTotals = (n: number) => priceCart(picks.slice(0, n).flatMap((sku) => (findVariant(sku) ? [rowOf(findVariant(sku)!.product, findVariant(sku)!.variant)] : [])));
+
+  // Unidades pedidas por SKU (la misma gafa dos veces cuenta 2) contra el stock.
+  const wanted = new Map<string, number>();
+  for (const u of units) wanted.set(u.variant.sku, (wanted.get(u.variant.sku) ?? 0) + 1);
+  if (upsell && extra) wanted.set(extra.variant.sku, (wanted.get(extra.variant.sku) ?? 0) + 1);
+  const short = [...wanted].flatMap(([sku, n]) => {
+    const f = findVariant(sku);
+    return f && n > f.variant.stock ? [`${f.product.name}${f.product.variants.length > 1 ? ` (${f.variant.label})` : ""}: solo quedan ${f.variant.stock}`] : [];
+  });
+
+  const setPick = (i: number, sku: string) => setPicks((cur) => cur.map((s, j) => (j === i ? sku : s)));
+  const pct2 = category === "gafas" ? gafasDiscountPct(2) : 0;
+  const pct3 = category === "gafas" ? gafasDiscountPct(3) : 0;
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (short.length > 0) return;
     const f = new FormData(e.currentTarget);
     const get = (k: string) => String(f.get(k) ?? "").trim();
     setBusy(true);
@@ -90,7 +118,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: [{ sku: variant!.sku, qty: q }, ...(upsell && extra ? [{ sku: extra.variant.sku, qty: 1 }] : [])],
+          items: [...wanted].map(([sku, n]) => ({ sku, qty: n })),
           customer: { name: `${get("name")} ${get("lastname")}`.trim(), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
         }),
@@ -111,7 +139,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
         aria-modal="true"
         aria-labelledby="order-title"
         data-theme="light"
-        className="max-h-[94dvh] w-full max-w-[520px] overflow-y-auto rounded-t-[28px] bg-canvas p-5 text-ink shadow-2xl sm:rounded-[28px] sm:p-7"
+        className="max-h-[94dvh] w-full max-w-[540px] overflow-y-auto rounded-t-[28px] bg-canvas p-5 text-ink shadow-2xl sm:rounded-[28px] sm:p-7"
       >
         <div className="flex items-center justify-between">
           <h2 id="order-title" className="text-[22px] font-extrabold uppercase tracking-[0.04em]">
@@ -122,38 +150,13 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
           </button>
         </div>
 
-        {/* Producto elegido */}
-        <div className="mt-4 rounded-[14px] border-2 border-ink p-3">
-          <div className="flex items-center gap-3">
-            <Thumb product={product} variant={variant} />
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold leading-tight">{product.name}</p>
-              <p className="text-[14px] text-muted">{product.variants.length > 1 ? variant.label : product.tagline}</p>
-            </div>
-            <p className="shrink-0 font-bold">{formatCOP(variant.priceCents)}</p>
-          </div>
-          {product.variants.length > 1 && (
-            <label className={`${lbl} mt-3`}>
-              Color
-              <select value={sku} onChange={(e) => setSku(e.target.value)} className={input}>
-                {product.variants.map((v) => (
-                  <option key={v.sku} value={v.sku} disabled={v.stock <= 0}>
-                    {v.label}
-                    {v.stock <= 0 ? " (agotado)" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        {/* Cantidad: llevar más cuesta menos solo cuando hay descuento real por cantidad */}
-        {maxQty > 1 && (
-          <fieldset className="mt-3 space-y-2">
-            <legend className="sr-only">Cantidad</legend>
-            {Array.from({ length: maxQty }, (_, i) => i + 1).map((n) => {
-              const t = pack(n);
-              const active = q === n;
+        {/* Cantidad */}
+        <fieldset className="mt-4">
+          <legend className="text-[13px] font-semibold">¿Cuántas unidades?</legend>
+          <div className="mt-2 space-y-2">
+            {Array.from({ length: MAX_UNITS }, (_, i) => i + 1).map((n) => {
+              const t = packTotals(n);
+              const active = qty === n;
               return (
                 <label
                   key={n}
@@ -175,8 +178,70 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
                 </label>
               );
             })}
-          </fieldset>
-        )}
+          </div>
+          {pct2 > 0 && (
+            <p className="mt-2 text-[13px] text-muted">
+              Lleva 2 y ahorra {pct2} %, lleva 3 y ahorra {pct3} %. Puedes mezclar modelos y colores.
+            </p>
+          )}
+        </fieldset>
+
+        {/* Una fila por unidad: modelo y color */}
+        <div className="mt-4 space-y-3">
+          {units.map((u, i) => (
+            <div key={i} className="rounded-[14px] border-2 border-ink p-3">
+              <div className="flex items-center gap-3">
+                <Thumb product={u.product} variant={u.variant} />
+                <div className="min-w-0 flex-1">
+                  {qty > 1 && <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-muted">Unidad {i + 1}</p>}
+                  <p className="font-semibold leading-tight">{u.product.name}</p>
+                  <p className="text-[14px] text-muted">{u.product.variants.length > 1 ? u.variant.label : u.product.tagline}</p>
+                </div>
+                <p className="shrink-0 font-bold">{formatCOP(u.variant.priceCents)}</p>
+              </div>
+              <div className={`mt-3 grid gap-3 ${models.length > 1 && u.product.variants.length > 1 ? "sm:grid-cols-2" : ""}`}>
+                {models.length > 1 && (
+                  <label className={lbl}>
+                    Modelo
+                    <select
+                      value={u.product.slug}
+                      onChange={(e) => {
+                        const p = models.find((m) => m.slug === e.target.value);
+                        const v = p && firstAvailable(p);
+                        if (v) setPick(i, v.sku);
+                      }}
+                      className={input}
+                    >
+                      {models.map((m) => (
+                        <option key={m.slug} value={m.slug}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {u.product.variants.length > 1 && (
+                  <label className={lbl}>
+                    Color
+                    <select value={u.variant.sku} onChange={(e) => setPick(i, e.target.value)} className={input}>
+                      {u.product.variants.map((v) => (
+                        <option key={v.sku} value={v.sku} disabled={v.stock <= 0 || v.priceCents <= 0}>
+                          {v.label}
+                          {v.stock <= 0 ? " (agotado)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+            </div>
+          ))}
+          {short.length > 0 && (
+            <p role="alert" className="text-[14px] text-red-600">
+              No alcanzan las unidades: {short.join("; ")}. Cambia el color o el modelo de alguna unidad.
+            </p>
+          )}
+        </div>
 
         <ul className="mt-4 space-y-2 rounded-[14px] bg-soft/30 p-4">
           <Check>
@@ -282,7 +347,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
           )}
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || short.length > 0}
             className="mt-5 w-full rounded-button bg-action px-6 py-4 text-[16px] font-bold uppercase tracking-[0.05em] text-on-action hover:opacity-90 disabled:opacity-50"
           >
             {busy ? "Preparando el pago…" : `Pagar ${formatCOP(totals.totalCents)} con Wompi`}

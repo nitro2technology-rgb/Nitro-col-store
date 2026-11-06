@@ -26,14 +26,21 @@ export function HomeAfterHero({ hasReviews }: { hasReviews: boolean }) {
           </Link>
         )}
       </div>
-      <div data-theme="dark" className="mt-6 bg-[#4b5563]/90 text-[13px] text-white backdrop-blur-md">
-        <ul className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-x-10 gap-y-1 px-4 py-2.5 md:justify-between md:px-8">
-          <li className="flex items-center gap-2">{check} Envío a toda Colombia</li>
-          <li className="flex items-center gap-2">{check} Pago seguro con Wompi</li>
-          <li className="flex items-center gap-2">{check} Garantía y devoluciones</li>
-        </ul>
-      </div>
+      <PromiseStrip className="mt-6" />
     </>
+  );
+}
+
+/** Franja gris con tres promesas (portada de inicio y de cada categoría). */
+export function PromiseStrip({ className = "" }: { className?: string }) {
+  return (
+    <div data-theme="dark" className={`bg-[#4b5563]/90 text-[13px] text-white backdrop-blur-md ${className}`}>
+      <ul className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-x-10 gap-y-1 px-4 py-2.5 md:justify-between md:px-8">
+        <li className="flex items-center gap-2">{check} Envío a toda Colombia</li>
+        <li className="flex items-center gap-2">{check} Pago seguro con Wompi</li>
+        <li className="flex items-center gap-2">{check} Garantía y devoluciones</li>
+      </ul>
+    </div>
   );
 }
 
