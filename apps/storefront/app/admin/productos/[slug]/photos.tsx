@@ -1,5 +1,6 @@
 import { deletePhotoAction, movePhoto, uploadPhotos } from "../../actions";
 import { card, CardHead, thumb } from "../../ui";
+import { FilePicker } from "../../file-picker";
 
 export type PhotoRow = { id: string; url: string; alt: string };
 export type PhotoGroup = { key: string; title: string; hint: string; sku: string; kind: "card" | "gallery"; photos: PhotoRow[] };
@@ -54,22 +55,13 @@ export function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; can
         {g.photos.length === 0 && <p className="py-4 text-[14px] text-[#a0a0b2]">Sin fotos.</p>}
       </div>
       {canUpload && (
-        <form action={uploadPhotos} className="mt-3 flex flex-wrap items-center gap-3">
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="sku" value={g.sku} />
-          <input type="hidden" name="kind" value={g.kind} />
-          <input
-            type="file"
-            name="files"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            required
-            className="max-w-full text-[13px] file:mr-3 file:rounded-[8px] file:border file:border-[#dcdce6] file:bg-white file:px-3 file:py-1.5 file:text-[13px] file:font-semibold"
-          />
-          <button type="submit" className="rounded-[10px] bg-[#5b4fe0] px-4 py-1.5 text-[14px] font-semibold text-white hover:opacity-90">
-            Subir
-          </button>
-        </form>
+        <FilePicker
+          name={`files__${g.sku || "general"}__${g.kind}`}
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          form="fotos-todas"
+          text="Elegir fotos"
+        />
       )}
     </div>
   );

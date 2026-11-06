@@ -357,22 +357,28 @@ export async function rejectReturn(form: FormData) {
 
 // ───────────── Fotos ─────────────
 
-const MAX_PHOTOS_PER_SEND = 3;
+const MAX_PHOTOS_PER_SEND = 30;
 
 /** Sube hasta 3 fotos a un grupo: principales de un color (card), galería de un color (gallery) o generales del producto. */
 export async function uploadPhotos(form: FormData) {
   const slug = str(form, "slug");
   const path = `/admin/productos/${slug}`;
   const user = await requireAdmin(path);
-  const sku = str(form, "sku");
-  const kind = str(form, "kind") === "card" ? "card" : "gallery";
   const { storageConfigured, uploadPhoto, MAX_FILE_BYTES } = await import("@/lib/storage");
   if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para poder subir fotos." });
 
-  const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) back(path, { error: "Elige al menos una foto." });
-  if (files.length > MAX_PHOTOS_PER_SEND) back(path, { error: `Sube máximo ${MAX_PHOTOS_PER_SEND} fotos por vez.` });
-  if (files.some((f) => f.size > MAX_FILE_BYTES)) back(path, { error: "Cada foto debe pesar menos de 8 MB." });
+  // Campos "files__<sku o general>__<card|gallery>": todas las fotos de todos los colores se suben con un solo guardado.
+  const batches: { sku: string; kind: "card" | "gallery"; files: File[] }[] = [];
+  for (const key of new Set(form.keys())) {
+    const m = /^files__(.*)__(card|gallery)$/.exec(key);
+    if (!m) continue;
+    const files = form.getAll(key).filter((f): f is File => f instanceof File && f.size > 0);
+    if (files.length) batches.push({ sku: m[1] === "general" ? "" : m[1]!, kind: m[2] as "card" | "gallery", files });
+  }
+  const total = batches.reduce((n, b) => n + b.files.length, 0);
+  if (total === 0) back(path, { error: "Elige al menos una foto." });
+  if (total > MAX_PHOTOS_PER_SEND) back(path, { error: `Sube máximo ${MAX_PHOTOS_PER_SEND} fotos por vez.` });
+  if (batches.some((b) => b.files.some((f) => f.size > MAX_FILE_BYTES))) back(path, { error: "Cada foto debe pesar menos de 8 MB." });
 
   const d = await db();
   const product = await d.product.findUnique({
@@ -380,28 +386,30 @@ export async function uploadPhotos(form: FormData) {
     select: { id: true, name: true, variants: { where: { deletedAt: null }, select: { id: true, sku: true, label: true } } },
   });
   if (!product) back("/admin/productos", { error: "Producto no encontrado." });
-  const variant = sku ? product!.variants.find((v) => v.sku === sku) : undefined;
-  if (sku && !variant) back(path, { error: "Color no encontrado." });
+  if (batches.some((b) => b.sku && !product!.variants.find((v) => v.sku === b.sku))) back(path, { error: "Color no encontrado." });
 
   let done = 0;
   try {
-    for (const f of files) {
-      const url = await uploadPhoto(Buffer.from(await f.arrayBuffer()), slug);
-      const last = await d.productImage.aggregate({ where: { productId: product!.id }, _max: { position: true } });
-      const img = await d.productImage.create({
-        data: {
-          productId: product!.id,
-          variantId: variant?.id ?? null,
-          url,
-          alt: variant ? `${product!.name} ${variant.label}` : product!.name,
-          kind: variant ? kind : "gallery",
-          position: (last._max.position ?? -1) + 1,
-        },
-      });
-      await d.auditLog.create({
-        data: { actorId: user.id, action: "photo.add", entity: "product_image", entityId: img.id, changes: { slug, sku: sku || null, kind: img.kind, url } },
-      });
-      done++;
+    for (const bt of batches) {
+      const variant = bt.sku ? product!.variants.find((v) => v.sku === bt.sku) : undefined;
+      for (const f of bt.files) {
+        const url = await uploadPhoto(Buffer.from(await f.arrayBuffer()), slug);
+        const last = await d.productImage.aggregate({ where: { productId: product!.id }, _max: { position: true } });
+        const img = await d.productImage.create({
+          data: {
+            productId: product!.id,
+            variantId: variant?.id ?? null,
+            url,
+            alt: variant ? `${product!.name} ${variant.label}` : product!.name,
+            kind: variant ? bt.kind : "gallery",
+            position: (last._max.position ?? -1) + 1,
+          },
+        });
+        await d.auditLog.create({
+          data: { actorId: user.id, action: "photo.add", entity: "product_image", entityId: img.id, changes: { slug, sku: bt.sku || null, kind: img.kind, url } },
+        });
+        done++;
+      }
     }
   } catch (e) {
     console.error("[fotos] subida", e);
@@ -665,43 +673,50 @@ export async function deleteCategory(form: FormData) {
 
 // ───────────── Portadas de categoría ─────────────
 
-export async function saveCover(form: FormData) {
+/** Guarda de una vez las portadas de todas las categorías que tengan archivos nuevos, cambios de enlace o pedido de quitar la de celular. */
+export async function saveCovers(form: FormData) {
   const path = "/admin/portadas";
   const user = await requireAdmin(path);
-  const slug = str(form, "slug");
-  const hrefRaw = str(form, "href").slice(0, 200);
   const { storageConfigured, uploadCoverMedia, saveCover: put, removeCoverFiles, COVER_MAX_BYTES } = await import("@/lib/storage");
   const { getCover } = await import("@/lib/covers");
   if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para guardar portadas." });
-  if (hrefRaw && !/^(\/|https:\/\/)\S*$/.test(hrefRaw)) back(path, { error: "El enlace debe empezar por / (una página de la tienda) o por https://." });
   const d = await db();
-  if (!(await d.category.findFirst({ where: { slug, deletedAt: null }, select: { id: true } }))) back(path, { error: "Categoría no encontrada." });
-
+  const cats = await d.category.findMany({ where: { deletedAt: null }, select: { slug: true, name: true } });
   const file = (k: string) => {
     const f = form.get(k);
     return f instanceof File && f.size > 0 ? f : null;
   };
-  const desktop = file("media");
-  const mobile = file("mobile");
-  if ((desktop && desktop.size > COVER_MAX_BYTES) || (mobile && mobile.size > COVER_MAX_BYTES)) back(path, { error: "Cada archivo debe pesar menos de 20 MB." });
 
-  try {
-    const before = await getCover(slug, true);
-    const media = desktop ? await uploadCoverMedia(desktop, slug, 2400) : before?.media;
-    if (!media) back(path, { error: "Sube la imagen, el GIF o el video de la portada." });
-    const dropMobile = form.get("dropMobile") === "on";
-    const mobileMedia = mobile ? await uploadCoverMedia(mobile, slug, 1100) : dropMobile ? undefined : before?.mobile;
-    await put(slug, { media: media!, mobile: mobileMedia, href: hrefRaw || undefined });
-    // Borra los archivos que se reemplazaron o quitaron.
-    await removeCoverFiles(slug, [desktop ? before?.media.url : undefined, mobile || dropMobile ? before?.mobile?.url : undefined], false);
-    await d.auditLog.create({ data: { actorId: user.id, action: "cover.save", entity: "category", entityId: slug, changes: { slug } } });
-  } catch (e) {
-    if (e && typeof e === "object" && "digest" in e) throw e; // redirección de back()
-    console.error("[portadas] guardar", e);
-    back(path, { error: "No se pudo guardar la portada. Usa JPG, PNG, WebP, GIF, MP4 o WebM de menos de 20 MB." });
+  const saved: string[] = [];
+  const failed: string[] = [];
+  for (const c of cats) {
+    const slug = c.slug;
+    const desktop = file(`media__${slug}`);
+    const mobile = file(`mobile__${slug}`);
+    const dropMobile = form.get(`drop__${slug}`) === "on";
+    const hrefRaw = str(form, `href__${slug}`).slice(0, 200);
+    try {
+      const before = await getCover(slug, true);
+      const hrefChanged = hrefRaw !== (before?.href ?? "");
+      if (!desktop && !mobile && !dropMobile && !(before && hrefChanged)) continue; // sin cambios
+      if ((desktop && desktop.size > COVER_MAX_BYTES) || (mobile && mobile.size > COVER_MAX_BYTES)) throw new Error("pesa más de 20 MB");
+      if (hrefRaw && !/^(\/|https:\/\/)\S*$/.test(hrefRaw)) throw new Error("el enlace debe empezar por / o por https://");
+      const media = desktop ? await uploadCoverMedia(desktop, slug, 2400) : before?.media;
+      if (!media) throw new Error("falta la imagen, el GIF o el video");
+      const mobileMedia = mobile ? await uploadCoverMedia(mobile, slug, 1100) : dropMobile ? undefined : before?.mobile;
+      await put(slug, { media, mobile: mobileMedia, href: hrefRaw || undefined });
+      await removeCoverFiles(slug, [desktop ? before?.media.url : undefined, mobile || dropMobile ? before?.mobile?.url : undefined], false);
+      await d.auditLog.create({ data: { actorId: user.id, action: "cover.save", entity: "category", entityId: slug, changes: { slug } } });
+      saved.push(c.name);
+    } catch (e) {
+      console.error("[portadas] guardar", slug, e);
+      failed.push(`${c.name} (${e instanceof Error ? e.message : "error"})`);
+    }
   }
   revalidatePath("/", "layout");
-  back(path, { ok: "Portada guardada." });
+  if (failed.length) back(path, { error: `${saved.length ? `Guardadas: ${saved.join(", ")}. ` : ""}No se pudo guardar: ${failed.join("; ")}.` });
+  if (saved.length === 0) back(path, { error: "No hay cambios: elige al menos un archivo." });
+  back(path, { ok: saved.length === 1 ? `Portada de ${saved[0]} guardada.` : `${saved.length} portadas guardadas: ${saved.join(", ")}.` });
 }
 
 export async function removeCover(form: FormData) {

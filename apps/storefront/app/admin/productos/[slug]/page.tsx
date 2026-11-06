@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { addVariant, removeVariant, updateProduct } from "../../actions";
+import { addVariant, removeVariant, updateProduct, uploadPhotos } from "../../actions";
 import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } from "../../ui";
 import { getPalette } from "../../palette";
 import { storageConfigured } from "@/lib/storage";
@@ -142,6 +142,19 @@ export default async function ProductEdit({
             </VariantForm>
           ))}
           <UploadNotice enabled={canUpload} />
+          {canUpload && (
+            <>
+              <form id="fotos-todas" action={uploadPhotos}>
+                <input type="hidden" name="slug" value={p.slug} />
+              </form>
+              <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-[14px] border border-[#e6e6ee] bg-white/95 p-4 shadow-lg backdrop-blur">
+                <button type="submit" form="fotos-todas" className={primaryBtn}>
+                  Subir todas las fotos elegidas
+                </button>
+                <span className="text-[13px] text-[#6b6b80]">Elige las fotos en cada color (y en las generales de abajo) y súbelas todas con un solo clic.</span>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
