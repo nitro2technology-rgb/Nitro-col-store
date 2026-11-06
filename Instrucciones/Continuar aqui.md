@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 23 de octubre de 2026 (**tienda en vivo en Render** en `https://nitrocol.nitro2tech.com`, rama `main`; base de Supabase migrada y sembrada; gafas con diseño editorial, búsqueda, filtros, carrito desplegable)
+**Última actualización:** 6 de noviembre de 2026 (tienda en vivo en Render en `https://nitrocol.nitro2tech.com`, rama `main`; catálogo desde la base, inicio de sesión con Google activo, fichas estilo Apple de smartwatch y audífonos, **panel de administración v2** en `/admin` con resumen de ganancias, edición de productos, costos y devoluciones)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -167,7 +167,10 @@ Catálogo/              fotos originales (NO está en git)
 - **Productos:** `/admin/productos` en cuadrícula con foto, filtros (en la tienda, ocultos, poco stock, sin costo). `/admin/productos/[slug]`: por color → nombre, precio normal, precio de oferta (si hay, se cobra la oferta y el normal sale tachado: `priceCents` = cobrado, `compareAtCents` = normal), costo, stock, aviso de poco stock; ganancia por unidad, margen, invertido y ganancia si vende todo, calculados mientras se escribe (`variant-form.tsx`). Información: título, frase, descripción, disponibilidad (visible/oculto), destacado, especificaciones («Nombre: valor»), lo principal («Título | texto»), en la caja, etiquetas, video. El slug no cambia. Fotos: aún desde el código.
 - **Costos:** `inventory_items.unit_cost_cents` (no en `product_variants`, que es de lectura pública por la API de Supabase). El checkout congela el costo en `order_items.unit_cost_cents`; el comprador lee sus `order_items` por la API, así que su permiso pasa a ser por columnas sin el costo. Pedidos anteriores a esto no tienen costo (el resumen lo avisa).
 - **Devoluciones** (`OrderReturn`, `/admin/devoluciones`): se registran desde el pedido enviado/entregado (tipo retracto/garantía/otro, motivo, unidades) → pedido «Devolución solicitada». Recibir (opción de devolver al stock, con `StockMovement`) → «Devuelto». Cerrar con valor reembolsado → «Reembolsado» (el dinero se devuelve a mano en Wompi/transferencia); con 0 (cambio o reparación) → vuelve a «Entregado». Rechazar (con motivo) → «Entregado». Todo con historial y auditoría.
-- **Migración `20261106010000_costos_devoluciones`:** la aplica el dueño (`pnpm --filter @nitro/db exec prisma migrate deploy`). Sin ella el panel y el checkout fallan, así que se aplica **antes** de subir el código.
+- **Migración `20261106010000_costos_devoluciones`:** **ya aplicada a la base real** (6 nov 2026, por el dueño).
+- **Estado (6 nov 2026):** commit `79513ff`; el dueño hace el push. Probado en local con sesión de administrador y datos reales: resumen (este mes / 30 días), cuadrícula de productos, ficha de edición con cálculo de ganancia en vivo (sin guardar), pedidos, detalle con formulario de devolución, devoluciones (vacía). Consultas del resumen verificadas contra la base: ventas, cubetas por día/mes, más vendidos, inventario (762 unidades, 77 colores con stock **sin costo**).
+- **Sin probar todavía:** guardar un producto o un color (y verlo en la tienda), y el flujo completo de una devolución (registrar → recibir → cerrar). Hacerlo con un pedido de prueba, no con uno real.
+- **Falta en Render:** `ADMIN_EMAILS=nitro.2technology@gmail.com` y confirmar `CATALOG_SOURCE=db`.
 
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
@@ -223,18 +226,16 @@ Catálogo/              fotos originales (NO está en git)
 - **Rendimiento medido (23 oct):** `/c/gafas` ~0,5 s; 40 miniaturas nuevas en paralelo ≤0,5 s; HTML de categoría 138 KB comprimido. Aun así el dueño reporta que las fotos del catálogo y `Categorías → Moda` (~6 s) tardan en la primera carga. Sin diagnosticar: pedir la pestaña Network de Chrome (F12). Candidatas: portada de Moda (`moda/portada-1.webp` 445 KB y `portada-2.webp` 301 KB, sin optimizar y con `priority`; generar versión de ~1000 px), CPU del navegador (follaje animado y efecto vidrio), servicio dormido por falta de monitor.
 - **Riesgos:** (1) Supabase gratis **no hace copias de seguridad**: resolver antes de recibir pedidos reales; (2) Render gratis permite uso comercial, Vercel Hobby no; (3) 512 MB es justo: si vuelve a aparecer *Out of memory*, pasar al plan Starter (~7 USD/mes, 2 GB).
 
-## 6. Qué sigue (en este orden)
+## 6. Qué sigue (actualizado 6 nov 2026, en este orden)
 
-0. **Terminar el despliegue en Render:** confirmar el monitor de `/api/health`, diagnosticar la lentitud de Moda/fotos (sección 5d) y confirmar qué valor tiene `CATALOG_SOURCE` en el panel.
-1. **Probar la lectura desde la base** (`CATALOG_SOURCE=db`, sección 5d) y dejarla activa en producción (ya no se piensa en Vercel salvo que se necesite uso comercial gratis). Después, retirar `lib/products.ts`/`gafas-data.ts` como fuente (quedan solo para el seed) y decidir dónde viven las categorías (`cover`, `byColor`).
-2. **Cargar el Excel** `Datos de productos.xlsx` (precios reales, stock, peso, medidas, textos) a la base.
-3. **Capa de API** (NestJS según las especificaciones, o consultas desde el servidor de Next para empezar) con precios y stock validados en el servidor. El navegador nunca escribe pedidos, pagos ni inventario.
-4. **Carrito en el servidor** (hoy solo en `localStorage`): carrito de invitado con cookie firmada que se fusiona al iniciar sesión.
-5. **Autenticación** con Supabase Auth (activa `/ingresar` y `/cuenta`).
-6. **Checkout y pagos** (Wompi y/o Mercado Pago; el dueño debe elegir y crear cuenta de pruebas). Hoy "Ir a pagar" está **desactivado a propósito**.
-7. **Panel de administración** (subir productos, editar precios, elegir destacados) y **RLS por vendedor** para el marketplace.
-8. Envíos, facturación electrónica, emails transaccionales, cupones, "Avísame cuando llegue".
-9. **Beanies** (nueva categoría de Moda con su propia portada `cover`).
+1. **Verificar el despliegue del panel v2** tras el push: en Render poner `ADMIN_EMAILS` y confirmar `CATALOG_SOURCE=db`; entrar a `https://nitrocol.nitro2tech.com/admin`, guardar un precio de prueba y ver que cambia en la tienda.
+2. **Que el dueño registre el costo** de cada producto en el panel (filtro «Sin costo»). Sin eso no hay ganancia en el resumen.
+3. **Probar devoluciones** con un pedido de prueba: registrar, recibir con reingreso al stock, cerrar con reembolso y con 0.
+4. **Fotos desde el panel:** subir/ordenar/borrar fotos por color con Supabase Storage (hoy las fotos viven en `public/products` y en `product_images`). Conectar las imágenes nuevas de `imagenes/productos/<slug>/` (prompts en `Instrucciones/productos/`).
+5. **Crear productos y colores nuevos desde el panel** (hoy solo se editan los existentes).
+6. **Precios reales de gafas** (Excel `Datos de productos.xlsx`) y limpieza de pedidos de prueba (NC-4 en adelante, devolviendo el inventario).
+7. **Operación:** respaldos de Supabase, monitor de `/api/health`, reservas de stock con vencimiento y cancelar pedidos pendientes viejos, llaves de Wompi de producción, prueba en celular real.
+8. Más adelante: cupones, exportar pedidos, facturación electrónica, roles por vendedor (marketplace), Beanies.
 
 ## 7. Pendiente que no depende del código
 
