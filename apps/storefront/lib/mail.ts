@@ -72,6 +72,42 @@ export function customerEmail(order: MailOrder) {
   };
 }
 
+export type ShipmentInfo = { carrier: string; trackingNumber: string; trackingUrl?: string | null };
+
+/** Aviso al cliente de que su pedido salió, con la transportadora y la guía. */
+export function shippedEmail(order: MailOrder, s: ShipmentInfo) {
+  const a = (order.shippingAddress ?? {}) as Record<string, string>;
+  const guide = s.trackingUrl
+    ? `<a href="${esc(s.trackingUrl)}" style="color:#111">${esc(s.trackingNumber)}</a>`
+    : `<b>${esc(s.trackingNumber)}</b>`;
+  return {
+    subject: `Tu pedido NC-${order.number} va en camino`,
+    html: shell(
+      `¡Tu pedido va en camino, ${esc(String(a.name ?? "").split(" ")[0])}!`,
+      `<p style="line-height:1.5">Enviamos tu pedido <b>NC-${order.number}</b> con <b>${esc(s.carrier)}</b>.<br>Número de guía: ${guide}</p>
+       ${table(order)}
+       <h2 style="font-size:16px;margin:24px 0 8px">Dirección de envío</h2>
+       <p style="margin:0;line-height:1.5">${esc(a.line)}<br>${esc(a.city)}, ${esc(a.department)}</p>`,
+    ),
+  };
+}
+
+/** Envía el aviso de envío al cliente. Nunca lanza error: devuelve false si no se pudo. */
+export async function sendShippedEmail(order: MailOrder, s: ShipmentInfo) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(`[mail] Sin RESEND_API_KEY: no se envió el aviso de envío de NC-${order.number}`);
+    return false;
+  }
+  const mail = shippedEmail(order, s);
+  try {
+    await send([order.email], mail.subject, mail.html);
+    return true;
+  } catch (error) {
+    console.error(`[mail] Aviso de envío NC-${order.number}:`, error);
+    return false;
+  }
+}
+
 async function send(to: string[], subject: string, html: string, replyTo?: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

@@ -150,6 +150,16 @@ Catálogo/              fotos originales (NO está en git)
 - **Imágenes nuevas por sección:** prompts para generarlas en `Instrucciones/productos/` (uno por producto + README). El dueño las guarda en `imagenes/productos/<producto>/` con los nombres indicados; falta conectarlas (portada por color, `principal`, `cerca-<especificación>`): hoy cada sección toma fotos de `variant.images` por posición.
 - Sin probar en celular.
 
+## 5h. Panel de administración `/admin` (6 nov 2026, versión básica)
+
+- **Acceso** (`lib/admin.ts`): sesión con correo confirmado y correo en `ADMIN_EMAILS` (variable de entorno, separada por comas; hoy `nitro.2technology@gmail.com`) o perfil con rol `admin`/`super_admin`. Sin sesión → `/ingresar?next=/admin`; con sesión sin permiso → 404. Cada página y cada acción llama a `requireAdmin()`. El rol del perfil no lo puede cambiar el usuario (RLS solo permite actualizar nombre, teléfono y documento). "Mi cuenta" muestra el botón "Panel de administración" a los administradores.
+- **Resumen** (`/admin`): pedidos por enviar, ventas y pedidos pagados del mes, variantes con 3 o menos unidades.
+- **Pedidos** (`/admin/pedidos`, filtros por estado y búsqueda por NC-n o correo; detalle en `/admin/pedidos/[n]`): productos, totales, dirección, contacto (con enlace a WhatsApp), pago e historial. Acciones (`app/admin/actions.ts`): pagado → preparando → **enviado** (transportadora + guía + enlace opcional; crea `Shipment` y envía correo al cliente con `sendShippedEmail`) → entregado; cancelar solo si el pago sigue pendiente. Cada cambio usa `updateMany` con el estado esperado (no pisa cambios simultáneos), deja `OrderStatusHistory` con autor y `AuditLog`.
+- **Productos** (`/admin/productos`): precio, precio anterior (tachado) y stock por color, y orden de destacado en portada. Ajustes de stock quedan en `StockMovement`; todo en `AuditLog`. Tras guardar, `revalidatePath("/", "layout")` regenera la tienda. **Solo se ve en la tienda con `CATALOG_SOURCE=db`** (la página lo advierte si no está).
+- **Probado:** build de producción, redirección sin sesión y las consultas del panel contra la base real. **Sin probar con sesión de administrador** (lo prueba el dueño): ver el panel, guardar un precio y el flujo de envío con correo.
+- **Falta en Render:** `ADMIN_EMAILS=nitro.2technology@gmail.com`.
+- **Pendiente para versiones siguientes:** crear/editar productos y fotos, cupones, devoluciones y reembolsos, roles por vendedor (marketplace), exportar pedidos. El dueño iba a subir un archivo con sus instrucciones para el panel.
+
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
 - **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.

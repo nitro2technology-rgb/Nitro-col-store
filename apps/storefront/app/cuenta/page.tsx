@@ -3,30 +3,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatCOP } from "@nitro/shared";
 import { buttonClasses } from "@nitro/ui";
+import { isAdmin } from "@/lib/admin";
+import { dateFmt, ORDER_STATUS } from "@/lib/order-status";
 import { ensureProfile } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-const STATUS: Record<string, string> = {
-  pending_payment: "Pago pendiente",
-  paid: "Pagado",
-  processing: "Preparando",
-  shipped: "Enviado",
-  delivered: "Entregado",
-  cancelled: "Cancelado",
-  refunded: "Reembolsado",
-  return_requested: "Devolución solicitada",
-  returned: "Devuelto",
-};
-const fmt = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" });
-
 export default async function AccountPage() {
   const user = await currentUser();
   if (!user) redirect("/ingresar?next=/cuenta");
 
   const profile = await ensureProfile(user);
+  const admin = await isAdmin(user);
   const { db } = await import("@nitro/db");
   const orders = profile
     ? await db.order.findMany({
@@ -54,13 +44,21 @@ export default async function AccountPage() {
             <li key={o.number}>
               <Link href={`/pedido/NC-${o.number}`} className="glass flex flex-wrap items-center justify-between gap-3 rounded-card p-5 hover:opacity-90">
                 <span className="font-semibold">NC-{o.number}</span>
-                <span className="text-muted">{fmt.format(o.createdAt)}</span>
-                <span>{STATUS[o.status] ?? o.status}</span>
+                <span className="text-muted">{dateFmt.format(o.createdAt)}</span>
+                <span>{ORDER_STATUS[o.status] ?? o.status}</span>
                 <span className="font-semibold">{formatCOP(Number(o.totalCents))}</span>
               </Link>
             </li>
           ))}
         </ul>
+      )}
+
+      {admin && (
+        <p className="mt-12">
+          <Link href="/admin" className={buttonClasses("buy")}>
+            Panel de administración
+          </Link>
+        </p>
       )}
 
       <form action="/auth/salir" method="post" className="mt-12">
