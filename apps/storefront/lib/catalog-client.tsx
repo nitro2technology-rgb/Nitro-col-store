@@ -2,9 +2,9 @@
 
 import { createContext, useContext } from "react";
 import type { Product } from "@nitro/shared";
-import { findVariant as findIn, type SearchEntry } from "./products";
+import { findVariant as findIn, registerCategories, type ExtraCategory, type SearchEntry } from "./products";
 
-type ClientCatalog = { products: Product[]; searchIndex: SearchEntry[] };
+type ClientCatalog = { products: Product[]; searchIndex: SearchEntry[]; extraCategories?: ExtraCategory[] };
 
 const CatalogContext = createContext<ClientCatalog>({ products: [], searchIndex: [] });
 
@@ -12,8 +12,9 @@ const CatalogContext = createContext<ClientCatalog>({ products: [], searchIndex:
 let current: Product[] = [];
 
 /** Catálogo mínimo del navegador, calculado en el servidor (ver lib/catalog.ts). */
-export function CatalogProvider({ products, searchIndex, children }: ClientCatalog & { children: React.ReactNode }) {
+export function CatalogProvider({ products, searchIndex, extraCategories = [], children }: ClientCatalog & { children: React.ReactNode }) {
   current = products;
+  registerCategories(extraCategories); // las subcategorías del panel, también en el navegador
   return <CatalogContext.Provider value={{ products, searchIndex }}>{children}</CatalogContext.Provider>;
 }
 

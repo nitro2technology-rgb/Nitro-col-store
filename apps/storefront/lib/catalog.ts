@@ -4,7 +4,7 @@
 // última página buena si la regeneración falla, y en el build el error detiene el despliegue.
 import { cache } from "react";
 import { productSchema, type Product } from "@nitro/shared";
-import { buildSearchIndex, products as staticProducts, type SearchEntry } from "./products";
+import { buildSearchIndex, categories as staticCategories, products as staticProducts, registerCategories, type ExtraCategory, type SearchEntry } from "./products";
 
 const toImages = (rows: { url: string; alt: string }[]) =>
   rows.length > 0 ? rows.map((r) => ({ src: r.url, alt: r.alt })) : undefined;
@@ -67,9 +67,11 @@ async function loadFromDb(): Promise<Product[]> {
 }
 
 /** Todos los productos publicados. Se calcula una vez por petición/regeneración. */
-export const getProducts = cache(async (): Promise<Product[]> =>
-  process.env.CATALOG_SOURCE === "db" ? loadFromDb() : staticProducts,
-);
+export const getProducts = cache(async (): Promise<Product[]> => {
+  if (process.env.CATALOG_SOURCE !== "db") return staticProducts;
+  await getExtraCategories(); // las categorías del panel deben estar en el árbol antes de usar product.category
+  return loadFromDb();
+});
 
 /** Índice del buscador, ya calculado en el servidor para no enviar el catálogo completo al navegador. */
 export const getSearchIndex = cache(async (): Promise<SearchEntry[]> => buildSearchIndex(await getProducts()));
@@ -100,3 +102,20 @@ export const getCartCatalog = cache(async (): Promise<Product[]> =>
     })),
   })),
 );
+
+/**
+ * Subcategorías creadas en el panel (solo con CATALOG_SOURCE=db). Las registra en el árbol de categorías de este proceso;
+ * hay que esperarlo antes de renderizar menú, listas o fichas (layout y páginas lo llaman).
+ */
+export const getExtraCategories = cache(async (): Promise<ExtraCategory[]> => {
+  if (process.env.CATALOG_SOURCE !== "db") return [];
+  const { db } = await import("@nitro/db");
+  const rows = await db.category.findMany({
+    where: { deletedAt: null, parent: { slug: { in: staticCategories.map((c) => c.slug) }, deletedAt: null } },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: { slug: true, name: true, parent: { select: { slug: true } } },
+  });
+  const extra = rows.map((r) => ({ parent: r.parent!.slug, slug: r.slug, name: r.name }));
+  registerCategories(extra);
+  return extra;
+});

@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
 import { CatalogProvider } from "@/lib/catalog-client";
-import { getCartCatalog, getSearchIndex } from "@/lib/catalog";
+import { getCartCatalog, getExtraCategories, getSearchIndex } from "@/lib/catalog";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const interTight = Inter_Tight({
@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const extraCategories = await getExtraCategories();
   const [products, searchIndex] = await Promise.all([getCartCatalog(), getSearchIndex()]);
   return (
     <html lang="es-CO" className={`${inter.variable} ${interTight.variable}`} suppressHydrationWarning>
@@ -33,7 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
       </head>
       <body>
-        <CatalogProvider products={products} searchIndex={searchIndex}>
+        <CatalogProvider products={products} searchIndex={searchIndex} extraCategories={extraCategories}>
           <Intro />
           <Foliage />
           <SiteHeader />

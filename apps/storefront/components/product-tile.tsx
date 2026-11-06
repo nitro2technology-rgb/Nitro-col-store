@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatPrice, type Product } from "@nitro/shared";
 import { ImageCarousel } from "@/components/image-carousel";
 import { ProductArt } from "@/components/art/product-art";
-import { fromPrice, isEditorial, variantImages } from "@/lib/products";
+import { findCategory, fromPrice, isEditorial, variantImages } from "@/lib/products";
 
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
@@ -35,7 +35,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
         <ImageCarousel
           key={sku}
           images={images}
-          cover={product.category === "gafas"}
+          cover={findCategory(product.category)?.parent?.slug === "moda"}
           jumpTo={hover ? 1 : 0}
           sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
         />

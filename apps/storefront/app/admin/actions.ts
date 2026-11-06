@@ -611,3 +611,46 @@ export async function removeVariant(form: FormData) {
   revalidatePath("/", "layout");
   back(path, res ? { error: res } : { ok: `Color ${sku} quitado.` });
 }
+
+// ───────────── Categorías ─────────────
+
+/** Crea una subcategoría dentro de Moda o Tecnología. Hereda el diseño del padre (portada, lista por color, ficha corta). */
+export async function createCategory(form: FormData) {
+  const path = "/admin/categorias";
+  const user = await requireAdmin(path);
+  const name = str(form, "name").slice(0, 60);
+  const parentSlug = str(form, "parent");
+  const { categories, allCategorySlugs } = await import("@/lib/products");
+  if (name.length < 2) back(path, { error: "Escribe el nombre de la categoría." });
+  if (!categories.some((c) => c.slug === parentSlug)) back(path, { error: "Elige dentro de qué categoría va (Moda o Tecnología)." });
+  const slug = slugify(name);
+  if (!slug) back(path, { error: "El nombre debe tener letras o números." });
+  const d = await db();
+  const parent = await d.category.findFirst({ where: { slug: parentSlug, deletedAt: null } });
+  if (!parent) back(path, { error: "La categoría padre no existe en la base. Corre el seed." });
+  if (allCategorySlugs.includes(slug) || (await d.category.findUnique({ where: { slug }, select: { id: true } })))
+    back(path, { error: `Ya existe una categoría con la dirección «${slug}». Usa otro nombre.` });
+  const last = await d.category.aggregate({ where: { parentId: parent!.id }, _max: { position: true } });
+  const c = await d.category.create({
+    data: { name, slug, parentId: parent!.id, path: `${parent!.path}/${slug}`, position: (last._max.position ?? -1) + 1 },
+  });
+  await d.auditLog.create({ data: { actorId: user.id, action: "category.create", entity: "category", entityId: c.id, changes: { name, slug, parent: parentSlug } } });
+  revalidatePath("/", "layout");
+  back(path, { ok: `Categoría «${name}» creada dentro de ${parent!.name}. Ya puedes crear productos en ella.` });
+}
+
+/** Borra una subcategoría creada en el panel, solo si no tiene productos. Las del código no se pueden borrar. */
+export async function deleteCategory(form: FormData) {
+  const path = "/admin/categorias";
+  const user = await requireAdmin(path);
+  const { isBuiltInCategory } = await import("@/lib/products");
+  const d = await db();
+  const c = await d.category.findFirst({ where: { id: str(form, "id"), deletedAt: null }, include: { _count: { select: { products: true, children: true } } } });
+  if (!c) back(path, { error: "La categoría ya no existe." });
+  if (isBuiltInCategory(c!.slug)) back(path, { error: "Esa categoría viene en el código y no se borra desde el panel." });
+  if (c!._count.products > 0 || c!._count.children > 0) back(path, { error: `«${c!.name}» tiene productos: muévelos o ocúltalos antes de borrarla.` });
+  await d.category.delete({ where: { id: c!.id } });
+  await d.auditLog.create({ data: { actorId: user.id, action: "category.delete", entity: "category", entityId: c!.id, changes: { name: c!.name, slug: c!.slug } } });
+  revalidatePath("/", "layout");
+  back(path, { ok: `Categoría «${c!.name}» borrada.` });
+}

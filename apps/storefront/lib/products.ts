@@ -160,7 +160,33 @@ export const categories: CategoryNode[] = [
   },
 ];
 
-export const allCategorySlugs = categories.flatMap((c) => [c.slug, ...c.children.map((x) => x.slug)]);
+/** Subcategorías escritas en el código; las creadas en el panel se suman encima (registerCategories). */
+const staticChildren = new Map(categories.map((c) => [c.slug, [...c.children]]));
+
+/** true si la categoría viene escrita en el código (no se puede borrar desde el panel). */
+export const isBuiltInCategory = (slug: string) =>
+  [...staticChildren.entries()].some(([parent, kids]) => parent === slug || kids.some((k) => k.slug === slug));
+
+export type ExtraCategory = { parent: string; slug: string; name: string };
+
+/**
+ * Suma al árbol las subcategorías creadas en el panel (hijas de Moda o Tecnología). Hereda el diseño del padre:
+ * portada, lista por color y ficha corta. Es idempotente y reemplaza el registro anterior (si se borra una, desaparece).
+ * Debe ejecutarse antes de renderizar, en el servidor (lib/catalog.ts) y en el navegador (CatalogProvider).
+ */
+export function registerCategories(extra: ExtraCategory[]) {
+  for (const parent of categories) {
+    const own = staticChildren.get(parent.slug) ?? [];
+    const added = extra
+      .filter((e) => e.parent === parent.slug && !own.some((c) => c.slug === e.slug) && !categories.some((c) => c.slug === e.slug))
+      .map((e) => ({ slug: e.slug, name: e.name }));
+    parent.children = [...own, ...added];
+  }
+  allCategorySlugs.length = 0;
+  allCategorySlugs.push(...categories.flatMap((c) => [c.slug, ...c.children.map((x) => x.slug)]));
+}
+
+export const allCategorySlugs: string[] = categories.flatMap((c) => [c.slug, ...c.children.map((x) => x.slug)]);
 
 /** Devuelve la categoría (padre u hoja) y, si es hoja, su padre. */
 export function findCategory(slug: string) {

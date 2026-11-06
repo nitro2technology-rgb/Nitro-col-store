@@ -187,6 +187,14 @@ Catálogo/              fotos originales (NO está en git)
 - Las **categorías** no se crean desde el panel (siguen estáticas en `lib/products.ts` para portada/diseño): una categoría nueva requiere código. Un producto en una categoría de la base que no exista en `lib/products.ts` puede no mostrarse bien en la tienda.
 - **Sin probar:** crear un producto real, agregar y quitar un color. Hacerlo y luego ocultar el de prueba.
 
+### 5l. Categorías desde el panel (6 nov 2026, código listo, sin probar con sesión)
+
+- **`/admin/categorias`:** crear una **subcategoría dentro de Moda o Tecnología** (ej. Beanies en Moda) y borrar las creadas en el panel (solo sin productos; las del código —Gafas, Audífonos, Smartwatch— no se borran). Acciones `createCategory` / `deleteCategory`. Sin migración: usa la tabla `categories` (nombre, slug, `parent_id`, `path`).
+- **Diseño:** la subcategoría **hereda el del padre** (no se elige): en Moda, la misma portada, lista por color, tarjetas con foto «cover» (ahora para todo Moda, antes solo gafas) y ficha corta. Lo específico de gafas (5 características, «Lleva más y ahorra», descuento por cantidad, textos UV400) sigue **solo** para `category === "gafas"`. Tecnología nueva usa la ficha corta normal (las fichas Apple son solo de smartwatch y audífonos, mapa `SHOWCASE`).
+- **Cómo se cablea:** `lib/products.ts` tiene `registerCategories()`, que suma al árbol estático (`categories`) las subcategorías de la base, **en el sitio** (así menú, footer, portada, `findCategory`, `productsIn` e `isEditorial` las ven sin cambiar). El servidor la llama desde `getExtraCategories()` (`lib/catalog.ts`, que también corre dentro de `getProducts()`) y el navegador desde `CatalogProvider` con las que le pasa el layout. Solo con `CATALOG_SOURCE=db`.
+- **Límite:** una categoría de **primer nivel** nueva (otra «Moda») necesita su portada y diseño en código; no se crea desde el panel. Beanies usa la portada de Moda; si se quiere una propia, hay que agregarla en código.
+- Tras crearla: «Producto nuevo» ya la ofrece. La página `/c/<slug>` se genera al primer visitante (no estaba en `generateStaticParams`).
+
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
 - **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.

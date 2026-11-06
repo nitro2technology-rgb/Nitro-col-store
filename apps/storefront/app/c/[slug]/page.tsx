@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProducts } from "@/lib/catalog";
+import { getExtraCategories, getProducts } from "@/lib/catalog";
 import { allCategorySlugs, findCategory, productsIn } from "@/lib/products";
 import { CatalogGrid } from "@/components/catalog-grid";
 import { ModaHero } from "@/components/moda-hero";
@@ -13,6 +13,7 @@ export function generateStaticParams() {
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  await getExtraCategories();
   const found = findCategory(slug);
   if (!found) notFound();
 
