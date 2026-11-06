@@ -185,7 +185,10 @@ export async function updateVariant(form: FormData) {
   const cost = costRaw ? int(costRaw) : null;
   const stock = int(str(form, "stock"));
   const lowAt = int(str(form, "lowAt") || "3");
+  const swatchRaw = str(form, "swatch");
+  const swatch = swatchRaw ? swatchRaw.toLowerCase() : null;
 
+  if (swatch !== null && !/^#[0-9a-f]{6}$/.test(swatch)) back(path, { error: `${sku}: el color del círculo no es válido.` });
   if (!sku || label.length < 1) back(path, { error: "Falta el nombre del color o versión." });
   if (regular === null || offer === null || stock === null || lowAt === null || (costRaw && cost === null))
     back(path, { error: `${sku}: revisa los números (solo dígitos, sin decimales).` });
@@ -200,6 +203,7 @@ export async function updateVariant(form: FormData) {
     if (!v || v.product.slug !== slug) return false;
     const before = {
       label: v.label,
+      swatch: v.swatch,
       priceCents: v.priceCents,
       compareAtCents: v.compareAtCents,
       unitCostCents: v.inventory?.unitCostCents ?? null,
@@ -208,13 +212,14 @@ export async function updateVariant(form: FormData) {
     };
     const after = {
       label,
+      swatch,
       priceCents: charged * 100,
       compareAtCents: offer! > 0 ? regular! * 100 : null,
       unitCostCents: cost === null ? null : cost * 100,
       onHand: stock!,
       lowStockAt: lowAt!,
     };
-    await t.productVariant.update({ where: { id: v.id }, data: { label, priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
+    await t.productVariant.update({ where: { id: v.id }, data: { label, swatch, priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
     const inv = await t.inventoryItem.upsert({
       where: { variantId: v.id },
       update: { onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt, version: { increment: 1 } },
@@ -475,7 +480,7 @@ async function nextSku(t: Prisma.TransactionClient, slug: string) {
   throw new Error("Sin códigos libres");
 }
 
-type VariantInput = { label: string; regular: number; offer: number; cost: number | null; stock: number; lowAt: number; weight: number };
+type VariantInput = { swatch: string | null; label: string; regular: number; offer: number; cost: number | null; stock: number; lowAt: number; weight: number };
 
 /** Lee y valida los campos de un color; devuelve el texto del error si algo está mal. */
 function readVariant(form: FormData): VariantInput | string {
@@ -488,13 +493,15 @@ function readVariant(form: FormData): VariantInput | string {
   const stock = int(str(form, "stock") || "0");
   const lowAt = int(str(form, "lowAt") || "3");
   const weight = int(str(form, "weight") || "200");
+  const swatchRaw = str(form, "swatch").toLowerCase();
+  if (swatchRaw && !/^#[0-9a-f]{6}$/.test(swatchRaw)) return "El color del círculo no es válido.";
   if (!label) return "Falta el nombre del color o versión.";
   if (regular === null || offer === null || stock === null || lowAt === null || weight === null || (costRaw && cost === null))
     return "Revisa los números (solo dígitos, sin decimales).";
   if (regular < 1000 || regular > MAX_PRICE_PESOS || offer > MAX_PRICE_PESOS || (cost ?? 0) > MAX_PRICE_PESOS || stock > MAX_STOCK || lowAt > 1000 || weight < 1 || weight > 50_000)
     return "Algún valor está fuera de rango.";
   if (offer > 0 && offer >= regular) return "El precio de oferta debe ser menor que el precio normal (o déjalo vacío).";
-  return { label, regular, offer, cost, stock, lowAt, weight };
+  return { swatch: swatchRaw || null, label, regular, offer, cost, stock, lowAt, weight };
 }
 
 async function createVariant(t: Prisma.TransactionClient, productId: string, slug: string, v: VariantInput, actorId: string) {
@@ -505,6 +512,7 @@ async function createVariant(t: Prisma.TransactionClient, productId: string, slu
       productId,
       sku,
       label: v.label,
+      swatch: v.swatch,
       priceCents: (v.offer > 0 ? v.offer : v.regular) * 100,
       compareAtCents: v.offer > 0 ? v.regular * 100 : null,
       weightGrams: v.weight,

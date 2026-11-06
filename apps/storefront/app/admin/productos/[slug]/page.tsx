@@ -6,7 +6,7 @@ import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } fr
 import { storageConfigured } from "@/lib/storage";
 import { ColorFields } from "../color-fields";
 import { VariantForm, type VariantRow } from "../variant-form";
-import { PhotoManager, type PhotoGroup } from "./photos";
+import { Group, PhotoManager, UploadNotice, type PhotoGroup } from "./photos";
 
 const SOLD = ["paid", "processing", "shipped", "delivered", "return_requested"] as const;
 const pesos = (cents: number) => Math.round(cents / 100);
@@ -50,6 +50,7 @@ export default async function ProductEdit({
     return {
       sku: v.sku,
       label: v.label,
+      swatch: v.swatch,
       photo: photo ? { url: thumb(photo.url)!, alt: photo.alt } : undefined,
       regular: pesos(v.compareAtCents ?? v.priceCents),
       offer: v.compareAtCents ? pesos(v.priceCents) : null,
@@ -66,34 +67,33 @@ export default async function ProductEdit({
   const highlights = ((p.highlights ?? []) as { title: string; body: string }[]).map((h) => `${h.title} | ${h.body}`).join("\n");
   const inBox = ((p.inBox ?? []) as string[]).join("\n");
 
-  const groups: PhotoGroup[] = [
-    ...p.variants.flatMap((v): PhotoGroup[] => [
-      {
-        key: `${v.sku}-card`,
-        title: `${v.label} · fotos principales`,
-        hint: "Carrusel de la tarjeta y de la cabecera. La primera es la portada de este color.",
-        sku: v.sku,
-        kind: "card",
-        photos: p.images.filter((im) => im.variantId === v.id && im.kind === "card"),
-      },
-      {
-        key: `${v.sku}-gallery`,
-        title: `${v.label} · galería`,
-        hint: "Fotos adicionales de este color (por ejemplo, con modelo).",
-        sku: v.sku,
-        kind: "gallery",
-        photos: p.images.filter((im) => im.variantId === v.id && im.kind === "gallery"),
-      },
-    ]),
+  const canUpload = storageConfigured();
+  const groupsOf = (v: (typeof p.variants)[number]): PhotoGroup[] => [
     {
-      key: "general",
-      title: "Fotos generales del producto",
-      hint: "No pertenecen a un color en particular.",
-      sku: "",
+      key: `${v.sku}-card`,
+      title: "Fotos principales",
+      hint: "Carrusel de la tarjeta y de la cabecera. La primera es la portada de este color.",
+      sku: v.sku,
+      kind: "card",
+      photos: p.images.filter((im) => im.variantId === v.id && im.kind === "card"),
+    },
+    {
+      key: `${v.sku}-gallery`,
+      title: "Galería",
+      hint: "Fotos adicionales de este color (por ejemplo, con modelo).",
+      sku: v.sku,
       kind: "gallery",
-      photos: p.images.filter((im) => im.variantId === null),
+      photos: p.images.filter((im) => im.variantId === v.id && im.kind === "gallery"),
     },
   ];
+  const general: PhotoGroup = {
+    key: "general",
+    title: "Fotos generales del producto",
+    hint: "No pertenecen a un color en particular.",
+    sku: "",
+    kind: "gallery",
+    photos: p.images.filter((im) => im.variantId === null),
+  };
 
   return (
     <>
@@ -129,12 +129,17 @@ export default async function ProductEdit({
       <section className="mt-8">
         <CardHead
           title="Colores, precios y stock"
-          sub="Precios en pesos, sin puntos. La ganancia no descuenta la comisión de pago ni el envío. Cada color se guarda por separado."
+          sub="Cada color tiene su nombre, el color del círculo, precio, stock y fotos. «Guardar» guarda los datos de ese color; las fotos se suben, ordenan y borran al instante (guarda antes lo que hayas escrito)."
         />
         <div className="mt-4 space-y-4">
-          {rows.map((v) => (
-            <VariantForm key={v.sku} slug={p.slug} v={v} />
+          {rows.map((v, i) => (
+            <VariantForm key={v.sku} slug={p.slug} v={v}>
+              {groupsOf(p.variants[i]!).map((g) => (
+                <Group key={g.key} slug={p.slug} g={g} canUpload={canUpload} />
+              ))}
+            </VariantForm>
           ))}
+          <UploadNotice enabled={canUpload} />
         </div>
       </section>
 
@@ -172,7 +177,7 @@ export default async function ProductEdit({
         </details>
       )}
 
-      <PhotoManager slug={p.slug} groups={groups} enabled={storageConfigured()} />
+      <PhotoManager slug={p.slug} group={general} enabled={canUpload} />
 
       <form action={updateProduct} className={`${card} mt-10`}>
         <input type="hidden" name="slug" value={p.slug} />

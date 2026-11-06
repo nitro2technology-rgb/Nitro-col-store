@@ -187,6 +187,11 @@ Catálogo/              fotos originales (NO está en git)
 - Las **categorías** no se crean desde el panel (siguen estáticas en `lib/products.ts` para portada/diseño): una categoría nueva requiere código. Un producto en una categoría de la base que no exista en `lib/products.ts` puede no mostrarse bien en la tienda.
 - **Sin probar:** crear un producto real, agregar y quitar un color. Hacerlo y luego ocultar el de prueba.
 
+### 5m. Todo en la ficha del producto + color del círculo (6 nov 2026)
+
+- **Fotos dentro de cada color:** en `/admin/productos/[slug]`, cada tarjeta de color tiene arriba sus datos (nombre, círculo, precio, oferta, costo, stock) y debajo **sus fotos** (principales y galería: subir, ← →, ✕). Las fotos generales (sin color) van en su propia sección al final. Subir/ordenar/borrar una foto recarga la página: guarda antes lo escrito del color.
+- **Color del círculo:** cada color (existente o nuevo) tiene un selector de color (`swatch-input.tsx`, guarda hex `#rrggbb` en `product_variants.swatch`; «Quitar» = sin círculo). Se ve en la tienda donde ya se usaba `swatch`: botón de color de la cabecera (fichas normales) y círculos de la ficha Apple (smartwatch/audífonos). La ficha de Moda (gafas, beanies) elige color con miniaturas de foto y no muestra el círculo.
+
 ### 5l. Categorías desde el panel (6 nov 2026, código listo, sin probar con sesión)
 
 - **`/admin/categorias`:** crear una **subcategoría dentro de Moda o Tecnología** (ej. Beanies en Moda) y borrar las creadas en el panel (solo sin productos; las del código —Gafas, Audífonos, Smartwatch— no se borran). Acciones `createCategory` / `deleteCategory`. Sin migración: usa la tabla `categories` (nombre, slug, `parent_id`, `path`).

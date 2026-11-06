@@ -7,7 +7,7 @@ export type PhotoGroup = { key: string; title: string; hint: string; sku: string
 const mini =
   "grid size-7 place-items-center rounded-[8px] border border-[#dcdce6] bg-white text-[14px] leading-none text-[#1d1b3a] hover:border-[#5b4fe0] hover:text-[#5b4fe0]";
 
-function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; canUpload: boolean }) {
+export function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; canUpload: boolean }) {
   return (
     <div className="border-t border-[#ececf3] pt-5 first:border-t-0 first:pt-0">
       <h3 className="text-[15px] font-semibold text-[#1d1b3a]">{g.title}</h3>
@@ -75,23 +75,23 @@ function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; canUpload:
   );
 }
 
-export function PhotoManager({ slug, groups, enabled }: { slug: string; groups: PhotoGroup[]; enabled: boolean }) {
+/** Fotos generales del producto (las de cada color van dentro de su tarjeta de color). */
+export function PhotoManager({ slug, group, enabled }: { slug: string; group: PhotoGroup; enabled: boolean }) {
   return (
     <section className={`${card} mt-10`}>
-      <CardHead
-        title="Fotos"
-        sub="JPG, PNG o WebP, hasta 3 fotos por vez (8 MB cada una). Se convierten solas a un formato liviano. Cuadradas y con fondo claro se ven mejor."
-      />
-      {!enabled && (
-        <p className="mt-4 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">
-          Para subir fotos falta la variable <code>SUPABASE_SERVICE_ROLE_KEY</code> en el servidor. Mientras tanto puedes ordenar y quitar fotos.
-        </p>
-      )}
-      <div className="mt-5 space-y-5">
-        {groups.map((g) => (
-          <Group key={g.key} slug={slug} g={g} canUpload={enabled} />
-        ))}
+      <CardHead title="Fotos generales" sub="Las fotos de cada color se cambian arriba, dentro de su color. Aquí van las que no son de un color en particular." />
+      <div className="mt-5">
+        <Group slug={slug} g={group} canUpload={enabled} />
       </div>
     </section>
+  );
+}
+
+export function UploadNotice({ enabled }: { enabled: boolean }) {
+  if (enabled) return null;
+  return (
+    <p className="mt-4 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">
+      Para subir fotos falta la variable <code>SUPABASE_SERVICE_ROLE_KEY</code> en el servidor. Mientras tanto puedes ordenar y quitar fotos.
+    </p>
   );
 }

@@ -4,10 +4,12 @@ import { useState } from "react";
 import { formatCOP } from "@nitro/shared";
 import { updateVariant } from "../actions";
 import { field, label, primaryBtn } from "../ui";
+import { SwatchInput } from "./swatch-input";
 
 export type VariantRow = {
   sku: string;
   label: string;
+  swatch: string | null;
   photo?: { url: string; alt: string };
   /** En pesos (sin centavos), como se escriben en el formulario. */
   regular: number;
@@ -25,7 +27,7 @@ const num = (s: string) => {
 const money = (pesos: number) => formatCOP(pesos * 100);
 
 /** Un color del producto: precios, costo y stock, con la ganancia calculada mientras se escribe. */
-export function VariantForm({ slug, v }: { slug: string; v: VariantRow }) {
+export function VariantForm({ slug, v, children }: { slug: string; v: VariantRow; children?: React.ReactNode }) {
   const [regular, setRegular] = useState(String(v.regular));
   const [offer, setOffer] = useState(v.offer ? String(v.offer) : "");
   const [cost, setCost] = useState(v.cost != null ? String(v.cost) : "");
@@ -42,7 +44,8 @@ export function VariantForm({ slug, v }: { slug: string; v: VariantRow }) {
   const offerInvalid = !!offer && (o === null || (r !== null && o >= r));
 
   return (
-    <form action={updateVariant} className="rounded-[14px] border border-[#e6e6ee] bg-white">
+    <div className="rounded-[14px] border border-[#e6e6ee] bg-white">
+    <form action={updateVariant}>
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="sku" value={v.sku} />
       <div className="grid gap-5 p-5 md:grid-cols-[120px_1fr]">
@@ -58,6 +61,7 @@ export function VariantForm({ slug, v }: { slug: string; v: VariantRow }) {
             <input name="label" required maxLength={60} defaultValue={v.label} className={`${field} mt-1`} />
             <span className="mt-1 block text-[12px] font-normal text-[#a0a0b2]">Código {v.sku}</span>
           </label>
+          <SwatchInput defaultValue={v.swatch} />
           <label className={label}>
             Stock (unidades)
             <input name="stock" inputMode="numeric" required value={stock} onChange={(e) => setStock(e.target.value)} className={`${field} mt-1`} />
@@ -110,6 +114,8 @@ export function VariantForm({ slug, v }: { slug: string; v: VariantRow }) {
         <Figure term="Ganancia si vendes todo" value={profit != null ? money(profit * s) : "—"} tone={profit != null && profit <= 0 ? "bad" : undefined} />
       </dl>
     </form>
+    {children && <div className="space-y-5 border-t border-[#e6e6ee] p-5">{children}</div>}
+    </div>
   );
 }
 

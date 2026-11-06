@@ -1,4 +1,5 @@
 import { field, label } from "../ui";
+import { SwatchInput } from "./swatch-input";
 
 /** Campos de un color (los usa también «Agregar un color» en la ficha). */
 export function ColorFields() {
@@ -8,6 +9,7 @@ export function ColorFields() {
         Nombre del color
         <input name="label" required maxLength={60} placeholder="Ej. Negro" className={`${field} mt-1`} />
       </label>
+      <SwatchInput />
       <label className={label}>
         Precio normal
         <input name="price" required inputMode="numeric" placeholder="65000" className={`${field} mt-1`} />
