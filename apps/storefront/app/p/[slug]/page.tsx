@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CtaBand } from "@/components/buy-cta";
 import { Foliage } from "@/components/foliage";
+import { BenefitsMarquee, ProductAccordion, QualityMarquee, TrustStrip } from "@/components/product-extras";
+import { ProductGallery } from "@/components/product-gallery";
 import { ProductHero } from "@/components/product-hero";
 import { ProductVideo } from "@/components/product-media";
 import { ProductStory } from "@/components/product-story";
@@ -99,6 +102,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ShowcaseHero product={product} tone={tone} />
           <ShowcaseHighlights product={product} />
           <ShowcaseCloseLook product={product} />
+          <ProductGallery product={product} titleClass="text-[clamp(32px,5vw,56px)] font-semibold tracking-[-0.009em] text-[var(--sc-text)]" />
           {product.videoUrl && (
             <section id="video" className="mx-auto max-w-[1024px] scroll-mt-28 px-6 py-24">
               <h2 className="text-[clamp(32px,5vw,56px)] font-semibold tracking-[-0.009em] text-[var(--sc-text)]">En acción.</h2>
@@ -107,10 +111,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
             </section>
           )}
+          <BenefitsMarquee product={product} />
+          <CtaBand product={product} />
+          <ProductAccordion product={product} />
+          <TrustStrip />
           {/* Reseñas y recomendados usan la misma columna de 1024 px que el resto de esta ficha. */}
-          <div id="resenas" className="scroll-mt-28 pt-4 [&>section]:max-w-[1024px]">
+          <div id="resenas" className="scroll-mt-28 pt-12 [&>section]:max-w-[1024px]">
             <Reviews reviews={reviews} slug={product.slug} titleClass={`${h2} font-semibold tracking-[-0.009em]`} />
           </div>
+          <CtaBand product={product} />
+          <QualityMarquee />
           <ShowcaseInfo />
           <div className="[&>section]:max-w-[1024px]">{recommended}</div>
         </div>
@@ -138,6 +148,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           </section>
         )}
+
+        <BenefitsMarquee product={product} />
+        <CtaBand product={product} />
+        <ProductAccordion product={product} />
+        <TrustStrip />
+        <QualityMarquee />
 
         {recommended}
       </div>

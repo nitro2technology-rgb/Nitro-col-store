@@ -689,3 +689,46 @@ html:not([data-intro-seen]) .hero .brand-write {
 @media (prefers-reduced-motion: reduce) {
   .watch-fade { animation: none; }
 }
+
+/* ───────────── Banners en movimiento y llamados a comprar ───────────── */
+
+/* Cinta que se desplaza de derecha a izquierda sin cortes: el contenido va duplicado y se mueve la mitad. */
+.marquee { overflow: hidden; }
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-move var(--marquee-speed, 38s) linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee-move {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Botón que palpita cada 3 segundos, como llamando a la acción. */
+.cta-pulse { animation: cta-pulse 3s ease-in-out infinite; }
+.cta-pulse:hover, .cta-pulse:focus-visible { animation: none; }
+@keyframes cta-pulse {
+  0%, 62%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(0 0 0 / 0); }
+  70% { transform: scale(1.045); box-shadow: 0 0 0 0 rgb(0 0 0 / 0.35); }
+  86% { transform: scale(1); box-shadow: 0 0 0 16px rgb(0 0 0 / 0); }
+}
+[data-theme="dark"] .cta-pulse, .showcase-dark .cta-pulse { animation-name: cta-pulse-dark; }
+@keyframes cta-pulse-dark {
+  0%, 62%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(255 255 255 / 0); }
+  70% { transform: scale(1.045); box-shadow: 0 0 0 0 rgb(255 255 255 / 0.45); }
+  86% { transform: scale(1); box-shadow: 0 0 0 16px rgb(255 255 255 / 0); }
+}
+
+/* Ola negra sobre la cinta final de las fichas. */
+.wave-top {
+  height: 34px;
+  background: #111827;
+  -webkit-mask: radial-gradient(60% 100% at 50% 100%, #000 99%, transparent 100%);
+  mask: radial-gradient(60% 100% at 50% 100%, #000 99%, transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; }
+  .marquee-track, .cta-pulse { animation: none !important; }
+}

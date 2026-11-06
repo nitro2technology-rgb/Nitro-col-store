@@ -6,6 +6,8 @@ import { Foliage } from "@/components/foliage";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BackButton } from "@/components/back-button";
+import { AnnouncementBar } from "@/components/announcement-bar";
+import { OrderModal } from "@/components/order-modal";
 import { CatalogProvider } from "@/lib/catalog-client";
 import { getCartCatalog, getExtraCategories, getSearchIndex } from "@/lib/catalog";
 
@@ -37,10 +39,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CatalogProvider products={products} searchIndex={searchIndex} extraCategories={extraCategories}>
           <Intro />
           <Foliage />
+          <AnnouncementBar />
           <SiteHeader />
           {children}
           <SiteFooter />
           <BackButton />
+          <OrderModal />
         </CatalogProvider>
       </body>
     </html>

@@ -1,6 +1,8 @@
 "use client";
 
 import { PriceTag } from "./price-tag";
+import { BuyCta } from "@/components/buy-cta";
+import { useOrderModal } from "@/lib/order-modal";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,14 +32,11 @@ export function ProductHero({ product, more = [] }: { product: Product; more?: R
 
   const router = useRouter();
   const addToCart = useCart((s) => s.add);
+  const openOrder = useOrderModal((s) => s.open);
   const [notice, setNotice] = useState<"added" | "max" | null>(null);
 
   const add = () => {
     setNotice(addToCart(variant.sku) > 0 ? "added" : "max");
-  };
-  const buyNow = () => {
-    addToCart(variant.sku);
-    router.push("/carrito");
   };
 
   // Al cambiar de variante se limpia el aviso anterior.
@@ -180,7 +179,7 @@ export function ProductHero({ product, more = [] }: { product: Product; more?: R
               <Button variant="ghost">Avísame cuando llegue</Button>
             ) : (
               <>
-                <Button onClick={buyNow}>Comprar ahora</Button>
+                <BuyCta product={product} />
                 <Button variant="ghost" onClick={add}>
                   Agregar al carrito
                 </Button>
@@ -202,7 +201,7 @@ export function ProductHero({ product, more = [] }: { product: Product; more?: R
             <p className="truncate text-[15px] font-semibold">{product.name}</p>
             <PriceTag priceCents={variant.priceCents} compareAtCents={variant.compareAtCents} className="text-[15px] text-muted" />
           </div>
-          <Button disabled={soldOut || !priced} onClick={buyNow} tabIndex={barVisible ? 0 : -1}>
+          <Button disabled={soldOut || !priced} onClick={() => openOrder(variant.sku)} tabIndex={barVisible ? 0 : -1}>
             {!priced ? "Próximamente" : soldOut ? "Agotado" : "Comprar"}
           </Button>
         </div>

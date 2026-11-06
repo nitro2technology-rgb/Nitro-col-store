@@ -11,7 +11,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatPrice, type Product, type ProductImage } from "@nitro/shared";
 import { Button } from "@nitro/ui";
+import { BuyCta } from "@/components/buy-cta";
 import { useVariant } from "@/components/variant-context";
+import { useOrderModal } from "@/lib/order-modal";
 import { useCart } from "@/lib/cart";
 import { FREE_SHIPPING_FROM_CENTS } from "@/lib/pricing";
 
@@ -56,7 +58,7 @@ function useBuy(sku: string) {
 /** Barra del producto, fija bajo el menú: nombre, secciones y compra. */
 export function ShowcaseNav({ product, sections }: { product: Product; sections: { id: string; label: string }[] }) {
   const { variant } = useShowcase(product);
-  const { buyNow } = useBuy(variant.sku);
+  const openOrder = useOrderModal((s) => s.open);
   const canBuy = variant.priceCents > 0 && variant.stock > 0;
   return (
     <nav
@@ -74,7 +76,7 @@ export function ShowcaseNav({ product, sections }: { product: Product; sections:
             </li>
           ))}
         </ul>
-        <Button onClick={buyNow} disabled={!canBuy} className="!px-3 !py-1 !text-[12px]">
+        <Button onClick={() => openOrder(variant.sku)} disabled={!canBuy} className="!px-3 !py-1 !text-[12px]">
           {canBuy ? "Comprar" : variant.priceCents > 0 ? "Agotado" : "Próximamente"}
         </Button>
       </div>
@@ -85,7 +87,7 @@ export function ShowcaseNav({ product, sections }: { product: Product; sections:
 /** Portada: nombre pequeño, titular enorme, el producto y la compra centrada debajo. */
 export function ShowcaseHero({ product, tone }: { product: Product; tone: ShowcaseTone }) {
   const { variant, photos, setSku } = useShowcase(product);
-  const { notice, add, buyNow } = useBuy(variant.sku);
+  const { notice, add } = useBuy(variant.sku);
   const hero = photos[0];
   const soldOut = variant.stock === 0;
   const priced = variant.priceCents > 0;
@@ -157,7 +159,7 @@ export function ShowcaseHero({ product, tone }: { product: Product; tone: Showca
             <Button variant="ghost">Avísame cuando llegue</Button>
           ) : (
             <>
-              <Button onClick={buyNow}>Comprar</Button>
+              <BuyCta product={product} />
               <Button variant="ghost" onClick={add}>
                 Agregar al carrito
               </Button>
