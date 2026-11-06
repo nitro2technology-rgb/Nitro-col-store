@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@nitro/ui";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { GoogleButton } from "./google-button";
 
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
 const showApple = process.env.NEXT_PUBLIC_AUTH_APPLE === "1";
@@ -23,10 +24,10 @@ export function AuthForm({ next }: { next: string }) {
     setInfo("");
   };
 
-  async function oauth(provider: "google" | "apple") {
+  async function apple() {
     setError("");
-    const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider, options: { redirectTo: callback() } });
-    if (error) setError(`No se pudo iniciar con ${provider === "google" ? "Google" : "Apple"}.`);
+    const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider: "apple", options: { redirectTo: callback() } });
+    if (error) setError("No se pudo iniciar con Apple.");
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -71,11 +72,9 @@ export function AuthForm({ next }: { next: string }) {
 
       {mode !== "reset" && (
         <div className="mt-5 space-y-3">
-          <Button type="button" variant="ghost" className="w-full" onClick={() => oauth("google")}>
-            Continuar con Google
-          </Button>
+          <GoogleButton next={next} callback={callback} onError={setError} />
           {showApple && (
-            <Button type="button" variant="ghost" className="w-full" onClick={() => oauth("apple")}>
+            <Button type="button" variant="ghost" className="w-full" onClick={apple}>
               Continuar con Apple
             </Button>
           )}
