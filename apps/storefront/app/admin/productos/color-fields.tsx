@@ -1,15 +1,16 @@
 import { field, label } from "../ui";
+import type { PaletteColor } from "../palette";
 import { SwatchInput } from "./swatch-input";
 
 /** Campos de un color (los usa también «Agregar un color» en la ficha). */
-export function ColorFields() {
+export function ColorFields({ palette }: { palette: { popular: PaletteColor[]; basics: PaletteColor[] } }) {
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <label className={label}>
         Nombre del color
         <input name="label" required maxLength={60} placeholder="Ej. Negro" className={`${field} mt-1`} />
       </label>
-      <SwatchInput />
+      <SwatchInput popular={palette.popular} basics={palette.basics} />
       <label className={label}>
         Precio normal
         <input name="price" required inputMode="numeric" placeholder="65000" className={`${field} mt-1`} />

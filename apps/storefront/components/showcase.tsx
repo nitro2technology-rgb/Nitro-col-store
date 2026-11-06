@@ -4,6 +4,7 @@
 // (audífonos, "Para los audifonos"). Titulares grandes, tarjetas de 28 px sin sombra y color solo en las cifras.
 // Los colores de cada tono son variables --sc-* definidas en globals.css (.showcase-dark / .showcase-light).
 // Compra, carrito y precios son los de la tienda.
+import { PriceTag } from "./price-tag";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -164,7 +165,7 @@ export function ShowcaseHero({ product, tone }: { product: Product; tone: Showca
           )}
         </div>
         <div className="text-[14px] font-semibold leading-[18px] text-[var(--sc-text)]" aria-live="polite">
-          <p>{priced ? formatPrice(variant.priceCents) : "Precio por definir"}</p>
+          <p>{priced ? <PriceTag priceCents={variant.priceCents} compareAtCents={variant.compareAtCents} /> : "Precio por definir"}</p>
           <p className="mt-1 font-normal text-[var(--sc-muted)]">
             {notice === "added" ? (
               <>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { createProduct } from "../../actions";
 import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../../ui";
+import { getPalette } from "../../palette";
 import { ColorFields } from "../color-fields";
 
 export const metadata = { title: "Producto nuevo" };
@@ -11,6 +12,7 @@ export default async function NewProduct({ searchParams }: { searchParams: Promi
   const { ok, error } = await searchParams;
   const { db } = await import("@nitro/db");
   const all = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], include: { _count: { select: { children: true } } } });
+  const palette = await getPalette();
   const names = new Map(all.map((c) => [c.id, c.name]));
   const leaves = all.filter((c) => c._count.children === 0).map((c) => ({ id: c.id, text: c.parentId ? `${names.get(c.parentId)} › ${c.name}` : c.name }));
 
@@ -60,7 +62,7 @@ export default async function NewProduct({ searchParams }: { searchParams: Promi
 
         <h2 className="mt-8 text-[17px] font-semibold text-[#1d1b3a]">Primer color o versión</h2>
         <p className="text-[13px] text-[#6b6b80]">Precios en pesos, sin puntos. Más colores se agregan después, en la ficha del producto.</p>
-        <ColorFields />
+        <ColorFields palette={palette} />
         <div className="mt-6">
           <button type="submit" className={primaryBtn}>
             Crear producto

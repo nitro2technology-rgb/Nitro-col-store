@@ -1,5 +1,6 @@
 "use client";
 
+import { PriceTag } from "./price-tag";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -146,17 +147,7 @@ export function ProductHero({ product, more = [] }: { product: Product; more?: R
           )}
 
           <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-[32px] font-semibold tracking-[-0.02em]">
-              {formatPrice(variant.priceCents)}
-            </span>
-            {variant.compareAtCents && (
-              <>
-                <span className="text-[17px] text-muted line-through">
-                  {formatCOP(variant.compareAtCents)}
-                </span>
-                <Badge>-{discount}%</Badge>
-              </>
-            )}
+            <PriceTag priceCents={variant.priceCents} compareAtCents={variant.compareAtCents} className="text-[32px] font-semibold tracking-[-0.02em]" />
           </div>
 
           {gafas && <GafasUpsell items={more} />}
@@ -209,7 +200,7 @@ export function ProductHero({ product, more = [] }: { product: Product; more?: R
         <div className="flex items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold">{product.name}</p>
-            <p className="text-[15px] text-muted">{formatPrice(variant.priceCents)}</p>
+            <PriceTag priceCents={variant.priceCents} compareAtCents={variant.compareAtCents} className="text-[15px] text-muted" />
           </div>
           <Button disabled={soldOut || !priced} onClick={buyNow} tabIndex={barVisible ? 0 : -1}>
             {!priced ? "Próximamente" : soldOut ? "Agotado" : "Comprar"}

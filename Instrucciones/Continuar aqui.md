@@ -192,6 +192,11 @@ Catálogo/              fotos originales (NO está en git)
 - **Fotos dentro de cada color:** en `/admin/productos/[slug]`, cada tarjeta de color tiene arriba sus datos (nombre, círculo, precio, oferta, costo, stock) y debajo **sus fotos** (principales y galería: subir, ← →, ✕). Las fotos generales (sin color) van en su propia sección al final. Subir/ordenar/borrar una foto recarga la página: guarda antes lo escrito del color.
 - **Color del círculo:** cada color (existente o nuevo) tiene un selector de color (`swatch-input.tsx`, guarda hex `#rrggbb` en `product_variants.swatch`; «Quitar» = sin círculo). Se ve en la tienda donde ya se usaba `swatch`: botón de color de la cabecera (fichas normales) y círculos de la ficha Apple (smartwatch/audífonos). La ficha de Moda (gafas, beanies) elige color con miniaturas de foto y no muestra el círculo.
 
+### 5n. Paleta de colores y precio con oferta en todas partes (6 nov 2026)
+
+- **Paleta** (`app/admin/palette.ts`, sin tabla nueva): «Más usados en la tienda» sale de los círculos ya guardados en `product_variants.swatch` (agrupados por color, con el nombre más usado, hasta 14) y «Básicos» son 16 colores predeterminados. Al elegir uno se rellena el círculo y, si está vacío, el nombre. El selector grande crea un color nuevo, que al guardarse pasa solo a «Más usados».
+- **Oferta visible en todos los productos:** componente único `components/price-tag.tsx` (precio + precio original tachado + «-X%»), usado en cabecera y barra móvil de la ficha, tarjetas de lista/recomendados, fichas Apple y carrito. Solo aparece lo tachado si el color tiene **precio de oferta** (`compareAtCents` > `priceCents`, se pone en el panel). No se inventa un «precio original» donde no hay oferta (sería publicidad engañosa). El mini carrito sigue mostrando solo el total.
+
 ### 5l. Categorías desde el panel (6 nov 2026, código listo, sin probar con sesión)
 
 - **`/admin/categorias`:** crear una **subcategoría dentro de Moda o Tecnología** (ej. Beanies en Moda) y borrar las creadas en el panel (solo sin productos; las del código —Gafas, Audífonos, Smartwatch— no se borran). Acciones `createCategory` / `deleteCategory`. Sin migración: usa la tabla `categories` (nombre, slug, `parent_id`, `path`).

@@ -1,5 +1,6 @@
 "use client";
 
+import { PriceTag } from "./price-tag";
 import { useState } from "react";
 import Link from "next/link";
 import { formatPrice, type Product } from "@nitro/shared";
@@ -44,7 +45,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
             {product.name}
             {product.variants.length > 1 && <span className="block text-muted">{chosen.label}</span>}
           </p>
-          <p className="shrink-0 text-right">{formatPrice(chosen.priceCents)}</p>
+          <p className="shrink-0 text-right"><PriceTag priceCents={chosen.priceCents} compareAtCents={chosen.compareAtCents} className="justify-end" /></p>
         </div>
       </Link>
     );
@@ -69,7 +70,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
         {!showColor && <p className="mt-2 line-clamp-2 text-[15px] leading-[1.45] text-muted">{product.description}</p>}
         <p className="mt-4 text-[19px] font-semibold">
           {showColor && chosen
-            ? formatPrice(chosen.priceCents)
+            ? <PriceTag priceCents={chosen.priceCents} compareAtCents={chosen.compareAtCents} />
             : fromPrice(product) > 0
               ? `Desde ${formatPrice(fromPrice(product))}`
               : formatPrice(0)}

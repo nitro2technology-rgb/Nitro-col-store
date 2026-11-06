@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { addVariant, removeVariant, updateProduct } from "../../actions";
 import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } from "../../ui";
+import { getPalette } from "../../palette";
 import { storageConfigured } from "@/lib/storage";
 import { ColorFields } from "../color-fields";
 import { VariantForm, type VariantRow } from "../variant-form";
@@ -68,6 +69,7 @@ export default async function ProductEdit({
   const inBox = ((p.inBox ?? []) as string[]).join("\n");
 
   const canUpload = storageConfigured();
+  const palette = await getPalette();
   const groupsOf = (v: (typeof p.variants)[number]): PhotoGroup[] => [
     {
       key: `${v.sku}-card`,
@@ -133,7 +135,7 @@ export default async function ProductEdit({
         />
         <div className="mt-4 space-y-4">
           {rows.map((v, i) => (
-            <VariantForm key={v.sku} slug={p.slug} v={v}>
+            <VariantForm key={v.sku} slug={p.slug} v={v} palette={palette}>
               {groupsOf(p.variants[i]!).map((g) => (
                 <Group key={g.key} slug={p.slug} g={g} canUpload={canUpload} />
               ))}
@@ -146,7 +148,7 @@ export default async function ProductEdit({
       <form action={addVariant} className={`${card} mt-6`}>
         <input type="hidden" name="slug" value={p.slug} />
         <CardHead title="Agregar un color o versión" sub="Después de crearlo, sube sus fotos en la sección Fotos." />
-        <ColorFields />
+        <ColorFields palette={palette} />
         <div className="mt-5">
           <button type="submit" className={primaryBtn}>
             Agregar color

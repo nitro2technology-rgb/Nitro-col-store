@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatCOP } from "@nitro/shared";
 import { updateVariant } from "../actions";
 import { field, label, primaryBtn } from "../ui";
+import type { PaletteColor } from "../palette";
 import { SwatchInput } from "./swatch-input";
 
 export type VariantRow = {
@@ -27,7 +28,7 @@ const num = (s: string) => {
 const money = (pesos: number) => formatCOP(pesos * 100);
 
 /** Un color del producto: precios, costo y stock, con la ganancia calculada mientras se escribe. */
-export function VariantForm({ slug, v, children }: { slug: string; v: VariantRow; children?: React.ReactNode }) {
+export function VariantForm({ slug, v, palette, children }: { slug: string; v: VariantRow; palette: { popular: PaletteColor[]; basics: PaletteColor[] }; children?: React.ReactNode }) {
   const [regular, setRegular] = useState(String(v.regular));
   const [offer, setOffer] = useState(v.offer ? String(v.offer) : "");
   const [cost, setCost] = useState(v.cost != null ? String(v.cost) : "");
@@ -61,7 +62,7 @@ export function VariantForm({ slug, v, children }: { slug: string; v: VariantRow
             <input name="label" required maxLength={60} defaultValue={v.label} className={`${field} mt-1`} />
             <span className="mt-1 block text-[12px] font-normal text-[#a0a0b2]">Código {v.sku}</span>
           </label>
-          <SwatchInput defaultValue={v.swatch} />
+          <SwatchInput defaultValue={v.swatch} popular={palette.popular} basics={palette.basics} />
           <label className={label}>
             Stock (unidades)
             <input name="stock" inputMode="numeric" required value={stock} onChange={(e) => setStock(e.target.value)} className={`${field} mt-1`} />

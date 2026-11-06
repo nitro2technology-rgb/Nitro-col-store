@@ -97,6 +97,7 @@ export const getCartCatalog = cache(async (): Promise<Product[]> =>
       label: v.label,
       swatch: v.swatch,
       priceCents: v.priceCents,
+      compareAtCents: v.compareAtCents,
       stock: v.stock,
       images: v.images?.slice(0, 1),
     })),

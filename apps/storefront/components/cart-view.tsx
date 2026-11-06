@@ -1,5 +1,6 @@
 "use client";
 
+import { PriceTag } from "./price-tag";
 import Link from "next/link";
 import { formatCOP } from "@nitro/shared";
 import { buttonClasses } from "@nitro/ui";
@@ -66,7 +67,7 @@ export function CartView() {
               <p className="text-[15px] text-muted">
                 {product.variants.length > 1 ? variant.label : ""}
               </p>
-              <p className="mt-1 text-[17px]">{formatCOP(variant.priceCents)}</p>
+              <p className="mt-1 text-[17px]"><PriceTag priceCents={variant.priceCents} compareAtCents={variant.compareAtCents} /></p>
 
               <div className="mt-3 flex items-center gap-4">
                 <div className="inline-flex items-center rounded-chip bg-soft" role="group" aria-label={`Cantidad de ${product.name}`}>
