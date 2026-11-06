@@ -638,3 +638,54 @@ html:not([data-intro-seen]) .hero .brand-write {
   from { transform: rotate(-0.6deg) translateY(-0.3%); }
   to { transform: rotate(0.6deg) translateY(0.3%); }
 }
+
+/* Fichas de tecnología (components/showcase.tsx): colores de cada tono, tomados de "Diseños frontend". */
+.showcase-dark {
+  --sc-page: #111111;
+  --sc-stage: #000000;
+  --sc-tile: #000000;
+  --sc-text: #f5f5f7;
+  --sc-soft-text: rgb(255 255 255 / 0.8);
+  --sc-muted: #86868b;
+  --sc-nav: rgb(17 17 17 / 0.88);
+  --sc-line: rgb(255 255 255 / 0.1);
+  --sc-line-strong: rgb(255 255 255 / 0.3);
+  --sc-chip: #333336;
+  --sc-chip-active: rgb(66 66 69 / 0.95);
+  /* Verde de la referencia del reloj: solo para cifras, nunca para botones ni estados. */
+  --sc-metric: #00d959;
+}
+.showcase-light {
+  --sc-page: #f5f5f7;
+  --sc-stage: #f5f5f7;
+  --sc-tile: #ffffff;
+  --sc-text: #1d1d1f;
+  --sc-soft-text: #424245;
+  --sc-muted: #707070;
+  --sc-nav: rgb(245 245 247 / 0.85);
+  --sc-line: rgb(0 0 0 / 0.08);
+  --sc-line-strong: rgb(0 0 0 / 0.2);
+  --sc-chip: #e8e8ed;
+  --sc-chip-active: #d2d2d7;
+  --sc-metric: #1d1d1f;
+}
+
+/* Halo iridiscente detrás del producto (referencia de audífonos): decorativo, nunca en controles. */
+.showcase-halo {
+  background: linear-gradient(60deg, rgb(8 148 255) 0%, rgb(201 89 221) 40%, rgb(255 46 84) 67%, rgb(255 144 3) 100%);
+  filter: blur(70px);
+  opacity: 0.35;
+  transform: scale(1.08);
+}
+
+/* La foto cambia con un fundido corto (al cambiar de color o de píldora). */
+.watch-fade {
+  animation: watch-fade 0.45s ease-out;
+}
+@keyframes watch-fade {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .watch-fade { animation: none; }
+}

@@ -1,67 +1,69 @@
-# Apple (España) — Style Reference
-> obsidian gallery vitrine — a dark showroom where a single titanium object glows against pure black
+# Apple — Style Reference
+> Midnight endurance instrument. Build screens as a sequence of black exhibition bays where oversized SF Pro headlines frame precision hardware, active data, and carefully rationed electric color.
 
-**Theme:** mixed
+**Theme:** dark
 
 Source measurements are normalized; roles and recommendations are interpreted. Font summary lists are independent, not paired by position. HTML examples are reconstructions, not source components.
 
-Apple's product page is a cinematic dark-stage that lets hardware speak first: full-bleed near-black canvas, a single hero product floating in negative space, white SF Pro Display headlines at massive scale, and one vivid blue Buy button as the only saturated action color on the page. The page alternates between black feature stages and white detail bands, using generous 28px card radii and 36–980px pill buttons to feel premium and tactile. Color is used as functional punctuation: orange for category eyebrows, blue for links and the single CTA, violet/teal for other product categories. Typography is the only chrome — heavy negative letter-spacing, tight line-heights, and weight contrast between SF Pro Text body and SF Pro Display headlines carry all the hierarchy.
+Apple — midnight endurance instrument. The page stages a titanium watch as an isolated object against near-black, with enormous white display type, dense product crops, and color withheld until it signals battery, links, or purchase. Rounded media tiles interrupt the black canvas in long, cinematic sections; pale cards and white footer bands arrive late as contrast breaks rather than becoming the default surface.
 
 ## Tokens — Colors
 
 | Name | Value | Token | Role |
 |------|-------|-------|------|
-| Obsidian | `#1d1d1f` | `--color-obsidian` | Primary dark canvas, card surfaces on dark sections, primary text on light backgrounds — the signature near-black that defines Apple's product stage |
-| Frost White | `#f5f5f7` | `--color-frost-white` | Primary text on dark backgrounds, light section surfaces, subtle dividers — slightly warm white that softens contrast against pure black |
-| Pure Black | `#000000` | `--color-pure-black` | Deepest dark canvas for hero and feature stages, footer background — used where absolute darkness amplifies product photography |
-| Paper White | `#ffffff` | `--color-paper-white` | Light section backgrounds, button text on dark fills, icon fills — the bright counterweight in alternating dark/light page rhythm |
-| Carbon | `#111111` | `--color-carbon` | Elevated surface above black, badge backgrounds — sits one step lighter than pure black for subtle layered depth |
-| Platinum | `#86868b` | `--color-platinum` | Muted body text, secondary descriptions, subtitle lines, caption text — the conversational gray that recedes behind primary copy |
-| Graphite | `#333336` | `--color-graphite` | Subtle elevated surfaces, secondary button backgrounds, nav dividers — quiet structural tone between obsidian and black |
-| Silver Mist | `#cccccc` | `--color-silver-mist` | Nav borders, button outlines, inactive UI chrome — the lightest neutral that still reads as structural rather than decorative |
-| Smoke | `#424245` | `--color-smoke` | Hairline borders, low-contrast dividers on dark sections |
-| Apple Blue | `#0071e3` | `--color-apple-blue` | Primary CTA fill (Comprar button), primary action background — the single filled chromatic button color on the page, vivid saturated blue against black creates unmistakable tap target |
-| Link Blue | `#0066cc` | `--color-link-blue` | Text links, inline link text, Learn more arrows — deeper than Apple Blue, optimized for readability on white |
-| Halo Blue | `#2997ff` | `--color-halo-blue` | Lighter link variant, accent text on dark backgrounds, secondary link color — brighter blue for dark-surface legibility |
-| Signal Orange | `#f56900` | `--color-signal-orange` | Orange outline accent for tags, dividers, and focused UI edges. Do not promote it to the primary CTA color |
-| Iris Violet | `#8668ff` | `--color-iris-violet` | Secondary category accent, alternate product-line color coding — used sparingly to differentiate categories from the orange-tagged ones |
-| Reef Teal | `#00a1b3` | `--color-reef-teal` | Tertiary category accent, alternate product-line color coding — cool counterpoint to the warm orange/iris palette |
+| Polar White | `#f5f5f7` | `--color-polar-white` | Primary headlines, body copy on dark surfaces, light tile backgrounds, footer bands |
+| Absolute Black | `#000000` | `--color-absolute-black` | Hero canvas, immersive product media, dark cards |
+| Carbon | `#111111` | `--color-carbon` | Page canvas, local navigation bar, dark section bands |
+| White | `#ffffff` | `--color-white` | Light content tiles, dark-surface button text |
+| Graphite | `#1d1d1f` | `--color-graphite` | Primary text on White and Polar White surfaces |
+| Steel | `#86868b` | `--color-steel` | Muted body copy, inactive labels, subdued control fills |
+| Divider Gray | `#6e6e73` | `--color-divider-gray` | 1px input borders and restrained dividers |
+| Control Charcoal | `#333336` | `--color-control-charcoal` | Dark translucent control and selector fills |
+| Glyph Silver | `#cccccc` | `--color-glyph-silver` | Global navigation icons and secondary navigation glyphs |
+| Battery Green | `#00d959` | `--color-battery-green` | Battery-performance display headlines and metrics — vivid green makes endurance data read like an instrument signal |
+| Link Blue | `#0066cc` | `--color-link-blue` | Inline editorial links and technical-reference navigation |
+| Purchase Blue | `#0071e3` | `--color-purchase-blue` | Filled Buy and Learn more buttons — the sole saturated purchase punctuation on black navigation and media |
+| Launch Orange | `#ff791b` | `--color-launch-orange` | Availability badge text for future-release messaging |
+| New Orange | `#b64400` | `--color-new-orange` | New-status badge text |
+| Ember Black | `#311400` | `--color-ember-black` | Dark orange-tinted availability badge surface |
 
 ## Tokens — Typography
 
-### SF Pro Display — All headlines, display text, section titles, hero copy. Used at dramatic scale (56–80px) for hero and section openers, contracting to 19–32px for feature card titles. Weight 600–700 with heavy negative letter-spacing creates the signature Apple headline density — characters pull tight at large sizes. · `--font-sf-pro-display`
-- **Substitute:** Inter, system-ui
-- **Weights:** 600, 700
-- **Sizes:** 19, 21, 24, 28, 32, 56, 80
-- **Line height:** 1.00, 1.05, 1.13, 1.14, 1.17, 1.19, 1.21
-- **Letter spacing:** -0.015em at 19px → -0.003em at 80px (tighter as size increases)
+### SF Pro Display — Product display headlines and large numerical callouts. The 64px/68px, -0.576px headline treatment is forceful without becoming heavy; near-tight tracking keeps large all-caps statements compact. · `--font-sf-pro-display`
+- **Substitute:** Inter
+- **Weights:** 600
+- **Sizes:** 19px, 21px, 28px, 32px, 40px, 48px, 56px, 64px
+- **Line height:** 1.00-1.42
+- **Letter spacing:** -0.576px at 64px; -0.144px at 48px; +0.128px at 32px; across the family -0.009em to 0.012em
 - **OpenType features:** `"numr"`
-- **Role:** All headlines, display text, section titles, hero copy. Used at dramatic scale (56–80px) for hero and section openers, contracting to 19–32px for feature card titles. Weight 600–700 with heavy negative letter-spacing creates the signature Apple headline density — characters pull tight at large sizes.
+- **Role:** Product display headlines and large numerical callouts. The 64px/68px, -0.576px headline treatment is forceful without becoming heavy; near-tight tracking keeps large all-caps statements compact.
 
-### SF Pro Text — Body copy, navigation, buttons, captions, footnotes, legal text. The utility face for everything below headlines. Weight 400 for body paragraphs, 600 for nav items, buttons, and labels. Generous line-height (1.47–1.83) for body creates breathing room; tight (1.00–1.24) for nav/buttons keeps interactive elements compact. · `--font-sf-pro-text`
-- **Substitute:** Inter, system-ui
+### SF Pro Text — Navigation, purchase controls, product copy, labels, and compact section headings. At 12px it gives the global navigation its compressed Apple cadence; 17px/600 is used for local product identity and emphatic compact headings. · `--font-sf-pro-text`
+- **Substitute:** Inter
 - **Weights:** 400, 600
-- **Sizes:** 10, 12, 14, 17, 20, 44
-- **Line height:** 1.00, 1.18, 1.24, 1.33, 1.43, 1.47, 1.83
-- **Letter spacing:** -0.037em at 10px → -0.010em at 20px (progressively looser as size shrinks)
+- **Sizes:** 10px, 12px, 14px, 17px, 20px, 26px, 44px
+- **Line height:** 1.00-1.83
+- **Letter spacing:** -0.37px at 10px; -0.12px at 12px; -0.224px at 14px and 17px; across the family -0.037em to -0.003em
 - **OpenType features:** `"numr"`
-- **Role:** Body copy, navigation, buttons, captions, footnotes, legal text. The utility face for everything below headlines. Weight 400 for body paragraphs, 600 for nav items, buttons, and labels. Generous line-height (1.47–1.83) for body creates breathing room; tight (1.00–1.24) for nav/buttons keeps interactive elements compact.
+- **Role:** Navigation, purchase controls, product copy, labels, and compact section headings. At 12px it gives the global navigation its compressed Apple cadence; 17px/600 is used for local product identity and emphatic compact headings.
 
 ### Type Scale
 
 | Role | Family | Weight | Size | Line Height | Letter Spacing | Token |
 |------|--------|--------|------|-------------|----------------|-------|
-| caption | — | — | 10px | 1.83 | -0.37px | `--text-caption` |
-| body | — | — | 14px | 1.43 | -0.22px | `--text-body` |
-| heading-sm | — | — | 19px | 1.21 | -0.28px | `--text-heading-sm` |
-| heading | — | — | 24px | 1.17 | -0.24px | `--text-heading` |
-| heading-lg | — | — | 32px | 1.14 | -0.32px | `--text-heading-lg` |
-| display | — | — | 56px | 1.07 | -0.84px | `--text-display` |
-| hero | — | — | 80px | 1.05 | -0.24px | `--text-hero` |
+| micro-label | SF Pro Text | 600 | 10px | 1.24 | -0.37px | `--text-micro-label` |
+| global-nav | SF Pro Text | 400 | 12px | 1 | -0.12px | `--text-global-nav` |
+| button-label | SF Pro Text | 400 | 12px | 1.33 | -0.12px | `--text-button-label` |
+| body | SF Pro Text | 400 | 17px | 1.47 | -0.374px | `--text-body` |
+| body-strong | SF Pro Text | 600 | 17px | 1.24 | -0.374px | `--text-body-strong` |
+| product-label | SF Pro Display | 600 | 19px | 1.21 | 0.228px | `--text-product-label` |
+| section-heading | SF Pro Display | 600 | 28px | 1.14 | 0.196px | `--text-section-heading` |
+| metric-heading | SF Pro Display | 600 | 32px | 1.13 | 0.128px | `--text-metric-heading` |
+| display-metric | SF Pro Display | 600 | 48px | 1 | -0.144px | `--text-display-metric` |
+| hero-display | SF Pro Display | 600 | 64px | 1.06 | -0.576px | `--text-hero-display` |
+| accent-display | SF Pro Display | 600 | 64px | 1.06 | -0.576px | `--text-accent-display` |
 
 ## Tokens — Spacing & Shapes
-
-**Base unit:** 4px
 
 **Density:** comfortable
 
@@ -71,177 +73,174 @@ Apple's product page is a cinematic dark-stage that lets hardware speak first: f
 |------|-------|-------|
 | 4 | 4px | `--spacing-4` |
 | 8 | 8px | `--spacing-8` |
+| 10 | 10px | `--spacing-10` |
 | 12 | 12px | `--spacing-12` |
+| 14 | 14px | `--spacing-14` |
 | 16 | 16px | `--spacing-16` |
+| 18 | 18px | `--spacing-18` |
 | 20 | 20px | `--spacing-20` |
 | 24 | 24px | `--spacing-24` |
 | 28 | 28px | `--spacing-28` |
 | 32 | 32px | `--spacing-32` |
 | 40 | 40px | `--spacing-40` |
 | 48 | 48px | `--spacing-48` |
-| 60 | 60px | `--spacing-60` |
-| 76 | 76px | `--spacing-76` |
-| 80 | 80px | `--spacing-80` |
-| 96 | 96px | `--spacing-96` |
-| 104 | 104px | `--spacing-104` |
-| 160 | 160px | `--spacing-160` |
+| 90 | 90px | `--spacing-90` |
+| 144 | 144px | `--spacing-144` |
+| 210 | 210px | `--spacing-210` |
 
 ### Border Radius
 
 | Element | Value |
 |---------|-------|
-| nav | 980px |
-| pill | 980px |
 | cards | 28px |
 | links | 10px |
-| buttons | 36px |
+| pills | 9999px |
+| badges | 5px |
+| inputs | 980px |
+| buttons | 980px |
+| mediaTiles | 28px |
+| selectorChips | 36px |
 
 ### Layout
 
-- **Page max-width:** 1440px
-- **Section gap:** 88-120px
-- **Card padding:** 28px
-- **Element gap:** 10-12px
+- **Section gap:** 24px
+- **Card padding:** 16px
+- **Element gap:** 4px
 
 ## Components
 
-### Hero Stage
-**Role:** Full-viewport product showcase
+### Global Commerce Navigation
+**Role:** 44px sitewide product navigation
 
-Full-bleed Pure Black (#000000) background, 1440px max-width centered. Product image occupies 50–60% of the viewport height, rendered at extreme scale. No visible card chrome — the product floats directly on the canvas. Headline sits bottom-left at 80px SF Pro Display 700, Frost White (#f5f5f7), letter-spacing -0.24px. Eyebrow label at 17px SF Pro Text 600, Frost White, preceded by a small Apple logo glyph. Price text and CTA cluster aligned below the headline.
+Use a #111111 bar with compact SF Pro Text 12px/12px weight 400 labels in rgba(255,255,255,0.8), #cccccc utility glyphs, and 4px-scale internal gaps. Keep the Apple mark and category links visually smaller than the product content.
 
-### Primary CTA Button (Apple Blue Filled)
-**Role:** Single conversion action — Comprar
+### Product Local Navigation
+**Role:** 52px product-specific subnavigation
 
-Filled pill button: background #0071e3, text #ffffff, 36px border-radius, 10px vertical / 20px horizontal padding, SF Pro Text 14px weight 600, letter-spacing -0.22px. The only filled chromatic button on the page. Sits beside a ghost price label ("Desde 899 €") in a inline flex row.
+Set a #111111 bar directly beneath the global navigation. Render the product title in SF Pro Text 17px/21px weight 600 in rgba(255,255,255,0.8); render supporting links at 12px/12px and use a fine Polar White active underline.
 
-### Ghost Price Label
-**Role:** Price indicator next to CTA
+### Purchase Blue Pill Button
+**Role:** Compact conversion button
 
-Borderless text button: text #ffffff on dark stages, SF Pro Text 14px weight 400, 36px border-radius, transparent background, 10px vertical / 20px horizontal padding. Visually quieter than the filled CTA to avoid competing.
+Fill with Purchase Blue #0071e3, set White text in SF Pro Text 12px/16px weight 400, use a 980px radius, and pad 3px vertically and 10px horizontally.
 
-### Category Eyebrow Tag
-**Role:** Sport/activity category label (e.g. 'Running')
+### Dark Selector Chip
+**Role:** Product-detail tabs and feature selectors
 
-Plain text label in Signal Orange (#f56900), SF Pro Text 17px weight 600, letter-spacing -0.19px. No background, no border, no chip chrome — color alone signals category. Sits above a feature headline, left-aligned.
+Use rgba(66,66,69,0.72) fill, rgba(255,255,255,0.8) text, 36px radius, and no visible border. Present inactive controls as compact floating pills on #000000 media.
 
-### Feature Card (Dark Stage)
-**Role:** Large image card on dark sections
+### Light Selector Chip
+**Role:** Controls placed on pale sections
 
-Full-bleed card on dark sections: 28px border-radius, internal padding ~28px, contains a full-width photograph (B&W product-in-use) with white text overlay positioned in the upper-left quadrant. Overlay text: SF Pro Text 14–17px Frost White, max 3 lines. No visible card border or shadow — the rounded photo edge is the only container cue.
+Use transparent fill with Graphite #1d1d1f text and border, 28px radius, and no added padding beyond the measured control content.
 
-### Light Section Content Block
-**Role:** Detail content on white backgrounds
+### Hero Purchase Stack
+**Role:** Centered purchase affordance beneath the hero product render
 
-Paper White (#ffffff) background, text-left/image-right or image-left/text-right two-column layout. Image is full-bleed within its column with no border-radius (edge-to-edge). Text column: orange eyebrow tag, 56px SF Pro Display 700 headline in Obsidian (#1d1d1f), body in Platinum (#86868b) 14–17px, optional inline sub-feature link with arrow icon.
+Place a Purchase Blue #0071e3 980px-radius button above centered Polar White pricing copy in SF Pro Text 14px/18px weight 600. Keep the supporting finance line in the same 14px/18px treatment.
 
-### Top Navigation Bar
-**Role:** Global site navigation
+### Black Product Media Tile
+**Role:** Contained cinematic feature card
 
-Pure Black (#000000) background, 980px pill border-radius, 10px vertical padding, full-width sticky. Apple logo glyph left, nav items centered as SF Pro Text 12px weight 400 Frost White with 8–10px horizontal gaps, search and bag icons right. Semi-transparent on scroll with backdrop blur.
+Use #000000 surface, 28px corner radius, no shadow, and 14px padding when a framed internal product view is needed. Crop product photography aggressively against black so hardware edges dissolve into the canvas.
 
-### Promo Banner
-**Role:** Education pricing announcement bar
+### White Information Tile
+**Role:** Late-page retail and informational card
 
-Slim bar above nav: Obsidian (#1d1d1f) background, centered SF Pro Text 12px Frost White text with inline blue link "Comprobar >" in Link Blue (#0066cc). 3px vertical padding, no border-radius.
+Use #ffffff background, 28px radius, no shadow, Graphite #1d1d1f text, and 16px minimum internal padding. This is a deliberate inversion from the dark product-story tiles.
 
-### Section Headline (Dark)
-**Role:** Section opener on dark stages
+### Feature Accordion Row
+**Role:** Expandable hardware-detail navigation
 
-Large left-aligned headline: SF Pro Display 600–700 at 56–80px, Frost White (#f5f5f7), letter-spacing -0.84px at 56px. Minimal surrounding padding — generous negative space above and below. No subtitle, no eyebrow — the headline stands alone.
+Render each row as a Control Charcoal #333336 pill with 36px radius and rgba(255,255,255,0.8) text. Prepend a circular plus glyph; the selected row may use a brighter gray fill without changing the pill geometry.
 
-### Inline Feature Link
-**Role:** Sub-feature callout with icon
+### Availability Badge
+**Role:** Release-status label
 
-Horizontal row: small circular icon (ArrowUpRight or compass) in Obsidian (#1d1d1f) on a white circle, followed by two-line label in SF Pro Text 17px weight 600 Obsidian. Appears below body copy in light sections as a tertiary drill-in.
+Use Launch Orange #ff791b text for future availability or New Orange #b64400 for newness. Pair release text with Ember Black #311400 when a colored badge surface is required; set SF Pro Text 12px/16px weight 600.
 
-### Watch Complication Display
-**Role:** Product UI preview on the watch face
+### Pill Search Input
+**Role:** Dark utility input
 
-The watch screen in hero shows a wayfinding face: black background, neon green (#a3e635 approximately) digital numerals and compass markers, white time display in SF Pro Display at ~44px. Multiple data complications arranged in concentric rings.
+Use rgba(255,255,255,0.04) fill, Polar White #f5f5f7 text, a 1px Divider Gray #6e6e73 border, 980px radius, 24px left padding, and 45px right padding.
+
+### Technical Reference Link
+**Role:** Inline navigation into detailed specifications
+
+Use Link Blue #0066cc as unfilled text links; reserve the color for references and editorial navigation rather than filled controls.
 
 ## Do's and Don'ts
 
 ### Do
-- Use #0071e3 Apple Blue as the filled CTA fill on #000000 backgrounds — it is the only filled chromatic button color permitted
-- Use 28px border-radius for all photo cards and content containers; 36px for standard buttons; 980px for pill nav and chip elements
-- Set headline type to SF Pro Display 600–700 at 56–80px with negative letter-spacing (-0.84px at 56px, -0.24px at 80px)
-- Alternate between Pure Black (#000000) feature stages and Paper White (#ffffff) detail bands with 88–120px section gaps
-- Tag category content with Signal Orange (#f56900) eyebrows at 17px SF Pro Text 600 — never apply orange to body text or buttons
-- Render all body text in Platinum (#86868b) on white sections and Frost White (#f5f5f7) on dark sections — never use pure #ffffff for paragraph copy
-- Use 980px border-radius for the top navigation bar and any pill-shaped interactive elements like chips or toggle selectors
+- Use Absolute Black #000000 for hero product stages and Carbon #111111 for the surrounding page bands.
+- Set display statements in SF Pro Display 600; use the measured 64px/68px/-0.576px treatment for hero-scale headlines.
+- Use Polar White #f5f5f7 for text on black and Graphite #1d1d1f for text on White #ffffff tiles.
+- Use 28px radius on media tiles and cards; use 36px only for dark selector chips.
+- Use Purchase Blue #0071e3 only on compact filled Buy or Learn more buttons with 980px radius and 3px 10px padding.
+- Reserve Battery Green #00d959 for battery and performance metrics, not navigation or purchase controls.
+- Keep global navigation at 44px high with SF Pro Text 12px/12px labels.
 
 ### Don't
-- Do not use drop shadows, box-shadows, or any CSS elevation — depth comes from surface contrast between #000000, #111111, and #1d1d1f only
-- Do not place more than one filled chromatic button in the same viewport — Apple Blue is the single CTA color
-- Do not use card grids, masonry layouts, or multi-column text blocks — content is always single-subject or two-column image+text
-- Do not apply the orange/violet/teal accent colors to text paragraphs, backgrounds, or large surfaces — they are category labels only
-- Do not use #ffffff for body paragraph text on white backgrounds — use Frost White (#f5f5f7) or Platinum (#86868b) to soften contrast
-- Do not add gradients, textures, or decorative backgrounds — the only gradient in the system is the subtle #000000→#111111 black-to-carbon surface transition
-- Do not use border-radius values outside the defined set (10px, 28px, 32px, 36px, 980px) — Apple's radii are deliberately restricted
+- Do not place gradients behind the hero hardware; keep its stage #000000.
+- Do not use rectangular 4px or 8px button corners; use 980px or 9999px radii for pill controls.
+- Do not turn Link Blue #0066cc into a filled button background; use Purchase Blue #0071e3 for supported filled purchase controls.
+- Do not use Battery Green #00d959 as a generic success state or card fill.
+- Do not add drop shadows to 28px media tiles and cards; their separation comes from canvas contrast and clipping.
+- Do not use warm lifestyle photography as the dominant visual; favor isolated product hardware, athletic movement, and data-led product views.
+- Do not loosen display tracking beyond the measured SF Pro Display range of -0.009em to 0.012em.
 
 ## Surfaces
 
 | Level | Name | Value | Purpose |
 |-------|------|-------|---------|
-| 0 | Pure Black Stage | `#000000` | Hero, feature stages, dramatic product photography backgrounds |
-| 1 | Carbon Layer | `#111111` | Elevated badges, subtle layering above pure black |
-| 2 | Obsidian Card | `#1d1d1f` | Card surfaces on dark sections, footer, content panels over black |
-| 3 | Graphite Surface | `#333336` | Subtle elevated panels, secondary button fills on dark |
-| 4 | Frost White Panel | `#f5f5f7` | Light section content blocks, subtle off-white bands |
-| 5 | Paper White | `#ffffff` | Full light sections, clean product detail bands |
+| 0 | Carbon Canvas | `#111111` | Default dark page background and navigation bands |
+| 1 | Black Media Stage | `#000000` | Hero, immersive product renders, and dark media cards |
+| 2 | Control Charcoal | `#333336` | Floating feature chips and dark selector controls |
+| 3 | White Retail Tile | `#ffffff` | Pale informational and retail cards |
+| 4 | Polar Footer Band | `#f5f5f7` | Footer and broad light-content bands |
 
 ## Elevation
 
-Apple avoids drop shadows entirely. Depth is created through surface contrast — alternating Pure Black (#000000) and Obsidian (#1d1d1f) backgrounds create layered card surfaces, and 28px border-radius on photos defines container edges. The product itself casts a subtle gradient shadow directly onto the canvas via photography, not CSS. No box-shadow is used in the interface; flat is the signature.
+Avoid box shadows entirely on cards and media. Depth comes from the switch between #111111 page bands, #000000 image stages, clipped 28px tile edges, and the occasional white surface.
 
 ## Imagery
 
-Photography is the dominant visual element. Product shots are rendered on pure black (#000000) with dramatic studio lighting that creates soft metallic highlights on the titanium case. Lifestyle photography is shot in high-contrast black and white (desaturated, no color) to avoid competing with the color product shots — runners, athletes, hands on wrists. No illustration, no abstract graphics, no stock photography. Images are full-bleed within their containers with 28px border-radius on cards or edge-to-edge in light sections. Icon style is minimal: outlined SF Symbols in single-weight strokes, monochrome Frost White on dark and Obsidian on light. The visual density is image-heavy in the hero (product occupies 50%+ of viewport) and text-light in detail bands (photographs on one side, copy on the other).
+Imagery is product-first and cinematic: large isolated Apple Watch renders float on pure black, tightly cropped to show case edges, crown texture, straps, and illuminated watch faces. Feature media includes high-contrast black-and-white athletic photography with overlaid white copy and restrained Battery Green data emphasis. Visuals occupy more area than prose, remain contained in 28px rounded tiles when framed, and use no decorative illustration layer; icons are small monochrome utility glyphs while watch-face content supplies the only dense multicolor detail.
 
 ## Layout
 
-Full-bleed dark canvas with max-width 1440px content centering. The hero is a full-viewport product showcase — large product image centered, headline and CTA cluster bottom-left, enormous negative space dominating the composition. Below the hero, dark feature sections stack vertically with 88–120px gaps, each containing a large rounded photo card (28px radius) with overlaid white text. The page transitions to white sections partway through, maintaining the same max-width but inverting the surface to Paper White (#ffffff) with two-column image+text layouts. Navigation is a sticky pill bar (980px radius) at the top. Section rhythm alternates dark → dark → light, creating a cinematic three-act structure. Content is always left-aligned text with images either full-bleed-column or centered as oversized single subjects — never card grids, never multi-column text.
+The page is a vertically sequenced product narrative on Carbon #111111 and Absolute Black #000000, led by a 44px global bar and a 52px local product bar. The opening screen centers a small product lockup, a large all-caps display statement, a floating watch render, and a compact centered purchase stack. Subsequent sections use left-aligned oversized section headings followed by wide, rounded 28px cinematic tiles; content alternates between full-width product photography, text-over-media highlights, and close-look modules with a left column of selector pills beside an oversized hardware crop. The long page stays spacious and image-led, then transitions into pale retail, environmental, value, and cross-product sections near the footer.
 
 ## Agent Prompt Guide
 
-**Quick Color Reference**
-- text on dark: #f5f5f7 (Frost White)
-- text on light: #1d1d1f (Obsidian)
-- background dark: #000000 (Pure Black)
-- background light: #ffffff (Paper White)
-- border/divider: #333336 (dark) / #d2d2d7 (light)
-- primary action: #0071e3 (filled action)
-- accent/category: #f56900 (Signal Orange)
-- link text: #0066cc
+Quick Color Reference:
+- Polar White: #f5f5f7 — Primary headlines, body copy on dark surfaces, light tile backgrounds, footer bands
+- Absolute Black: #000000 — Hero canvas, immersive product media, dark cards
+- Carbon: #111111 — Page canvas, local navigation bar, dark section bands
+- White: #ffffff — Light content tiles, dark-surface button text
+- Graphite: #1d1d1f — Primary text on White and Polar White surfaces
+- Steel: #86868b — Muted body copy, inactive labels, subdued control fills
+- Divider Gray: #6e6e73 — 1px input borders and restrained dividers
+- Control Charcoal: #333336 — Dark translucent control and selector fills
+- Glyph Silver: #cccccc — Global navigation icons and secondary navigation glyphs
+- Battery Green: #00d959 — Battery-performance display headlines and metrics — vivid green makes endurance data read like an instrument signal
+- Link Blue: #0066cc — Inline editorial links and technical-reference navigation
+- Purchase Blue: #0071e3 — Filled Buy and Learn more buttons — the sole saturated purchase punctuation on black navigation and media
+- Launch Orange: #ff791b — Availability badge text for future-release messaging
+- New Orange: #b64400 — New-status badge text
+- Ember Black: #311400 — Dark orange-tinted availability badge surface
 
-**5 Example Component Prompts**
-
-1. **Hero Stage**: Full-bleed #000000 background, max-width 1440px centered. Product photo at 60% viewport height, centered. Bottom-left content stack: Apple logo + "WATCH ULTRA 3" eyebrow in SF Pro Text 17px weight 600 #f5f5f7, then headline "Una fuerza de la naturaleza." at SF Pro Display 80px weight 700 #f5f5f7 letter-spacing -0.24px, then inline row of price text "Desde 899 €" (SF Pro Text 14px #ffffff) and filled pill button #0071e3 background, #ffffff text, SF Pro Text 14px weight 600, 36px radius, 10px 20px padding.
-
-2. **Category Eyebrow + Headline + Body Block (Light Section)**: White #ffffff background. Orange eyebrow "Running" in SF Pro Text 17px weight 600 #f56900, letter-spacing -0.19px. Below: headline "Tus retos piden paso." in SF Pro Display 56px weight 700 #1d1d1f, letter-spacing -0.84px. Body paragraph: SF Pro Text 17px weight 400 #86868b, line-height 1.47, max-width 460px.
-
-3. **Feature Card (Dark Stage)**: Obsidian #1d1d1f background. Card with 28px border-radius, internal padding 28px. Full-width B&W photograph inside. White overlay text top-left: SF Pro Text 14px weight 400 #f5f5f7, max-width 340px, 3 lines max.
-
-4. **Section Headline (Dark)**: Pure Black #000000 background with 120px vertical padding. Left-aligned SF Pro Display 56px weight 700 #f5f5f7, letter-spacing -0.84px, max-width 980px. No subtitle, no eyebrow.
-
-5. **Inline Sub-Feature Link**: Horizontal flex row. Small 32px circular icon container with #f5f5f7 border, inside an outlined arrow/compass icon in #1d1d1f stroke. Then 2-line text in SF Pro Text 17px weight 600 #1d1d1f on light background.
-
-## Page Rhythm
-
-The page follows a three-act cinematic structure: (1) Dark hero — full-bleed product on black with one CTA; (2) Dark feature stages — stacked rounded photo cards on obsidian with overlaid white text, 88–120px vertical gaps; (3) Light detail band — two-column image+copy on white with orange category labels. Never break this dark→dark→light cadence. Never use card grids. Never use multi-column text. One subject per viewport, generous negative space, color appears only in the CTA and category eyebrows.
-
-## Contrast & Type Density
-
-The typographic signature is aggressive negative letter-spacing that increases with size: -0.037em at 10px caption tightens to -0.003em at 80px hero display. This means display text feels optically dense and weighty while small text remains crisp. Line-heights are tight for display (1.05–1.14) and generous for body (1.43–1.83). The "numr" font feature is used for tabular numerals in product specs and pricing — always use it for any numeric data.
+Create a black product hero with an isolated titanium smartwatch render centered below a SF Pro Display 64px/68px weight 600 uppercase Polar White headline with -0.576px tracking; add a compact Purchase Blue #0071e3 Buy pill and Polar White SF Pro Text 14px/18px pricing beneath.
+Create a Carbon #111111 highlights section with a left-aligned Polar White SF Pro Display heading and one 28px-radius black-and-white running photograph tile; overlay Polar White SF Pro Text 17px/25px copy and emphasize the battery metric in Battery Green #00d959.
+Create a #000000 close-look module with a left stack of rgba(66,66,69,0.72) 36px-radius selector pills in rgba(255,255,255,0.8), beside an oversized cropped watch render; use Polar White SF Pro Display headings.
+Create a White #ffffff 28px-radius information tile with Graphite #1d1d1f SF Pro Text content and a Link Blue #0066cc text-only reference link; do not add shadows.
 
 ## Similar Brands
 
-- **Bang & Olufsen** — Same cinematic product-on-black hero staging with massive negative space, single hero subject, and minimal white headline typography
-- **Tesla (vehicle configurator pages)** — Full-bleed dark backgrounds with floating product photography, single vivid blue action color, and two-column dark-then-light section alternation
-- **Sonos** — Dark product showcase pages with generous 28px card radii, SF-style sans-serif headlines at extreme scale, and orange accent for category tags
-- **Dyson** — Product-first page architecture: large dark hero with centered product, white headline overlay, single filled CTA, and high-contrast B&W lifestyle photography in dark feature sections
-- **Leica** — Premium dark-canvas product pages with minimal text chrome, dramatic product photography as the visual anchor, and pill-shaped nav bar at 980px radius
+- **Apple iPhone Pro** — Same black hardware-stage heroes, oversized SF Pro display typography, and compact blue purchase pills.
+- **Apple AirPods Pro** — Shares isolated product photography on black, sparse navigation, and rounded media-card framing.
+- **Garmin** — Shares data-led endurance storytelling and performance metrics, though Apple uses more cinematic black space.
+- **Nike** — Shares tightly cropped high-contrast athlete imagery and kinetic performance framing against dark fields.
 
 ## Quick Start
 
@@ -250,100 +249,114 @@ The typographic signature is aggressive negative letter-spacing that increases w
 ```css
 :root {
   /* Colors */
-  --color-obsidian: #1d1d1f;
-  --color-frost-white: #f5f5f7;
-  --color-pure-black: #000000;
-  --color-paper-white: #ffffff;
+  --color-polar-white: #f5f5f7;
+  --color-absolute-black: #000000;
   --color-carbon: #111111;
-  --color-platinum: #86868b;
-  --color-graphite: #333336;
-  --color-silver-mist: #cccccc;
-  --color-smoke: #424245;
-  --color-apple-blue: #0071e3;
+  --color-white: #ffffff;
+  --color-graphite: #1d1d1f;
+  --color-steel: #86868b;
+  --color-divider-gray: #6e6e73;
+  --color-control-charcoal: #333336;
+  --color-glyph-silver: #cccccc;
+  --color-battery-green: #00d959;
   --color-link-blue: #0066cc;
-  --color-halo-blue: #2997ff;
-  --color-signal-orange: #f56900;
-  --color-iris-violet: #8668ff;
-  --color-reef-teal: #00a1b3;
+  --color-purchase-blue: #0071e3;
+  --color-launch-orange: #ff791b;
+  --color-new-orange: #b64400;
+  --color-ember-black: #311400;
 
   /* Typography — Font Families */
   --font-sf-pro-display: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sf-pro-text: 'SF Pro Text', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Typography — Scale */
-  --text-caption: 10px;
-  --leading-caption: 1.83;
-  --tracking-caption: -0.37px;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --tracking-body: -0.22px;
-  --text-heading-sm: 19px;
-  --leading-heading-sm: 1.21;
-  --tracking-heading-sm: -0.28px;
-  --text-heading: 24px;
-  --leading-heading: 1.17;
-  --tracking-heading: -0.24px;
-  --text-heading-lg: 32px;
-  --leading-heading-lg: 1.14;
-  --tracking-heading-lg: -0.32px;
-  --text-display: 56px;
-  --leading-display: 1.07;
-  --tracking-display: -0.84px;
-  --text-hero: 80px;
-  --leading-hero: 1.05;
-  --tracking-hero: -0.24px;
+  --text-micro-label: 10px;
+  --leading-micro-label: 1.24;
+  --tracking-micro-label: -0.37px;
+  --text-global-nav: 12px;
+  --leading-global-nav: 1;
+  --tracking-global-nav: -0.12px;
+  --text-button-label: 12px;
+  --leading-button-label: 1.33;
+  --tracking-button-label: -0.12px;
+  --text-body: 17px;
+  --leading-body: 1.47;
+  --tracking-body: -0.374px;
+  --text-body-strong: 17px;
+  --leading-body-strong: 1.24;
+  --tracking-body-strong: -0.374px;
+  --text-product-label: 19px;
+  --leading-product-label: 1.21;
+  --tracking-product-label: 0.228px;
+  --text-section-heading: 28px;
+  --leading-section-heading: 1.14;
+  --tracking-section-heading: 0.196px;
+  --text-metric-heading: 32px;
+  --leading-metric-heading: 1.13;
+  --tracking-metric-heading: 0.128px;
+  --text-display-metric: 48px;
+  --leading-display-metric: 1;
+  --tracking-display-metric: -0.144px;
+  --text-hero-display: 64px;
+  --leading-hero-display: 1.06;
+  --tracking-hero-display: -0.576px;
+  --text-accent-display: 64px;
+  --leading-accent-display: 1.06;
+  --tracking-accent-display: -0.576px;
 
   /* Typography — Weights */
   --font-weight-regular: 400;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
 
   /* Spacing */
-  --spacing-unit: 4px;
   --spacing-4: 4px;
   --spacing-8: 8px;
+  --spacing-10: 10px;
   --spacing-12: 12px;
+  --spacing-14: 14px;
   --spacing-16: 16px;
+  --spacing-18: 18px;
   --spacing-20: 20px;
   --spacing-24: 24px;
   --spacing-28: 28px;
   --spacing-32: 32px;
   --spacing-40: 40px;
   --spacing-48: 48px;
-  --spacing-60: 60px;
-  --spacing-76: 76px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-104: 104px;
-  --spacing-160: 160px;
+  --spacing-90: 90px;
+  --spacing-144: 144px;
+  --spacing-210: 210px;
 
   /* Layout */
-  --page-max-width: 1440px;
-  --section-gap: 88-120px;
-  --card-padding: 28px;
-  --element-gap: 10-12px;
+  --section-gap: 24px;
+  --card-padding: 16px;
+  --element-gap: 4px;
 
   /* Border Radius */
+  --radius-md: 5px;
   --radius-lg: 10px;
   --radius-3xl: 28px;
   --radius-3xl-2: 32px;
   --radius-3xl-3: 36px;
   --radius-full: 980px;
+  --radius-full-2: 999px;
+  --radius-full-3: 9999px;
 
   /* Named Radii */
-  --radius-nav: 980px;
-  --radius-pill: 980px;
   --radius-cards: 28px;
   --radius-links: 10px;
-  --radius-buttons: 36px;
+  --radius-pills: 9999px;
+  --radius-badges: 5px;
+  --radius-inputs: 980px;
+  --radius-buttons: 980px;
+  --radius-mediatiles: 28px;
+  --radius-selectorchips: 36px;
 
   /* Surfaces */
-  --surface-pure-black-stage: #000000;
-  --surface-carbon-layer: #111111;
-  --surface-obsidian-card: #1d1d1f;
-  --surface-graphite-surface: #333336;
-  --surface-frost-white-panel: #f5f5f7;
-  --surface-paper-white: #ffffff;
+  --surface-carbon-canvas: #111111;
+  --surface-black-media-stage: #000000;
+  --surface-control-charcoal: #333336;
+  --surface-white-retail-tile: #ffffff;
+  --surface-polar-footer-band: #f5f5f7;
 }
 ```
 
@@ -352,72 +365,87 @@ The typographic signature is aggressive negative letter-spacing that increases w
 ```css
 @theme {
   /* Colors */
-  --color-obsidian: #1d1d1f;
-  --color-frost-white: #f5f5f7;
-  --color-pure-black: #000000;
-  --color-paper-white: #ffffff;
+  --color-polar-white: #f5f5f7;
+  --color-absolute-black: #000000;
   --color-carbon: #111111;
-  --color-platinum: #86868b;
-  --color-graphite: #333336;
-  --color-silver-mist: #cccccc;
-  --color-smoke: #424245;
-  --color-apple-blue: #0071e3;
+  --color-white: #ffffff;
+  --color-graphite: #1d1d1f;
+  --color-steel: #86868b;
+  --color-divider-gray: #6e6e73;
+  --color-control-charcoal: #333336;
+  --color-glyph-silver: #cccccc;
+  --color-battery-green: #00d959;
   --color-link-blue: #0066cc;
-  --color-halo-blue: #2997ff;
-  --color-signal-orange: #f56900;
-  --color-iris-violet: #8668ff;
-  --color-reef-teal: #00a1b3;
+  --color-purchase-blue: #0071e3;
+  --color-launch-orange: #ff791b;
+  --color-new-orange: #b64400;
+  --color-ember-black: #311400;
 
   /* Typography */
   --font-sf-pro-display: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sf-pro-text: 'SF Pro Text', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Typography — Scale */
-  --text-caption: 10px;
-  --leading-caption: 1.83;
-  --tracking-caption: -0.37px;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --tracking-body: -0.22px;
-  --text-heading-sm: 19px;
-  --leading-heading-sm: 1.21;
-  --tracking-heading-sm: -0.28px;
-  --text-heading: 24px;
-  --leading-heading: 1.17;
-  --tracking-heading: -0.24px;
-  --text-heading-lg: 32px;
-  --leading-heading-lg: 1.14;
-  --tracking-heading-lg: -0.32px;
-  --text-display: 56px;
-  --leading-display: 1.07;
-  --tracking-display: -0.84px;
-  --text-hero: 80px;
-  --leading-hero: 1.05;
-  --tracking-hero: -0.24px;
+  --text-micro-label: 10px;
+  --leading-micro-label: 1.24;
+  --tracking-micro-label: -0.37px;
+  --text-global-nav: 12px;
+  --leading-global-nav: 1;
+  --tracking-global-nav: -0.12px;
+  --text-button-label: 12px;
+  --leading-button-label: 1.33;
+  --tracking-button-label: -0.12px;
+  --text-body: 17px;
+  --leading-body: 1.47;
+  --tracking-body: -0.374px;
+  --text-body-strong: 17px;
+  --leading-body-strong: 1.24;
+  --tracking-body-strong: -0.374px;
+  --text-product-label: 19px;
+  --leading-product-label: 1.21;
+  --tracking-product-label: 0.228px;
+  --text-section-heading: 28px;
+  --leading-section-heading: 1.14;
+  --tracking-section-heading: 0.196px;
+  --text-metric-heading: 32px;
+  --leading-metric-heading: 1.13;
+  --tracking-metric-heading: 0.128px;
+  --text-display-metric: 48px;
+  --leading-display-metric: 1;
+  --tracking-display-metric: -0.144px;
+  --text-hero-display: 64px;
+  --leading-hero-display: 1.06;
+  --tracking-hero-display: -0.576px;
+  --text-accent-display: 64px;
+  --leading-accent-display: 1.06;
+  --tracking-accent-display: -0.576px;
 
   /* Spacing */
   --spacing-4: 4px;
   --spacing-8: 8px;
+  --spacing-10: 10px;
   --spacing-12: 12px;
+  --spacing-14: 14px;
   --spacing-16: 16px;
+  --spacing-18: 18px;
   --spacing-20: 20px;
   --spacing-24: 24px;
   --spacing-28: 28px;
   --spacing-32: 32px;
   --spacing-40: 40px;
   --spacing-48: 48px;
-  --spacing-60: 60px;
-  --spacing-76: 76px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-104: 104px;
-  --spacing-160: 160px;
+  --spacing-90: 90px;
+  --spacing-144: 144px;
+  --spacing-210: 210px;
 
   /* Border Radius */
+  --radius-md: 5px;
   --radius-lg: 10px;
   --radius-3xl: 28px;
   --radius-3xl-2: 32px;
   --radius-3xl-3: 36px;
   --radius-full: 980px;
+  --radius-full-2: 999px;
+  --radius-full-3: 9999px;
 }
 ```

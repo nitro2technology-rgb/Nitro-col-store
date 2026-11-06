@@ -141,6 +141,15 @@ Catálogo/              fotos originales (NO está en git)
 - Cada color usa **solo sus fotos** (G-tide lila y rosado tienen 1; la cuadrícula la repite). Si hay más fotos, agregarlas y correr `python scripts/miniaturas.py`.
 - Sin probar en celular real (el tamaño de ventana no se pudo reducir en la prueba automática).
 
+## 5g. Fichas de Tecnología estilo Apple (6 nov 2026)
+
+- **Smartwatch y audífonos** tienen ficha propia (`components/showcase.tsx` + `showcase-info.tsx`), elegida en `app/p/[slug]/page.tsx` con el mapa `SHOWCASE` (categoría → tono). Tono **oscuro** para smartwatch (referencia `Diseños frontend/Para los smartwathc`) y **claro** para audífonos (`Para los audifonos`). Colores de cada tono: variables `--sc-*` en `globals.css` (`.showcase-dark` / `.showcase-light`).
+- Secciones: barra del producto fija bajo el menú (con Comprar) → portada (titular grande, foto, colores, compra) → "Lo principal." (foto 16:10 con texto + cifras; verde #00d959 solo en el reloj) → "Míralo de cerca." (una píldora por especificación; cambia la foto) → video → reseñas → tarjeta blanca (envío, garantía, WhatsApp) → recomendados. Sin follaje en estas fichas. Botones de la tienda (no el azul de Apple), por la regla de blanco y negro.
+- **Fotos:** solo las principales del color (`variant.images`); las de catálogo (`gallery`) traen textos del fabricante con errores y un Aurafit negro que no vendemos, así que solo se usan si el color no tiene principales.
+- **Textos de las píldoras** (`DETAILS` en `showcase.tsx`): provisionales, redactados a partir de la caja del producto.
+- **Imágenes nuevas por sección:** prompts para generarlas en `Instrucciones/productos/` (uno por producto + README). El dueño las guarda en `imagenes/productos/<producto>/` con los nombres indicados; falta conectarlas (portada por color, `principal`, `cerca-<especificación>`): hoy cada sección toma fotos de `variant.images` por posición.
+- Sin probar en celular.
+
 ## 5f. Pagos con Wompi (23 oct 2026, en pruebas)
 
 - **Flujo:** carrito → `/checkout` (datos de envío) → `POST /api/checkout` (el servidor recalcula precios, descuento, envío y stock desde la base, crea `Order` + `OrderItem` + `Payment` y devuelve la URL de Wompi con la firma de integridad) → pago en Wompi → webhook `POST /api/webhooks/wompi` (verifica la firma del evento, marca el pedido `paid` una sola vez y descuenta el inventario) → `/pedido/NC-<número>` (resultado; también consulta la transacción a Wompi y aplica el mismo resultado, de respaldo). Código en `lib/wompi.ts`, `lib/pricing.ts`, `app/api/checkout`, `app/api/webhooks/wompi`, `app/checkout`, `app/pedido/[ref]`, `components/checkout-form.tsx`.

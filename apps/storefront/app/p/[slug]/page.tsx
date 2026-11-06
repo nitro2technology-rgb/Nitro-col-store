@@ -6,6 +6,8 @@ import { ProductVideo } from "@/components/product-media";
 import { ProductStory } from "@/components/product-story";
 import { Recommended } from "@/components/recommended";
 import { Reviews } from "@/components/reviews";
+import { ShowcaseCloseLook, ShowcaseHero, ShowcaseHighlights, ShowcaseNav, type ShowcaseTone } from "@/components/showcase";
+import { ShowcaseInfo } from "@/components/showcase-info";
 import { VariantProvider } from "@/components/variant-context";
 import { getProducts } from "@/lib/catalog";
 import { recommendationsFor } from "@/lib/gafas-promo";
@@ -15,6 +17,9 @@ import { getReviews } from "@/lib/reviews";
 export const revalidate = 300;
 
 const h2 = "text-[clamp(32px,5vw,56px)]";
+
+// Fichas con el estilo de "Diseños frontend": el reloj en negro y los audífonos en gris niebla.
+const SHOWCASE: Record<string, ShowcaseTone> = { smartwatch: "dark", audifonos: "light" };
 
 export async function generateStaticParams() {
   return (await getProducts()).map((p) => ({ slug: p.slug }));
@@ -67,12 +72,55 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     })),
   };
 
+  const ld = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />;
+  const recommended = (
+    <Recommended
+      groups={
+        gafas
+          ? [{ title: "Moda", products: moda }, { title: "Tecnología", products: tech }]
+          : [{ title: "Tecnología", products: tech }, { title: "Moda", products: moda }]
+      }
+    />
+  );
+
+  const tone = SHOWCASE[product.category];
+  if (tone) {
+    const sections = [
+      { id: "resumen", label: "Resumen" },
+      { id: "de-cerca", label: "De cerca" },
+      ...(product.videoUrl ? [{ id: "video", label: "Video" }] : []),
+      { id: "resenas", label: "Reseñas" },
+    ];
+    return (
+      <VariantProvider product={product}>
+        {ld}
+        <div data-theme={tone} className={`showcase-${tone} isolate bg-[var(--sc-page)] text-ink`}>
+          <ShowcaseNav product={product} sections={sections} />
+          <ShowcaseHero product={product} tone={tone} />
+          <ShowcaseHighlights product={product} />
+          <ShowcaseCloseLook product={product} />
+          {product.videoUrl && (
+            <section id="video" className="mx-auto max-w-[1024px] scroll-mt-28 px-6 py-24">
+              <h2 className="text-[clamp(32px,5vw,56px)] font-semibold tracking-[-0.009em] text-[var(--sc-text)]">En acción.</h2>
+              <div className="mt-10 overflow-hidden rounded-[28px] bg-black">
+                <ProductVideo product={product} />
+              </div>
+            </section>
+          )}
+          {/* Reseñas y recomendados usan la misma columna de 1024 px que el resto de esta ficha. */}
+          <div id="resenas" className="scroll-mt-28 pt-4 [&>section]:max-w-[1024px]">
+            <Reviews reviews={reviews} slug={product.slug} titleClass={`${h2} font-semibold tracking-[-0.009em]`} />
+          </div>
+          <ShowcaseInfo />
+          <div className="[&>section]:max-w-[1024px]">{recommended}</div>
+        </div>
+      </VariantProvider>
+    );
+  }
+
   return (
     <VariantProvider product={product}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {ld}
 
       {/* Escenario del producto en su tema (claro u oscuro): compra primero, detalle después. */}
       <div data-theme={product.theme} className={`text-ink ${product.theme === "dark" ? "stage-dark isolate" : ""}`}>
@@ -91,13 +139,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </section>
         )}
 
-        <Recommended
-          groups={
-            gafas
-              ? [{ title: "Moda", products: moda }, { title: "Tecnología", products: tech }]
-              : [{ title: "Tecnología", products: tech }, { title: "Moda", products: moda }]
-          }
-        />
+        {recommended}
       </div>
     </VariantProvider>
   );
