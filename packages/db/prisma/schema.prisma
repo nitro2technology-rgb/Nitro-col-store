@@ -198,8 +198,8 @@ model Product {
   featuredRank Int?          @map("featured_rank")
   /// "light" | "dark": tema visual de la página de producto
   theme        String        @default("light")
-  /// Especificaciones de solo lectura que no se filtran
-  specs        Json          @default("{}")
+  /// Especificaciones de solo lectura que no se filtran. JSON (no JSONB) para conservar el orden de las claves
+  specs        Json          @default("{}") @db.Json
   /// [{ title, body }] — sección "Lo principal"
   highlights   Json          @default("[]")
   /// Lista de textos de "En la caja"
@@ -258,6 +258,8 @@ model ProductVariant {
   widthMm        Int       @map("width_mm")
   heightMm       Int       @map("height_mm")
   allowBackorder Boolean   @default(false) @map("allow_backorder")
+  /// Orden del color dentro del producto (menor = primero)
+  position       Int       @default(0)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
   deletedAt      DateTime? @map("deleted_at")

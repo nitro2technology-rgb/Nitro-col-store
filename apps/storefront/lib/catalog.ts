@@ -21,7 +21,7 @@ async function loadFromDb(): Promise<Product[]> {
       images: { orderBy: { position: "asc" } },
       variants: {
         where: { deletedAt: null },
-        orderBy: [{ createdAt: "asc" }, { sku: "asc" }],
+        orderBy: [{ position: "asc" }, { sku: "asc" }],
         include: { inventory: true },
       },
     },

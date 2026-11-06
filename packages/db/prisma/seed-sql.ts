@@ -55,13 +55,14 @@ for (const p of products) {
 
   (p.images ?? []).forEach((im, pos) => out.push(image("gallery", im, pos)));
 
-  for (const v of p.variants) {
+  for (const [position, v] of p.variants.entries()) {
     out.push(
-      `INSERT INTO product_variants (id, product_id, sku, label, swatch, price_cents, compare_at_cents, weight_grams, length_mm, width_mm, height_mm, created_at, updated_at)`,
-      `VALUES (gen_random_uuid(), (SELECT id FROM products WHERE slug = ${ps}), ${str(v.sku)}, ${str(v.label)}, ${str(v.swatch)}, ${num(v.priceCents)}, ${num(v.compareAtCents)}, ${DIMS.weightGrams}, ${DIMS.lengthMm}, ${DIMS.widthMm}, ${DIMS.heightMm}, clock_timestamp(), now())`,
-      `ON CONFLICT (sku) DO UPDATE SET label = EXCLUDED.label, swatch = EXCLUDED.swatch, price_cents = EXCLUDED.price_cents, compare_at_cents = EXCLUDED.compare_at_cents, updated_at = now();`,
+      `INSERT INTO product_variants (id, product_id, sku, position, label, swatch, price_cents, compare_at_cents, weight_grams, length_mm, width_mm, height_mm, created_at, updated_at)`,
+      `VALUES (gen_random_uuid(), (SELECT id FROM products WHERE slug = ${ps}), ${str(v.sku)}, ${position}, ${str(v.label)}, ${str(v.swatch)}, ${num(v.priceCents)}, ${num(v.compareAtCents)}, ${DIMS.weightGrams}, ${DIMS.lengthMm}, ${DIMS.widthMm}, ${DIMS.heightMm}, clock_timestamp(), now())`,
+      `ON CONFLICT (sku) DO UPDATE SET position = EXCLUDED.position, label = EXCLUDED.label, swatch = EXCLUDED.swatch, price_cents = EXCLUDED.price_cents, compare_at_cents = EXCLUDED.compare_at_cents, updated_at = now();`,
       `INSERT INTO inventory_items (id, variant_id, on_hand, updated_at) VALUES (gen_random_uuid(), (SELECT id FROM product_variants WHERE sku = ${str(v.sku)}), ${v.stock}, now())`,
-      `ON CONFLICT (variant_id) DO UPDATE SET on_hand = EXCLUDED.on_hand, updated_at = now();`,
+      // El stock solo se siembra al crear: después lo descuentan los pedidos y no se debe pisar.
+      `ON CONFLICT (variant_id) DO NOTHING;`,
     );
     // Las fotos de la variante se borran al re-sembrar: DELETE por variante antes de insertar
     out.push(`DELETE FROM product_images WHERE variant_id = (SELECT id FROM product_variants WHERE sku = ${str(v.sku)});`);

@@ -82,16 +82,17 @@ async function main() {
       data: (p.images ?? []).map((im, position) => ({ productId: product.id, kind: "gallery", url: im.src, alt: im.alt, position })),
     });
 
-    for (const v of p.variants) {
-      const vdata = { productId: product.id, label: v.label, swatch: v.swatch ?? null, priceCents: v.priceCents, compareAtCents: v.compareAtCents ?? null };
+    for (const [position, v] of p.variants.entries()) {
+      const vdata = { productId: product.id, position, label: v.label, swatch: v.swatch ?? null, priceCents: v.priceCents, compareAtCents: v.compareAtCents ?? null };
       const variant = await db.productVariant.upsert({
         where: { sku: v.sku },
         update: vdata,
         create: { sku: v.sku, ...PLACEHOLDER_DIMS, ...vdata },
       });
+      // El stock solo se siembra al crear: después lo descuentan los pedidos y no se debe pisar.
       await db.inventoryItem.upsert({
         where: { variantId: variant.id },
-        update: { onHand: v.stock },
+        update: {},
         create: { variantId: variant.id, onHand: v.stock },
       });
       await db.productImage.createMany({
