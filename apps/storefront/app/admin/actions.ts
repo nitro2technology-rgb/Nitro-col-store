@@ -1145,7 +1145,7 @@ export async function deleteTestOrder(form: FormData) {
       },
     });
     return order;
-  });
+  }, { timeout: 30000, maxWait: 15000 }); // la conexión remota puede tardar más que los 5 s por defecto
   revalidatePath("/", "layout");
   if (!done) back("/admin/pedidos", { error: "Ese pedido ya no existe." });
   back("/admin/pedidos", { ok: `Pedido NC-${number} eliminado${restock ? " y sus unidades volvieron al inventario" : ""}.` });
