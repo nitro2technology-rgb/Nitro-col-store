@@ -325,7 +325,7 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 
 ### 5t. Reseñas abiertas con fotos
 - `/api/reviews` ahora recibe FormData: nombre, correo, estrellas, opinión y hasta 3 fotos (6 MB c/u, a WebP en el bucket `portadas`, prefijo `rev-`). Ya no pide número de pedido; una reseña por correo y producto. Si el correo tiene un pedido pagado de ese producto queda con «Compra verificada» (`orderId`).
-- **MIGRACIÓN PENDIENTE** `20261107000000_resenas_fotos` (columnas `images` y `author_email` en `reviews`): hay que aplicarla ANTES de desplegar (`pnpm --filter @nitro/db exec prisma migrate deploy`). Sin ella las reseñas no se leen ni se guardan.
+- **MIGRACIÓN YA APLICADA (7 nov 2026)** `20261107000000_resenas_fotos` (columnas `images` y `author_email` en `reviews`): hay que aplicarla ANTES de desplegar (`pnpm --filter @nitro/db exec prisma migrate deploy`). Sin ella las reseñas no se leen ni se guardan.
 
 - Reseñas ahora exigen sesión: `/api/reviews/context` (GET) devuelve los pedidos pagados de la persona que incluyen el producto; el formulario deja elegir «¿De cuál pedido es tu reseña?» y guarda `profileId`, `orderId` (compra verificada) y `authorEmail` de la sesión. Una reseña por cuenta y producto.
 
@@ -335,3 +335,12 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 - Ficha de producto en el panel (`/admin/productos/[slug]`): un solo formulario `producto-todo` con la acción `saveProduct` guarda información, todos los colores (campos `v__<sku>__<campo>`) y fotos elegidas con el botón «Guardar todo» (SaveButton: sin cambios / hay cambios / guardando). Se valida todo antes de escribir; los datos van en una transacción y las fotos se suben después. Reemplaza a `updateProduct`, `updateVariant` y `uploadPhotos`.
 - Panel · precios en lote: en `/admin/productos` el panel plegable «Aplicar el mismo precio, oferta o costo…» (`bulk-prices.tsx`, acción `applyPrices`) marca productos con casillas y aplica precio/oferta/costo a todos sus colores (vacío = no cambia; valida antes de escribir). En la ficha del producto, `copy-prices.tsx` copia los valores del primer color a los demás (luego «Guardar todo»).
 - Stock en la tienda: `productsIn` y «Destacados» del catálogo ordenan por stock (más primero, agotados al final); `ProductTile` muestra «Agotado» y baja la opacidad (por color en la lista por color; `isSoldOut`/`totalStock` en `lib/products.ts`). Galerías de moda con fotos de esquinas redondeadas.
+
+### 5u. Resumen de la sesión del 7 nov 2026 (todo probado solo con `tsc` y curl; sin capturas, Chrome no estaba conectado)
+- Reseñas por categoría: salen en la ficha de CADA producto (`/p/[slug]`), no en el catálogo `/c/`.
+- Video del smartwatch: formato historia 9:16 (máx. 340 px), arranca solo al verse y tiene botón de sonido (reutiliza `IgStoryVideo`).
+- Panel · producto: un solo botón «Guardar todo» (`saveProduct`) para info, colores, precios, stock y fotos, con estado visible.
+- Panel · catálogo: precios/oferta/costo en lote (`applyPrices`) y botón de copiar del primer color a los demás (`copy-prices.tsx`).
+- Tienda: más stock primero, agotados al final con etiqueta «Agotado» y opacos; galerías de Moda con esquinas redondeadas.
+- Commits locales por subir con `git push` (el usuario lo hace): `6ad3643`, `dbfd957`, `8170380`, `afc6fe6`, `ce38e25` (y los anteriores si faltan).
+- Siguiente (ideas, nada empezado): moderar/ocultar reseñas de clientes desde el panel; precios reales de gafas; llaves de producción de Wompi; copias de seguridad; quitar componentes antiguos sin uso (`product-gallery.tsx`, etc.). Revisar visualmente en celular y computador todo lo de esta sesión.
