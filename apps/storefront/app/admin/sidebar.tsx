@@ -12,6 +12,7 @@ const LINKS: { href: string; label: string; icon: IconName }[] = [
   { href: "/admin/portadas", label: "Portadas", icon: "box" },
   { href: "/admin/inicio", label: "Inicio", icon: "home" },
   { href: "/admin/devoluciones", label: "Devoluciones", icon: "returns" },
+  { href: "/admin/resenas", label: "Reseñas", icon: "orders" },
 ];
 
 /** Menú lateral en escritorio; en el celular se vuelve una fila deslizable arriba. */

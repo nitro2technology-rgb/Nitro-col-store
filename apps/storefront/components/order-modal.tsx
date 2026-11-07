@@ -12,6 +12,7 @@ import { gafasDiscountPct } from "@/lib/gafas-promo";
 import { useOrderModal } from "@/lib/order-modal";
 import { priceCart } from "@/lib/pricing";
 import { findCategory } from "@/lib/products";
+import { SavedFill } from "@/components/saved-fill";
 
 const input = "mt-1 w-full rounded-[12px] border border-ink/25 bg-canvas px-3 py-2.5 text-[16px] text-ink outline-none focus:border-ink";
 const lbl = "block text-[13px] font-semibold text-ink";
@@ -121,6 +122,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
           items: [...wanted].map(([sku, n]) => ({ sku, qty: n })),
           customer: { name: `${get("name")} ${get("lastname")}`.trim(), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
+          saveData: f.get("saveData") === "on",
         }),
       });
       const data = await res.json();
@@ -258,6 +260,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
 
         <form onSubmit={submit} className="mt-5">
           <div className="grid gap-3 sm:grid-cols-2">
+            <SavedFill />
             <label className={lbl}>
               Nombre *
               <input name="name" required minLength={2} maxLength={60} autoComplete="given-name" className={input} />

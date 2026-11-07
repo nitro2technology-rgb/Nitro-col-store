@@ -17,6 +17,7 @@ const ALLOWED_FROM: Partial<Record<OrderStatus, OrderStatus[]>> = {
   shipped: ["paid", "processing"],
   delivered: ["shipped", "paid", "processing"], // las ventas por fuera de la página no llevan guía
   cancelled: ["pending_payment"],
+  refunded: ["cancelled"], // pedido pagado que el cliente canceló: ya se le devolvió el dinero
 };
 
 // `v` cambia en cada redirección: las páginas con formularios la usan como `key` para que se reinicien por completo
@@ -68,11 +69,12 @@ export async function setOrderStatus(form: FormData) {
   const to = str(form, "to") as OrderStatus;
   const path = `/admin/pedidos/${number}`;
   const user = await requireAdmin(path);
-  if (number === null || !(to === "processing" || to === "delivered" || to === "cancelled")) back("/admin/pedidos", { error: "Solicitud inválida." });
+  if (number === null || !(to === "processing" || to === "delivered" || to === "cancelled" || to === "refunded")) back("/admin/pedidos", { error: "Solicitud inválida." });
 
-  const reasons = { processing: "Preparando el pedido", delivered: "Entregado al cliente", cancelled: "Cancelado desde el panel" } as const;
+  const reasons = { processing: "Preparando el pedido", delivered: "Entregado al cliente", cancelled: "Cancelado desde el panel", refunded: "Dinero devuelto al cliente" } as const;
   const done = await moveOrder(number!, to, user.id, reasons[to as keyof typeof reasons], async (t, orderId) => {
     if (to === "delivered") await t.shipment.updateMany({ where: { orderId, status: "in_transit" }, data: { status: "delivered" } });
+    if (to === "refunded") await t.payment.updateMany({ where: { orderId, status: "approved" }, data: { status: "refunded" } });
   });
   revalidatePath("/admin", "layout");
   if (done && to === "delivered") {
@@ -1079,4 +1081,23 @@ export async function createManualSale(form: FormData) {
     back(dest, sent ? { ok: `Venta NC-${number} registrada y correo de agradecimiento enviado.` } : { ok: `Venta NC-${number} registrada.`, error: "No se pudo enviar el correo al cliente." });
   }
   back(dest, { ok: `Venta NC-${number} registrada.` });
+}
+
+// ───────────── Reseñas ─────────────
+
+/** Oculta o vuelve a mostrar una reseña de cliente (no la borra). */
+export async function setReviewPublished(form: FormData) {
+  const path = "/admin/resenas";
+  const user = await requireAdmin(path);
+  const id = str(form, "id");
+  const publish = str(form, "publish") === "1";
+  const d = await db();
+  const r = await d.review.findUnique({ where: { id }, select: { id: true, published: true } });
+  if (!r) back(path, { error: "La reseña ya no existe." });
+  await d.review.update({ where: { id }, data: { published: publish } });
+  await d.auditLog.create({
+    data: { actorId: user.id, action: publish ? "review.show" : "review.hide", entity: "review", entityId: id, changes: { before: r!.published, after: publish } },
+  });
+  revalidatePath("/", "layout");
+  back(path, { ok: publish ? "Reseña visible de nuevo en la tienda." : "Reseña oculta; ya no se ve en la tienda." });
 }

@@ -129,10 +129,18 @@ export default async function OrderDetail({
                 <StatusButton number={order.number} to="delivered" label="Marcar entregado y agradecer al cliente" />
               )}
               {order.status === "pending_payment" && <StatusButton number={order.number} to="cancelled" label="Cancelar pedido" ghost />}
+              {order.status === "cancelled" && order.payments[0]?.status === "approved" && (
+                <StatusButton number={order.number} to="refunded" label="Ya le devolví el dinero" />
+              )}
             </div>
             {order.status === "pending_payment" && (
               <p className="mt-3 text-[14px] text-[#6b6b80]">
                 El pago aún no se confirma. Si el cliente pagó, Wompi lo marcará como pagado solo; cancela solo pedidos abandonados.
+              </p>
+            )}
+            {order.status === "cancelled" && order.payments[0]?.status === "approved" && (
+              <p className="mt-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">
+                REEMBOLSO PENDIENTE: el cliente canceló un pedido ya pagado ({cop(order.totalCents)}). Devuélvele el dinero (Wompi o transferencia) y luego pulsa «Ya le devolví el dinero».
               </p>
             )}
             {(order.status === "delivered" || order.status === "cancelled") && <p className="mt-3 text-[15px] text-[#6b6b80]">Este pedido está cerrado.</p>}

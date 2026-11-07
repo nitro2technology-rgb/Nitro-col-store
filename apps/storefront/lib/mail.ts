@@ -170,3 +170,38 @@ export async function sendOrderEmails(order: MailOrder) {
   ]);
   for (const r of results) if (r.status === "rejected") console.error(`[mail] Pedido NC-${order.number}:`, r.reason);
 }
+
+/** Aviso interno al dueño (cancelaciones, devoluciones). Nunca lanza error. */
+export async function sendOwnerNotice(subject: string, title: string, bodyHtml: string, replyTo?: string) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(`[mail] Sin RESEND_API_KEY: no se envió el aviso «${subject}»`);
+    return false;
+  }
+  const notify = (process.env.ORDER_NOTIFY_EMAIL ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (notify.length === 0) return false;
+  try {
+    await send(notify, subject, shell(esc(title), bodyHtml), replyTo);
+    return true;
+  } catch (error) {
+    console.error(`[mail] Aviso «${subject}»:`, error);
+    return false;
+  }
+}
+
+/** Confirmación al cliente de que canceló su pedido; avisa si hay que devolverle el dinero. */
+export async function sendCancelledEmail(order: MailOrder, refundDue: boolean) {
+  if (!order.email || !process.env.RESEND_API_KEY) return false;
+  const body = `<p style="line-height:1.5">Cancelamos tu pedido NC-${order.number} como pediste.</p>${table(order)}
+    <p style="line-height:1.5;margin-top:16px">${
+      refundDue
+        ? "Como ya habías pagado, te devolveremos el dinero. Te escribiremos por correo o WhatsApp para confirmarte cómo y cuándo (depende del medio de pago que usaste)."
+        : "No se cobró nada."
+    }</p>`;
+  try {
+    await send([order.email], `Pedido NC-${order.number} cancelado`, shell(`Pedido NC-${order.number} cancelado`, body));
+    return true;
+  } catch (error) {
+    console.error(`[mail] Cancelación NC-${order.number}:`, error);
+    return false;
+  }
+}

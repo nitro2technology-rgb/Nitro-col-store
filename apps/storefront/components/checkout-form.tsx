@@ -7,6 +7,7 @@ import { Button, buttonClasses } from "@nitro/ui";
 import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
 import { priceCart } from "@/lib/pricing";
+import { SavedFill } from "@/components/saved-fill";
 
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
 const label = "block text-sm text-muted";
@@ -51,6 +52,7 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
           items: rows.map((r) => ({ sku: r.variant.sku, qty: r.qty })),
           customer: { name: get("name"), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
+          saveData: f.get("saveData") === "on",
         }),
       });
       const data = await res.json();
@@ -67,6 +69,7 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
       <form onSubmit={submit} className="glass rounded-card p-8">
         <h2 className="text-[28px]">Datos de envío</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <SavedFill />
           <label className={`${label} sm:col-span-2`}>
             Nombre completo
             <input name="name" required minLength={2} maxLength={120} autoComplete="name" defaultValue={defaultName} className={field} />

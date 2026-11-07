@@ -95,6 +95,21 @@ export async function POST(req: Request) {
     },
   });
 
+  // «Guardar mis datos»: solo con sesión. Un fallo aquí nunca debe frenar el pago.
+  if (profile && body?.saveData === true) {
+    try {
+      const same = await db.address.findFirst({ where: { profileId: profile.id, line1: line, city }, select: { id: true } });
+      if (same) await db.address.update({ where: { id: same.id }, data: { fullName: name, phone, department, notes: notes || null } });
+      else if ((await db.address.count({ where: { profileId: profile.id } })) < 10) {
+        const first = (await db.address.count({ where: { profileId: profile.id } })) === 0;
+        await db.address.create({ data: { profileId: profile.id, fullName: name, phone, documentId: "", department, city, line1: line, notes: notes || null, isDefault: first } });
+      }
+      await db.profile.update({ where: { id: profile.id }, data: { ...(profile.fullName ? {} : { fullName: name }), ...(profile.phone ? {} : { phone }) } });
+    } catch (error) {
+      console.error("[checkout] No se pudieron guardar los datos de la cuenta:", error);
+    }
+  }
+
   const reference = orderReference(order.number);
   const origin = siteOrigin(req);
   const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(origin);

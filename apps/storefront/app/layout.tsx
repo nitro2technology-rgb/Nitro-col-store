@@ -6,6 +6,7 @@ import { Foliage } from "@/components/foliage";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { FavoritesSection } from "@/components/favorites-section";
+import { FavoritesSync } from "@/components/favorites-sync";
 import { AnnouncementBar } from "@/components/announcement-bar";
 import { OrderModal } from "@/components/order-modal";
 import { CatalogProvider } from "@/lib/catalog-client";
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AnnouncementBar />
           <SiteHeader />
           {children}
+          <FavoritesSync />
           <FavoritesSection />
           <SiteFooter />
           <OrderModal />

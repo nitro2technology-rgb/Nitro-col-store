@@ -103,6 +103,7 @@ export async function applyTransaction(tx: WompiTransaction) {
       });
     }
     if (status !== "approved") return;
+    if (order.status === "cancelled") console.error(`[wompi] ¡Pago aprobado de un pedido CANCELADO (NC-${order.number})! Hay que devolver el dinero a mano.`);
 
     // Solo una llamada logra pasar el pedido de pendiente a pagado; así el inventario se descuenta una vez.
     const moved = await t.order.updateMany({ where: { id: order.id, status: "pending_payment" }, data: { status: "paid" } });
