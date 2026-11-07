@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { OrderStatus, Prisma } from "@nitro/db";
 import { requireAdmin } from "@/lib/admin";
-import { sendShippedEmail } from "@/lib/mail";
+import { sendDeliveredEmail, sendShippedEmail } from "@/lib/mail";
 
 const MAX_PRICE_PESOS = 50_000_000;
 const MAX_STOCK = 100_000;
@@ -15,7 +15,7 @@ const MAX_STOCK = 100_000;
 const ALLOWED_FROM: Partial<Record<OrderStatus, OrderStatus[]>> = {
   processing: ["paid"],
   shipped: ["paid", "processing"],
-  delivered: ["shipped"],
+  delivered: ["shipped", "paid", "processing"], // las ventas por fuera de la página no llevan guía
   cancelled: ["pending_payment"],
 };
 
@@ -73,6 +73,12 @@ export async function setOrderStatus(form: FormData) {
     if (to === "delivered") await t.shipment.updateMany({ where: { orderId, status: "in_transit" }, data: { status: "delivered" } });
   });
   revalidatePath("/admin", "layout");
+  if (done && to === "delivered") {
+    // Al marcar entregado, el cliente recibe el correo de agradecimiento (si dejó correo).
+    const order = await (await db()).order.findUnique({ where: { number: number! }, include: { items: true } });
+    const sent = order ? await sendDeliveredEmail(order) : false;
+    back(path, { ok: sent ? "Pedido entregado. Le enviamos el correo de agradecimiento al cliente." : "Pedido entregado." });
+  }
   back(path, done ? { ok: "Estado actualizado." } : { error: "El pedido cambió de estado o ya no admite ese cambio. Revisa e intenta de nuevo." });
 }
 
@@ -805,4 +811,124 @@ export async function saveHome(form: FormData) {
   }
   revalidatePath("/", "layout");
   back(path, { ok: "Inicio guardado." });
+}
+
+// ───────────── Ventas por fuera de la página ─────────────
+
+const SALE_METHODS = ["Efectivo", "Transferencia", "Nequi o Daviplata", "Otro"] as const;
+
+/** Registra una venta hecha por fuera de la página (efectivo, conocidos…): descuenta inventario y guarda el contacto. */
+export async function createManualSale(form: FormData) {
+  const path = "/admin/pedidos/nuevo";
+  const user = await requireAdmin(path);
+  const d = await db();
+
+  const name = str(form, "name").slice(0, 120);
+  const phone = str(form, "phone").slice(0, 20);
+  const email = str(form, "email").slice(0, 160);
+  const city = str(form, "city").slice(0, 80);
+  const line = str(form, "line").slice(0, 200);
+  const notes = str(form, "notes").slice(0, 300);
+  const method = (SALE_METHODS as readonly string[]).includes(str(form, "method")) ? str(form, "method") : "Otro";
+  const delivered = str(form, "state") !== "paid";
+  const sendMail = form.get("sendMail") === "on";
+  if (name.length < 2) back(path, { error: "Escribe el nombre de quien compró." });
+  if (!/^[0-9+() -]{7,20}$/.test(phone)) back(path, { error: "Escribe un teléfono o WhatsApp válido de quien compró." });
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) back(path, { error: "Revisa el correo: no parece válido." });
+
+  const pesos = (k: string) => {
+    const n = Number(str(form, k).replace(/[^0-9]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+  // Líneas: cada una con producto (SKU), cantidad y precio unitario (por defecto el de la página).
+  const wanted: { sku: string; qty: number; unitCents: number | null }[] = [];
+  for (let i = 0; i < 8; i++) {
+    const sku = str(form, `sku_${i}`);
+    if (!sku) continue;
+    const qty = Number(str(form, `qty_${i}`) || 1);
+    if (!Number.isInteger(qty) || qty < 1 || qty > 50) back(path, { error: "Revisa las cantidades: deben ser números enteros." });
+    const price = pesos(`price_${i}`);
+    wanted.push({ sku, qty, unitCents: price > 0 ? price * 100 : null });
+  }
+  if (wanted.length === 0) back(path, { error: "Elige al menos un producto." });
+  if (new Set(wanted.map((w) => w.sku)).size !== wanted.length) back(path, { error: "Un producto está repetido: súmalo en una sola línea." });
+
+  const variants = await d.productVariant.findMany({
+    where: { sku: { in: wanted.map((w) => w.sku) }, deletedAt: null },
+    include: { inventory: true, product: { select: { name: true, sellerId: true } } },
+  });
+  if (variants.length !== wanted.length) back(path, { error: "Algún producto ya no existe." });
+
+  const lines = wanted.map((w) => {
+    const v = variants.find((x) => x.sku === w.sku)!;
+    return { v, qty: w.qty, unitCents: w.unitCents ?? v.priceCents };
+  });
+  const subtotal = lines.reduce((s, l) => s + l.unitCents * l.qty, 0);
+  const discount = pesos("discount") * 100;
+  if (discount > subtotal) back(path, { error: "El descuento no puede ser mayor que el total de la venta." });
+  const total = subtotal - discount;
+  if (total <= 0) back(path, { error: "El total de la venta debe ser mayor que cero. Revisa los precios." });
+
+  let number = 0;
+  try {
+    const order = await d.$transaction(async (t) => {
+      const created = await t.order.create({
+        data: {
+          email,
+          phone,
+          status: delivered ? "delivered" : "paid",
+          subtotalCents: subtotal,
+          discountCents: discount,
+          shippingCents: 0,
+          totalCents: total,
+          shippingAddress: { name, department: "", city, line, notes },
+          attribution: { source: "manual", method },
+          items: {
+            create: lines.map((l) => ({
+              variantId: l.v.id,
+              sellerId: l.v.product.sellerId,
+              name: `${l.v.product.name} ${l.v.label}`,
+              sku: l.v.sku,
+              unitCents: l.unitCents,
+              unitCostCents: l.v.inventory?.unitCostCents ?? null,
+              quantity: l.qty,
+              totalCents: l.unitCents * l.qty,
+            })),
+          },
+          payments: { create: { provider: "manual", method, status: "approved", amountCents: total } },
+          history: {
+            create: [
+              { toStatus: "paid", reason: `Venta registrada por fuera de la página (${method})`, actorId: user.id },
+              ...(delivered ? [{ fromStatus: "paid" as const, toStatus: "delivered" as const, reason: "Entregado al cliente", actorId: user.id }] : []),
+            ],
+          },
+        },
+      });
+      // Inventario: solo se descuenta si alcanza; si no, se cancela toda la venta.
+      for (const l of lines) {
+        const dec = await t.inventoryItem.updateMany({ where: { variantId: l.v.id, onHand: { gte: l.qty } }, data: { onHand: { decrement: l.qty } } });
+        if (dec.count === 0) throw new Error(`stock:${l.v.product.name} (${l.v.label})`);
+        if (l.v.inventory) await t.stockMovement.create({ data: { inventoryItemId: l.v.inventory.id, delta: -l.qty, reason: `Venta manual NC-${created.number}`, actorId: user.id } });
+      }
+      await t.auditLog.create({ data: { actorId: user.id, action: "order.manual", entity: "order", entityId: created.id, changes: { number: created.number, total, method } } });
+      return created;
+    });
+    number = order.number;
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e;
+    const msg = e instanceof Error && e.message.startsWith("stock:") ? `No hay suficientes unidades de ${e.message.slice(6)} en inventario.` : "No se pudo registrar la venta. Intenta de nuevo.";
+    if (!(e instanceof Error && e.message.startsWith("stock:"))) console.error("[venta manual]", e);
+    back(path, { error: msg });
+  }
+  revalidatePath("/admin", "layout");
+  revalidatePath("/", "layout");
+
+  const dest = `/admin/pedidos/${number}`;
+  if (delivered && sendMail) {
+    if (!email) back(dest, { ok: `Venta NC-${number} registrada.`, error: "No se envió el correo: no escribiste el correo del cliente." });
+    const order = await d.order.findUnique({ where: { number }, include: { items: true } });
+    const sent = order ? await sendDeliveredEmail(order) : false;
+    back(dest, sent ? { ok: `Venta NC-${number} registrada y correo de agradecimiento enviado.` } : { ok: `Venta NC-${number} registrada.`, error: "No se pudo enviar el correo al cliente." });
+  }
+  back(dest, { ok: `Venta NC-${number} registrada.` });
 }

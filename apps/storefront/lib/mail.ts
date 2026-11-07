@@ -108,6 +108,38 @@ export async function sendShippedEmail(order: MailOrder, s: ShipmentInfo) {
   }
 }
 
+/** Aviso al cliente de que su pedido fue entregado, con agradecimiento y la invitación a dejar su reseña. */
+export function deliveredEmail(order: MailOrder) {
+  const a = (order.shippingAddress ?? {}) as Record<string, string>;
+  const first = esc(String(a.name ?? "").split(" ")[0]);
+  return {
+    subject: `Tu pedido NC-${order.number} fue entregado: gracias por tu compra`,
+    html: shell(
+      `¡Gracias por tu compra${first ? `, ${first}` : ""}!`,
+      `<p style="line-height:1.5">Tu pedido <b>NC-${order.number}</b> fue entregado. Gracias por confiar en Nitro Col Store: esperamos que lo disfrutes mucho.</p>
+       ${table(order)}
+       <p style="margin-top:24px;line-height:1.5;color:#555">Si tienes cualquier duda o algo no quedó como esperabas, escríbenos y lo resolvemos. Y si te gustó, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña con el número <b>NC-${order.number}</b> y este correo.</p>`,
+    ),
+  };
+}
+
+/** Envía el correo de entregado y agradecimiento. Nunca lanza error: devuelve false si no se pudo (o no hay correo). */
+export async function sendDeliveredEmail(order: MailOrder) {
+  if (!order.email) return false;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(`[mail] Sin RESEND_API_KEY: no se envió el correo de entrega de NC-${order.number}`);
+    return false;
+  }
+  const mail = deliveredEmail(order);
+  try {
+    await send([order.email], mail.subject, mail.html);
+    return true;
+  } catch (error) {
+    console.error(`[mail] Correo de entrega NC-${order.number}:`, error);
+    return false;
+  }
+}
+
 async function send(to: string[], subject: string, html: string, replyTo?: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

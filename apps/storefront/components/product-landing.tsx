@@ -5,6 +5,7 @@
 // precio con ahorro, color, botón «Quiero el mío ahora» que palpita, despacho y, debajo, las demás fotos en columna con
 // el botón repetido entre ellas. En celular, una sola columna y una barra de compra fija al pie.
 // Los textos son los del producto y de la tienda; las valoraciones solo aparecen si hay reseñas reales.
+import { FavoriteButton } from "@/components/favorite-button";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { formatCOP, formatPrice, type Product, type ProductImage } from "@nitro/shared";
@@ -81,6 +82,10 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
               </span>
             </p>
           )}
+
+          <div className="mt-3">
+            <FavoriteButton slug={product.slug} name={product.name} label />
+          </div>
 
           <div className="mt-3 rounded-[12px] border border-ink/20 px-4 py-3 text-[14px] leading-snug">
             {product.tagline && <p className="text-muted">{product.tagline}</p>}

@@ -4,6 +4,7 @@ import { PriceTag } from "./price-tag";
 import { useState } from "react";
 import Link from "next/link";
 import { formatPrice, type Product } from "@nitro/shared";
+import { FavoriteButton } from "@/components/favorite-button";
 import { ImageCarousel } from "@/components/image-carousel";
 import { ProductArt } from "@/components/art/product-art";
 import { findCategory, fromPrice, isEditorial, variantImages } from "@/lib/products";
@@ -25,6 +26,8 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
   // Lista por color (Moda y Tecnología): foto redondeada y rótulos pequeños en mayúsculas.
   if (showColor && isEditorial(product) && chosen) {
     return (
+      <div className="relative w-full">
+      <FavoriteButton slug={product.slug} name={product.name} className="absolute left-4 top-4 z-10" />
       <Link
         href={href}
         data-theme={product.theme}
@@ -54,10 +57,13 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
           <PriceTag priceCents={chosen.priceCents} compareAtCents={chosen.compareAtCents} className="mt-1.5 max-w-full text-[13px] font-semibold" />
         </div>
       </Link>
+      </div>
     );
   }
 
   return (
+    <div className="relative w-full max-w-[420px]">
+    <FavoriteButton slug={product.slug} name={product.name} className="absolute left-6 top-6 z-10" />
     <Link
       href={href}
       data-theme={product.theme}
@@ -83,5 +89,6 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
         </p>
       </div>
     </Link>
+    </div>
   );
 }

@@ -40,6 +40,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageTitle sub="Los pedidos pagados quedan en «Por enviar» hasta que les pongas la guía.">Pedidos</PageTitle>
+      <p className="mt-4">
+        <Link href="/admin/pedidos/nuevo" className="inline-flex items-center gap-2 rounded-[10px] bg-[#5b4fe0] px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#4a3fd0]">
+          + Registrar una venta por fuera de la página
+        </Link>
+      </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {FILTERS.map((f) => (

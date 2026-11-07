@@ -125,7 +125,9 @@ export default async function OrderDetail({
             )}
             <div className="mt-4 flex flex-wrap gap-3">
               {order.status === "paid" && <StatusButton number={order.number} to="processing" label="Marcar preparando" />}
-              {order.status === "shipped" && <StatusButton number={order.number} to="delivered" label="Marcar entregado" />}
+              {(order.status === "shipped" || ((order.status === "paid" || order.status === "processing") && order.payments[0]?.provider === "manual")) && (
+                <StatusButton number={order.number} to="delivered" label="Marcar entregado y agradecer al cliente" />
+              )}
               {order.status === "pending_payment" && <StatusButton number={order.number} to="cancelled" label="Cancelar pedido" ghost />}
             </div>
             {order.status === "pending_payment" && (
