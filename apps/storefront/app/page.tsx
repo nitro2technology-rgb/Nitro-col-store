@@ -2,7 +2,7 @@ import type { Product } from "@nitro/shared";
 import { getProducts } from "@/lib/catalog";
 import { commonFaq } from "@/lib/faq";
 import { getLatestReviews } from "@/lib/reviews";
-import { categories, featuredOf, productsIn, variantImages } from "@/lib/products";
+import { categories, featuredOf, productsIn, totalStock, variantImages } from "@/lib/products";
 import { HomeHero } from "@/components/home-hero";
 import { CategoryCover } from "@/components/category-cover";
 import { getCover } from "@/lib/covers";
@@ -35,7 +35,7 @@ export default async function Home() {
         image: firstPhoto(featured[0]),
         href: "/c/tecnologia",
       },
-      products: [...featured, ...all.filter((p) => !featured.includes(p))].slice(0, 8),
+      products: [...featured, ...[...all].sort((a, b) => totalStock(b) - totalStock(a)).filter((p) => !featured.includes(p))].slice(0, 8),
     },
     ...categories.flatMap((parent) =>
       parent.children.flatMap((c) => {

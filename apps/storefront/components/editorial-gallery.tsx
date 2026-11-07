@@ -52,9 +52,10 @@ export function EditorialGallery({ images }: { images: ProductImage[] }) {
         {images.map((img, i) => (
           <div
             key={img.src}
-            className="relative aspect-[4/5] shrink-0 bg-[#f8f8f6]"
+            className="relative aspect-[4/5] shrink-0"
             style={{ width: cell, scrollSnapAlign: "start" }}
           >
+            <div className="absolute inset-1.5 overflow-hidden rounded-[20px] bg-[#f8f8f6]">
             <Image
               src={img.src}
               alt={img.alt}
@@ -64,6 +65,7 @@ export function EditorialGallery({ images }: { images: ProductImage[] }) {
               className="object-contain"
               priority={i < 2}
             />
+            </div>
           </div>
         ))}
       </div>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Product } from "@nitro/shared";
 import { ProductTile } from "@/components/product-tile";
-import { colorFamilies } from "@/lib/products";
+import { colorFamilies, totalStock } from "@/lib/products";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
@@ -94,15 +94,16 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
         if (byColor) {
           return variants
             .filter((v) => !q || norm(`${p.name} ${p.brand} ${v.label}`).includes(q))
-            .map((v) => ({ key: v.sku, product: p, sku: v.sku, price: v.priceCents }));
+            .map((v) => ({ key: v.sku, product: p, sku: v.sku, price: v.priceCents, stock: Math.max(0, v.stock) }));
         }
         if (q && !norm(`${p.name} ${p.brand}`).includes(q)) return [];
-        return [{ key: p.slug, product: p, sku: colors.size > 0 ? variants[0]!.sku : undefined, price: Math.min(...variants.map((v) => v.priceCents)) }];
+        return [{ key: p.slug, product: p, sku: colors.size > 0 ? variants[0]!.sku : undefined, price: Math.min(...variants.map((v) => v.priceCents)), stock: totalStock(p) }];
       });
     if (sort === "precio-asc") return [...list].sort((a, b) => a.price - b.price);
     if (sort === "precio-desc") return [...list].sort((a, b) => b.price - a.price);
     if (sort === "nombre") return [...list].sort((a, b) => a.product.name.localeCompare(b.product.name, "es", { numeric: true }));
-    return list;
+    // «Destacados»: con más stock primero y los agotados al final.
+    return [...list].sort((a, b) => b.stock - a.stock);
   }, [products, query, colors, models, types, byColor, sort]);
 
   const active = colors.size + models.size + types.size;

@@ -7,9 +7,13 @@ import { formatPrice, type Product } from "@nitro/shared";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ImageCarousel } from "@/components/image-carousel";
 import { ProductArt } from "@/components/art/product-art";
-import { findCategory, fromPrice, isEditorial, variantImages } from "@/lib/products";
+import { findCategory, fromPrice, isEditorial, isSoldOut, variantImages } from "@/lib/products";
 
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+
+function SoldOutBadge({ className }: { className: string }) {
+  return <span className={`pointer-events-none absolute z-10 rounded-[6px] bg-black px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.05em] text-white ${className}`}>Agotado</span>;
+}
 
 /** Tarjeta de producto: carrusel con las fotos principales, nombre, descripción y precio. */
 export function ProductTile({ product, sku, showColor = false }: { product: Product; sku?: string; showColor?: boolean }) {
@@ -21,6 +25,9 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
   // En la lista por color se suma una foto con modelo (al azar pero estable) si ese color la tiene.
   const extra = showColor && chosen?.gallery?.length ? chosen.gallery[hash(chosen.sku) % chosen.gallery.length] : undefined;
   const images = extra ? [...base, extra] : base;
+  // Agotado: la tarjeta se ve más opaca y lleva la etiqueta «Agotado» (por color en la lista por color).
+  const soldOut = isSoldOut(product, showColor ? sku : undefined);
+  const dim = soldOut ? "opacity-55 saturate-50" : "";
   const href = sku ? `/p/${product.slug}?color=${sku}` : `/p/${product.slug}`;
 
   // Lista por color (Moda y Tecnología): foto redondeada y rótulos pequeños en mayúsculas.
@@ -28,10 +35,11 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
     return (
       <div className="relative w-full">
       <FavoriteButton slug={product.slug} name={product.name} className="absolute left-4 top-4 z-10" />
+      {soldOut && <SoldOutBadge className="right-4 top-4" />}
       <Link
         href={href}
         data-theme={product.theme}
-        className={`flex w-full flex-col rounded-card p-2.5 text-ink ${dark ? "stage-dark border border-white/10" : "glass"}`}
+        className={`flex w-full flex-col rounded-card p-2.5 text-ink ${dim} ${dark ? "stage-dark border border-white/10" : "glass"}`}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
@@ -44,7 +52,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
             jumpTo={hover ? 1 : 0}
             sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
           />
-          {chosen.compareAtCents && chosen.compareAtCents > chosen.priceCents ? (
+          {!soldOut && chosen.compareAtCents && chosen.compareAtCents > chosen.priceCents ? (
             <span className="pointer-events-none absolute right-3 top-3 rounded-[6px] bg-black px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.05em] text-white">Oferta</span>
           ) : null}
         </div>
@@ -64,10 +72,11 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
   return (
     <div className="relative w-full max-w-[420px]">
     <FavoriteButton slug={product.slug} name={product.name} className="absolute left-6 top-6 z-10" />
+    {soldOut && <SoldOutBadge className="right-6 top-6" />}
     <Link
       href={href}
       data-theme={product.theme}
-      className={`flex w-full max-w-[420px] flex-col rounded-card p-4 text-ink ${dark ? "stage-dark border border-white/10" : "glass"}`}
+      className={`flex w-full max-w-[420px] flex-col rounded-card p-4 text-ink ${dim} ${dark ? "stage-dark border border-white/10" : "glass"}`}
     >
       {images.length > 0 ? (
         <ImageCarousel key={sku} images={images} />

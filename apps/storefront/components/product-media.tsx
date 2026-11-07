@@ -23,9 +23,9 @@ export function ProductGallery({
 
   if (editorial && images.length > 0) {
     return (
-      <div className="-mx-6 grid grid-cols-2 gap-0 md:grid-cols-3 xl:grid-cols-4" aria-label="Galería de imágenes">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4" aria-label="Galería de imágenes">
         {images.map((img, i) => (
-          <div key={img.src} className="glass relative aspect-square overflow-hidden">
+          <div key={img.src} className="glass relative aspect-square overflow-hidden rounded-[20px]">
             <Image src={img.src} alt={img.alt} fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw" className="object-cover object-[50%_25%]" priority={i === 0} />
           </div>
         ))}

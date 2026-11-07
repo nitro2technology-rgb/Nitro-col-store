@@ -204,8 +204,16 @@ export function productsIn(slug: string, list: Product[] = products): Product[] 
   const found = findCategory(slug);
   if (!found) return [];
   const leaves = found.node ? found.node.children.map((c) => c.slug) : [slug];
-  return list.filter((p) => leaves.includes(p.category));
+  // Con más stock primero; los agotados al final (el orden de siempre se conserva entre iguales).
+  return list.filter((p) => leaves.includes(p.category)).sort((a, b) => totalStock(b) - totalStock(a));
 }
+
+/** Unidades disponibles de un producto sumando todos sus colores. */
+export const totalStock = (p: Product) => p.variants.reduce((s, v) => s + Math.max(0, v.stock), 0);
+export const isSoldOut = (p: Product, sku?: string) => {
+  const v = sku ? p.variants.find((x) => x.sku === sku) : undefined;
+  return v ? v.stock <= 0 : totalStock(p) <= 0;
+};
 
 export const featuredOf = (list: Product[] = products) =>
   list.filter((p) => p.featuredRank != null).sort((a, b) => a.featuredRank! - b.featuredRank!);
