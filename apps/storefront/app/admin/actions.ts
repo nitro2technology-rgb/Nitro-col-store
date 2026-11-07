@@ -130,10 +130,13 @@ const lines = (text: string) =>
     .map((l) => l.trim())
     .filter(Boolean);
 
-export async function updateProduct(form: FormData) {
-  const slug = str(form, "slug");
-  const path = `/admin/productos/${slug}`;
-  const user = await requireAdmin(path);
+/** Error de validación del formulario: se muestra al administrador y no se guarda nada. */
+class Fail extends Error {}
+const fail = (message: string): never => {
+  throw new Fail(message);
+};
+
+function parseInfo(form: FormData) {
   const name = str(form, "name").slice(0, 120);
   const tagline = str(form, "tagline").slice(0, 200);
   const description = str(form, "description").slice(0, 5000);
@@ -146,14 +149,14 @@ export async function updateProduct(form: FormData) {
   const highlights = parsePairs(str(form, "highlights"), /\s*\|\s*/);
   const inBox = lines(str(form, "inBox")).map((l) => l.slice(0, 200)).slice(0, 30);
 
-  if (name.length < 2 || description.length < 10) back(path, { error: "El nombre y la descripción son obligatorios (descripción de 10 letras o más)." });
-  if (status !== "published" && status !== "draft") back(path, { error: "Disponibilidad inválida." });
-  if (rankRaw && (rank === null || rank < 1 || rank > 99)) back(path, { error: "El orden de destacado va de 1 a 99 (vacío = no destacado)." });
-  if (videoUrl && !/^(https:\/\/|\/)\S+$/i.test(videoUrl)) back(path, { error: "El video debe ser un enlace https:// o una ruta que empiece por /." });
-  if (!specs) back(path, { error: "Especificaciones: una por línea con el formato «Nombre: valor»." });
-  if (!highlights) back(path, { error: "Lo principal: una por línea con el formato «Título | texto»." });
+  if (name.length < 2 || description.length < 10) fail("El nombre y la descripción son obligatorios (descripción de 10 letras o más).");
+  if (status !== "published" && status !== "draft") fail("Disponibilidad inválida.");
+  if (rankRaw && (rank === null || rank < 1 || rank > 99)) fail("El orden de destacado va de 1 a 99 (vacío = no destacado).");
+  if (videoUrl && !/^(https:\/\/|\/)\S+$/i.test(videoUrl)) fail("El video debe ser un enlace https:// o una ruta que empiece por /.");
+  if (!specs) fail("Especificaciones: una por línea con el formato «Nombre: valor».");
+  if (!highlights) fail("Lo principal: una por línea con el formato «Título | texto».");
 
-  const after = {
+  return {
     name,
     tagline: tagline || null,
     description,
@@ -165,83 +168,179 @@ export async function updateProduct(form: FormData) {
     highlights: highlights!.map(([title, body]) => ({ title, body })),
     inBox,
   };
-  const found = await (await db()).$transaction(async (t) => {
-    const p = await t.product.findUnique({ where: { slug } });
-    if (!p) return false;
-    await t.product.update({ where: { id: p.id }, data: after });
-    const before = Object.fromEntries(Object.keys(after).map((k) => [k, p[k as keyof typeof p]]));
-    await t.auditLog.create({
-      data: { actorId: user.id, action: "product.update", entity: "product", entityId: p.id, changes: JSON.parse(JSON.stringify({ slug, before, after })) },
-    });
-    return true;
-  });
-  if (!found) back("/admin/productos", { error: "Producto no encontrado." });
-  revalidatePath("/", "layout");
-  back(path, { ok: after.status === "published" ? "Producto guardado." : "Producto guardado. Está oculto: no aparece en la tienda." });
 }
 
-export async function updateVariant(form: FormData) {
-  const slug = str(form, "slug");
-  const path = `/admin/productos/${slug}`;
-  const user = await requireAdmin(path);
-  const sku = str(form, "sku");
-  const label = str(form, "label").slice(0, 60);
-  const regular = int(str(form, "price"));
-  const offerRaw = str(form, "offer");
+/** Datos de un color dentro del formulario único (campos `v__<sku>__<campo>`). */
+function parseVariant(form: FormData, sku: string) {
+  const g = (f: string) => str(form, `v__${sku}__${f}`);
+  const label = g("label").slice(0, 60);
+  const regular = int(g("price"));
+  const offerRaw = g("offer");
   const offer = offerRaw ? int(offerRaw) : 0;
-  const costRaw = str(form, "cost");
+  const costRaw = g("cost");
   const cost = costRaw ? int(costRaw) : null;
-  const stock = int(str(form, "stock"));
-  const lowAt = int(str(form, "lowAt") || "3");
-  const swatchRaw = str(form, "swatch");
+  const stock = int(g("stock"));
+  const lowAt = int(g("lowAt") || "3");
+  const swatchRaw = g("swatch");
   const swatch = swatchRaw ? swatchRaw.toLowerCase() : null;
 
-  if (swatch !== null && !/^#[0-9a-f]{6}$/.test(swatch)) back(path, { error: `${sku}: el color del círculo no es válido.` });
-  if (!sku || label.length < 1) back(path, { error: "Falta el nombre del color o versión." });
+  if (swatch !== null && !/^#[0-9a-f]{6}$/.test(swatch)) fail(`${sku}: el color del círculo no es válido.`);
+  if (label.length < 1) fail(`${sku}: falta el nombre del color o versión.`);
   if (regular === null || offer === null || stock === null || lowAt === null || (costRaw && cost === null))
-    back(path, { error: `${sku}: revisa los números (solo dígitos, sin decimales).` });
+    fail(`${sku}: revisa los números (solo dígitos, sin decimales).`);
   if (regular! < 1000 || regular! > MAX_PRICE_PESOS || offer! > MAX_PRICE_PESOS || (cost ?? 0) > MAX_PRICE_PESOS || stock! > MAX_STOCK || lowAt! > 1000)
-    back(path, { error: `${sku}: algún valor está fuera de rango.` });
-  if (offer! > 0 && offer! >= regular!) back(path, { error: `${sku}: el precio de oferta debe ser menor que el precio normal (o déjalo vacío).` });
+    fail(`${sku}: algún valor está fuera de rango.`);
+  if (offer! > 0 && offer! >= regular!) fail(`${sku}: el precio de oferta debe ser menor que el precio normal (o déjalo vacío).`);
 
   // En la tienda, priceCents es lo que se cobra y compareAtCents el precio tachado.
   const charged = offer! > 0 ? offer! : regular!;
-  const ok = await (await db()).$transaction(async (t) => {
-    const v = await t.productVariant.findUnique({ where: { sku }, include: { inventory: true, product: { select: { slug: true } } } });
-    if (!v || v.product.slug !== slug) return false;
-    const before = {
-      label: v.label,
-      swatch: v.swatch,
-      priceCents: v.priceCents,
-      compareAtCents: v.compareAtCents,
-      unitCostCents: v.inventory?.unitCostCents ?? null,
-      onHand: v.inventory?.onHand ?? 0,
-      lowStockAt: v.inventory?.lowStockAt ?? null,
-    };
-    const after = {
-      label,
-      swatch,
-      priceCents: charged * 100,
-      compareAtCents: offer! > 0 ? regular! * 100 : null,
-      unitCostCents: cost === null ? null : cost * 100,
-      onHand: stock!,
-      lowStockAt: lowAt!,
-    };
-    await t.productVariant.update({ where: { id: v.id }, data: { label, swatch, priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
-    const inv = await t.inventoryItem.upsert({
-      where: { variantId: v.id },
-      update: { onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt, version: { increment: 1 } },
-      create: { variantId: v.id, onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt },
+  return {
+    sku,
+    label,
+    swatch,
+    priceCents: charged * 100,
+    compareAtCents: offer! > 0 ? regular! * 100 : null,
+    unitCostCents: cost === null ? null : cost * 100,
+    onHand: stock!,
+    lowStockAt: lowAt!,
+  };
+}
+
+const MAX_PHOTOS_PER_SEND = 30;
+
+/** Fotos elegidas en el formulario (campos `files__<sku o general>__<card|gallery>`). Vacío si no se eligió ninguna. */
+async function parseUploads(form: FormData) {
+  const batches: { sku: string; kind: "card" | "gallery"; files: File[] }[] = [];
+  for (const key of new Set(form.keys())) {
+    const m = /^files__(.*)__(card|gallery)$/.exec(key);
+    if (!m) continue;
+    const files = form.getAll(key).filter((f): f is File => f instanceof File && f.size > 0);
+    if (files.length) batches.push({ sku: m[1] === "general" ? "" : m[1]!, kind: m[2] as "card" | "gallery", files });
+  }
+  const total = batches.reduce((n, b) => n + b.files.length, 0);
+  if (total === 0) return batches;
+  const { storageConfigured, MAX_FILE_BYTES } = await import("@/lib/storage");
+  if (!storageConfigured()) fail("Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para poder subir fotos.");
+  if (total > MAX_PHOTOS_PER_SEND) fail(`Sube máximo ${MAX_PHOTOS_PER_SEND} fotos por vez.`);
+  if (batches.some((b) => b.files.some((f) => f.size > MAX_FILE_BYTES))) fail("Cada foto debe pesar menos de 8 MB.");
+  return batches;
+}
+
+/**
+ * Guarda TODO lo de la página de un producto con un solo botón: la información, todos los colores (nombre, círculo,
+ * precios, costo, stock) y las fotos elegidas. Primero se revisa todo; si algo está mal no se guarda nada.
+ * Los datos se guardan juntos (todo o nada); las fotos se suben después.
+ */
+export async function saveProduct(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+
+  let info: ReturnType<typeof parseInfo>;
+  let variants: ReturnType<typeof parseVariant>[];
+  let batches: Awaited<ReturnType<typeof parseUploads>>;
+  try {
+    info = parseInfo(form);
+    variants = [...new Set(form.getAll("skus").map(String))].map((sku) => parseVariant(form, sku));
+    batches = await parseUploads(form);
+  } catch (e) {
+    if (e instanceof Fail) back(path, { error: e.message });
+    throw e;
+  }
+
+  const d = await db();
+  let changedColors = 0;
+  try {
+    const found = await d.$transaction(async (t) => {
+      const p = await t.product.findUnique({ where: { slug } });
+      if (!p) return false;
+      const beforeInfo = Object.fromEntries(Object.keys(info).map((k) => [k, p[k as keyof typeof p]]));
+      if (JSON.stringify(beforeInfo) !== JSON.stringify(info)) {
+        await t.product.update({ where: { id: p.id }, data: info });
+        await t.auditLog.create({
+          data: { actorId: user.id, action: "product.update", entity: "product", entityId: p.id, changes: JSON.parse(JSON.stringify({ slug, before: beforeInfo, after: info })) },
+        });
+      }
+      for (const nv of variants) {
+        const v = await t.productVariant.findUnique({ where: { sku: nv.sku }, include: { inventory: true } });
+        if (!v || v.productId !== p.id) fail(`No existe ${nv.sku} en este producto.`);
+        const before = {
+          label: v!.label,
+          swatch: v!.swatch,
+          priceCents: v!.priceCents,
+          compareAtCents: v!.compareAtCents,
+          unitCostCents: v!.inventory?.unitCostCents ?? null,
+          onHand: v!.inventory?.onHand ?? 0,
+          lowStockAt: v!.inventory?.lowStockAt ?? null,
+        };
+        const { sku, ...after } = nv;
+        if (JSON.stringify(before) === JSON.stringify(after)) continue;
+        changedColors++;
+        await t.productVariant.update({ where: { id: v!.id }, data: { label: after.label, swatch: after.swatch, priceCents: after.priceCents, compareAtCents: after.compareAtCents } });
+        const inv = await t.inventoryItem.upsert({
+          where: { variantId: v!.id },
+          update: { onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt, version: { increment: 1 } },
+          create: { variantId: v!.id, onHand: after.onHand, unitCostCents: after.unitCostCents, lowStockAt: after.lowStockAt },
+        });
+        const delta = after.onHand - before.onHand;
+        if (delta !== 0) await t.stockMovement.create({ data: { inventoryItemId: inv.id, delta, reason: "Ajuste manual en el panel", actorId: user.id } });
+        await t.auditLog.create({ data: { actorId: user.id, action: "variant.update", entity: "product_variant", entityId: v!.id, changes: { sku, before, after } } });
+      }
+      return true;
     });
-    const delta = after.onHand - before.onHand;
-    if (delta !== 0) await t.stockMovement.create({ data: { inventoryItemId: inv.id, delta, reason: "Ajuste manual en el panel", actorId: user.id } });
-    await t.auditLog.create({ data: { actorId: user.id, action: "variant.update", entity: "product_variant", entityId: v.id, changes: { sku, before, after } } });
-    return true;
-  });
-  if (!ok) back(path, { error: `No existe ${sku} en este producto.` });
-  // Las páginas de la tienda se regeneran con los datos nuevos (solo se nota con CATALOG_SOURCE=db).
+    if (!found) back("/admin/productos", { error: "Producto no encontrado." });
+  } catch (e) {
+    if (e instanceof Fail) back(path, { error: e.message });
+    throw e;
+  }
+
+  // Fotos (después de guardar los datos).
+  let done = 0;
+  if (batches.length > 0) {
+    const { uploadPhoto } = await import("@/lib/storage");
+    const product = await d.product.findUnique({
+      where: { slug },
+      select: { id: true, name: true, variants: { where: { deletedAt: null }, select: { id: true, sku: true, label: true } } },
+    });
+    if (!product) back("/admin/productos", { error: "Producto no encontrado." });
+    if (batches.some((b) => b.sku && !product!.variants.find((v) => v.sku === b.sku))) {
+      revalidatePath("/", "layout");
+      back(path, { error: "Los datos se guardaron, pero un color de las fotos ya no existe." });
+    }
+    try {
+      for (const bt of batches) {
+        const variant = bt.sku ? product!.variants.find((v) => v.sku === bt.sku) : undefined;
+        for (const f of bt.files) {
+          const url = await uploadPhoto(Buffer.from(await f.arrayBuffer()), slug);
+          const last = await d.productImage.aggregate({ where: { productId: product!.id }, _max: { position: true } });
+          const img = await d.productImage.create({
+            data: {
+              productId: product!.id,
+              variantId: variant?.id ?? null,
+              url,
+              alt: variant ? `${product!.name} ${variant.label}` : product!.name,
+              kind: variant ? bt.kind : "gallery",
+              position: (last._max.position ?? -1) + 1,
+            },
+          });
+          await d.auditLog.create({
+            data: { actorId: user.id, action: "photo.add", entity: "product_image", entityId: img.id, changes: { slug, sku: bt.sku || null, kind: img.kind, url } },
+          });
+          done++;
+        }
+      }
+    } catch (e) {
+      console.error("[fotos] subida", e);
+      revalidatePath("/", "layout");
+      back(path, { error: `Los datos se guardaron, pero no se pudo subir una foto${done ? ` (se subieron ${done})` : ""}. Revisa que sea JPG, PNG o WebP.` });
+    }
+  }
+
   revalidatePath("/", "layout");
-  back(path, { ok: `${label} (${sku}) guardado.` });
+  const parts = ["la información", changedColors === 1 ? "1 color" : `${changedColors} colores`];
+  if (done) parts.push(done === 1 ? "1 foto" : `${done} fotos`);
+  const hidden = info.status === "draft" ? " El producto está oculto: no aparece en la tienda." : "";
+  back(path, { ok: `Todo guardado (${parts.join(", ")}).${hidden}` });
 }
 
 // ───────────── Devoluciones ─────────────
@@ -364,69 +463,6 @@ export async function rejectReturn(form: FormData) {
 }
 
 // ───────────── Fotos ─────────────
-
-const MAX_PHOTOS_PER_SEND = 30;
-
-/** Sube hasta 3 fotos a un grupo: principales de un color (card), galería de un color (gallery) o generales del producto. */
-export async function uploadPhotos(form: FormData) {
-  const slug = str(form, "slug");
-  const path = `/admin/productos/${slug}`;
-  const user = await requireAdmin(path);
-  const { storageConfigured, uploadPhoto, MAX_FILE_BYTES } = await import("@/lib/storage");
-  if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para poder subir fotos." });
-
-  // Campos "files__<sku o general>__<card|gallery>": todas las fotos de todos los colores se suben con un solo guardado.
-  const batches: { sku: string; kind: "card" | "gallery"; files: File[] }[] = [];
-  for (const key of new Set(form.keys())) {
-    const m = /^files__(.*)__(card|gallery)$/.exec(key);
-    if (!m) continue;
-    const files = form.getAll(key).filter((f): f is File => f instanceof File && f.size > 0);
-    if (files.length) batches.push({ sku: m[1] === "general" ? "" : m[1]!, kind: m[2] as "card" | "gallery", files });
-  }
-  const total = batches.reduce((n, b) => n + b.files.length, 0);
-  if (total === 0) back(path, { error: "Elige al menos una foto." });
-  if (total > MAX_PHOTOS_PER_SEND) back(path, { error: `Sube máximo ${MAX_PHOTOS_PER_SEND} fotos por vez.` });
-  if (batches.some((b) => b.files.some((f) => f.size > MAX_FILE_BYTES))) back(path, { error: "Cada foto debe pesar menos de 8 MB." });
-
-  const d = await db();
-  const product = await d.product.findUnique({
-    where: { slug },
-    select: { id: true, name: true, variants: { where: { deletedAt: null }, select: { id: true, sku: true, label: true } } },
-  });
-  if (!product) back("/admin/productos", { error: "Producto no encontrado." });
-  if (batches.some((b) => b.sku && !product!.variants.find((v) => v.sku === b.sku))) back(path, { error: "Color no encontrado." });
-
-  let done = 0;
-  try {
-    for (const bt of batches) {
-      const variant = bt.sku ? product!.variants.find((v) => v.sku === bt.sku) : undefined;
-      for (const f of bt.files) {
-        const url = await uploadPhoto(Buffer.from(await f.arrayBuffer()), slug);
-        const last = await d.productImage.aggregate({ where: { productId: product!.id }, _max: { position: true } });
-        const img = await d.productImage.create({
-          data: {
-            productId: product!.id,
-            variantId: variant?.id ?? null,
-            url,
-            alt: variant ? `${product!.name} ${variant.label}` : product!.name,
-            kind: variant ? bt.kind : "gallery",
-            position: (last._max.position ?? -1) + 1,
-          },
-        });
-        await d.auditLog.create({
-          data: { actorId: user.id, action: "photo.add", entity: "product_image", entityId: img.id, changes: { slug, sku: bt.sku || null, kind: img.kind, url } },
-        });
-        done++;
-      }
-    }
-  } catch (e) {
-    console.error("[fotos] subida", e);
-    revalidatePath("/", "layout");
-    back(path, { error: `No se pudo subir la foto${done ? ` (se subieron ${done})` : ""}. Revisa que sea JPG, PNG o WebP.` });
-  }
-  revalidatePath("/", "layout");
-  back(path, { ok: done === 1 ? "Foto subida." : `${done} fotos subidas.` });
-}
 
 export async function deletePhotoAction(form: FormData) {
   const slug = str(form, "slug");

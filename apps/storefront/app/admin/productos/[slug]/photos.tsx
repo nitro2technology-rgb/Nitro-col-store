@@ -56,7 +56,7 @@ export function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; can
           name={`files__${g.sku || "general"}__${g.kind}`}
           accept="image/jpeg,image/png,image/webp"
           multiple
-          form="fotos-todas"
+          form="producto-todo"
           text="Elegir fotos"
         />
       )}

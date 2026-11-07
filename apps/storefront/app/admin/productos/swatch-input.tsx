@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { label } from "../ui";
 import type { PaletteColor } from "../palette";
 
@@ -28,18 +28,32 @@ export function SwatchInput({
   defaultValue,
   popular = [],
   basics = [],
+  name = "swatch",
+  labelName = "label",
+  form,
 }: {
+  /** Nombre del campo del color y del campo del nombre (para varios colores en un mismo formulario). */
+  name?: string;
+  labelName?: string;
+  /** id del formulario si los campos están fuera de él. */
+  form?: string;
   defaultValue?: string | null;
   popular?: PaletteColor[];
   basics?: PaletteColor[];
 }) {
   const [hex, setHex] = useState(defaultValue && HEX.test(defaultValue) ? defaultValue.toLowerCase() : "");
   const root = useRef<HTMLDivElement>(null);
+  const hidden = useRef<HTMLInputElement>(null);
+  const initial = useRef(hex);
+  // Avisa al botón de guardar de que hubo un cambio (el campo oculto no lo hace solo).
+  useEffect(() => {
+    if (hex !== initial.current) hidden.current?.dispatchEvent(new Event("input", { bubbles: true }));
+  }, [hex]);
 
   function pick(c: PaletteColor) {
     setHex(c.hex);
     // Rellena el nombre del color solo si el campo está vacío (no pisa lo que ya escribiste).
-    const name = root.current?.closest("form")?.querySelector<HTMLInputElement>('input[name="label"]');
+    const name = root.current?.closest("[data-color-card],form")?.querySelector<HTMLInputElement>(`input[name="${labelName}"]`);
     if (name && !name.value.trim()) name.value = c.name;
   }
 
@@ -47,7 +61,7 @@ export function SwatchInput({
     <div className={`${label} sm:col-span-2`} ref={root}>
       Color del círculo
       <div className="mt-1 flex flex-wrap items-center gap-3">
-        <input type="hidden" name="swatch" value={hex} />
+        <input ref={hidden} type="hidden" name={name} form={form} value={hex} />
         <input
           type="color"
           aria-label="Elegir un color nuevo"
