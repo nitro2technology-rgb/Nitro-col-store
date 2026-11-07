@@ -7,8 +7,11 @@ import { Recommended } from "@/components/recommended";
 import { Reviews } from "@/components/reviews";
 import { VariantProvider } from "@/components/variant-context";
 import { getProducts } from "@/lib/catalog";
-import { getProduct, productsIn } from "@/lib/products";
-import { getReviews } from "@/lib/reviews";
+import { findCategory, getProduct, productsIn } from "@/lib/products";
+import { getReviews, getReviewsForProducts } from "@/lib/reviews";
+import { getSettings } from "@/lib/site-settings";
+import { HomeIgReviews } from "@/components/home-social";
+import { HomeReviews } from "@/components/home-blocks";
 
 export const revalidate = 300;
 
@@ -43,6 +46,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const tech = productsIn("tecnologia", others).slice(0, 3);
 
   const reviews = await getReviews(product.slug);
+  // Reseñas de la categoría del producto (ej. todas las gafas): historias de Instagram marcadas para su categoría (o la
+  // principal) y reseñas de clientes que compraron otros productos de ella. Cada bloque solo sale si tiene algo.
+  const cat = findCategory(product.category);
+  const topSlug = cat?.parent?.slug ?? product.category;
+  const places = [product.category, topSlug];
+  const igReviews = (await getSettings()).reviews.filter((r) => r.places.some((p) => places.includes(p)));
+  const categoryName = cat?.parent?.name ?? cat?.name ?? "";
+  const categoryReviews = await getReviewsForProducts(
+    productsIn(topSlug, others).map((p) => p.slug),
+    6,
+  );
   const rating = reviews.length > 0 ? { avg: reviews.reduce((s, r) => s + r.stars, 0) / reviews.length, count: reviews.length } : undefined;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -78,6 +92,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div id="resenas" className="scroll-mt-28 pt-12">
           <Reviews reviews={reviews} slug={product.slug} titleClass={h2} />
         </div>
+        <HomeIgReviews reviews={igReviews} title={categoryName ? `Reseñas de ${categoryName} en Instagram` : "Reseñas en Instagram"} />
+        <HomeReviews
+          reviews={categoryReviews}
+          title={categoryName ? `Más reseñas de ${categoryName}` : "Más reseñas"}
+          sub="De clientes que compraron otros productos de esta categoría"
+          id="resenas-categoria"
+        />
         <CtaBand product={product} />
         <QualityMarquee />
 

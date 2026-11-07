@@ -331,4 +331,4 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 
 - Instagram: cada publicación admite hasta 5 fotos o videos (MP4/WebM, 30 MB c/u; `uploadSiteMedia`). El tipo se deduce de la extensión (`isVideoUrl`); los videos corren mudos, en bucle y solo mientras se ven (`IgSlides`).
 
-- Reseñas por categoría: cada reseña de Instagram (Admin → Inicio) tiene «Dónde sale» (`places`: inicio y/o slugs de categorías; las antiguas solo inicio). `/c/[slug]` muestra las de Instagram marcadas para esa categoría o su categoría principal más las de clientes de sus productos (`getReviewsForProducts`); cada bloque solo aparece si tiene contenido.
+- Reseñas por categoría: cada reseña de Instagram (Admin → Inicio) tiene «Dónde sale» (`places`: inicio y/o slugs de categorías; las antiguas solo inicio). `/p/[slug]` (ficha de cada producto, junto a sus reseñas; NO en el catálogo `/c/`) muestra las de Instagram marcadas para esa categoría o su categoría principal más las de clientes de otros productos de esa categoría (`getReviewsForProducts`); cada bloque solo aparece si tiene contenido.
