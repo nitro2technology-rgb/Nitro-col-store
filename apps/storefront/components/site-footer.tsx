@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { categories } from "@/lib/products";
+import { BUSINESS } from "@/lib/business";
 
+/** Pie de página: bloque oscuro a todo el ancho, para distinguirlo del resto. Compacto en celular. */
 export function SiteFooter() {
   return (
-    <footer className="text-muted">
-      <div className="mx-auto grid max-w-[1024px] gap-10 px-6 py-16 text-xs sm:grid-cols-4">
+    <footer data-theme="dark" className="mt-10 bg-[#0b0b0b] text-ink/70">
+      <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-x-6 gap-y-6 px-6 py-8 text-[13px] md:grid-cols-4 md:gap-10 md:py-12 md:text-sm">
         {categories.map((parent) => (
           <div key={parent.slug}>
             <Link href={`/c/${parent.slug}`} className="font-semibold text-ink">
               {parent.name}
             </Link>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-1.5 md:mt-3 md:space-y-2">
               {parent.children.map((c) => (
                 <li key={c.slug}>
                   <Link href={`/c/${c.slug}`} className="hover:text-ink">
@@ -21,26 +23,28 @@ export function SiteFooter() {
             </ul>
           </div>
         ))}
-        <div>
-          <p className="font-semibold text-ink">Medios de pago</p>
-          <p className="mt-3 leading-relaxed">Tarjetas, PSE, Nequi, Daviplata y efectivo.</p>
-        </div>
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <p className="font-semibold text-ink">Tu compra</p>
-          <p className="mt-3 leading-relaxed">
-            Cinco días hábiles para ejercer el derecho de retracto.
+          <p className="mt-2 leading-relaxed md:mt-3">Pago con tarjeta, PSE y Nequi. Cinco días hábiles para ejercer el derecho de retracto.</p>
+          <p className="mt-2">
+            WhatsApp:{" "}
+            <a href={`https://wa.me/${BUSINESS.whatsapp.replace(/\D/g, "")}`} className="text-ink underline underline-offset-4">
+              {BUSINESS.whatsapp}
+            </a>
           </p>
         </div>
       </div>
-      <nav aria-label="Información" className="mx-auto flex max-w-[1024px] flex-wrap gap-x-6 gap-y-2 px-6 pb-6 text-xs">
-        <Link href="/ayuda" className="hover:text-ink">Ayuda</Link>
-        <Link href="/terminos" className="hover:text-ink">Términos y condiciones</Link>
-        <Link href="/privacidad" className="hover:text-ink">Privacidad</Link>
-        <Link href="/cuenta" className="hover:text-ink">Mi cuenta</Link>
-      </nav>
-      <p className="mx-auto max-w-[1024px] px-6 pb-12 text-xs">
-        © {new Date().getFullYear()} Nitro Col Store. Precios en COP, IVA incluido.
-      </p>
+      <div className="border-t border-ink/15">
+        <div className="mx-auto flex max-w-[1100px] flex-col gap-3 px-6 py-5 text-[12px] md:flex-row md:items-center md:justify-between">
+          <nav aria-label="Información" className="flex flex-wrap gap-x-5 gap-y-1.5">
+            <Link href="/ayuda" className="hover:text-ink">Ayuda</Link>
+            <Link href="/terminos" className="hover:text-ink">Términos y condiciones</Link>
+            <Link href="/privacidad" className="hover:text-ink">Privacidad</Link>
+            <Link href="/cuenta" className="hover:text-ink">Mi cuenta</Link>
+          </nav>
+          <p>© {new Date().getFullYear()} Nitro Col Store. Precios en COP, IVA incluido.</p>
+        </div>
+      </div>
     </footer>
   );
 }

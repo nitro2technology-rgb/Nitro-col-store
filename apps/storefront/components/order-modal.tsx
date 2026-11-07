@@ -103,8 +103,8 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
   });
 
   const setPick = (i: number, sku: string) => setPicks((cur) => cur.map((s, j) => (j === i ? sku : s)));
-  const pct2 = category === "gafas" ? gafasDiscountPct(2) : 0;
-  const pct3 = category === "gafas" ? gafasDiscountPct(3) : 0;
+  const pct2 = gafasDiscountPct(2);
+  const pct3 = gafasDiscountPct(3);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -181,7 +181,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
           </div>
           {pct2 > 0 && (
             <p className="mt-2 text-[13px] text-muted">
-              Lleva 2 y ahorra {pct2} %, lleva 3 y ahorra {pct3} %. Puedes mezclar modelos y colores.
+              Lleva 2 y ahorra {pct2} %, lleva 3 o más y ahorra {pct3} %. Puedes mezclar modelos y colores.
             </p>
           )}
         </fieldset>

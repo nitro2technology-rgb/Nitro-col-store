@@ -16,16 +16,6 @@ const check = (
 export function HomeAfterHero({ hasReviews }: { hasReviews: boolean }) {
   return (
     <>
-      <div className="mx-auto mt-6 flex max-w-[1440px] flex-wrap items-center justify-center gap-4 px-4">
-        <Link href="#coleccion" className={buttonClasses("buy", "cta-pulse !px-8 !py-3.5 !text-[15px] font-bold uppercase tracking-[0.06em]")}>
-          Ver colección
-        </Link>
-        {hasReviews && (
-          <Link href="#resenas" className="text-[15px] underline underline-offset-4">
-            Nuestras reseñas
-          </Link>
-        )}
-      </div>
       <PromiseStrip className="mt-6" />
     </>
   );
@@ -78,7 +68,11 @@ export type Promo = { title: string; text: string; cta: string; href: string; im
 /** Dos pancartas grandes hacia Tecnología y Moda. */
 export function HomePromos({ promos }: { promos: Promo[] }) {
   return (
-    <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-16 md:grid-cols-2 md:px-8 md:py-24">
+    <section aria-labelledby="categorias" className="mx-auto max-w-[1440px] px-4 py-14 md:px-8 md:py-20">
+      <h2 id="categorias" className="mb-6 text-[clamp(26px,3.4vw,40px)] font-semibold">
+        Categorías principales
+      </h2>
+      <div className="grid gap-4 md:grid-cols-2">
       {promos.map((p) => (
         <Link
           key={p.title}
@@ -99,6 +93,7 @@ export function HomePromos({ promos }: { promos: Promo[] }) {
           </span>
         </Link>
       ))}
+      </div>
     </section>
   );
 }

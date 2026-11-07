@@ -112,3 +112,32 @@ export async function removeCoverFiles(slug: string, urls: (string | undefined)[
   if (withJson) names.push(`${slug}.json`);
   if (names.length > 0) await client().storage.from(COVERS).remove(names);
 }
+
+// ───────────── Ajustes de la página de inicio (bucket "portadas": ajustes.json + fotos de Instagram) ─────────────
+
+/** Sube una foto (JPG, PNG o WebP) como WebP de hasta 1200 px de ancho y devuelve su dirección pública. */
+export async function uploadSiteImage(file: File, prefix: string): Promise<string> {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Formato no permitido");
+  const c = client();
+  await ensureBucket(c, COVERS);
+  const body = await sharp(Buffer.from(await file.arrayBuffer()), { failOn: "none", limitInputPixels: 60_000_000 })
+    .rotate()
+    .resize({ width: 1200, withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+  const path = `${prefix}-${crypto.randomUUID()}.webp`;
+  const { error } = await c.storage.from(COVERS).upload(path, body, { contentType: "image/webp", cacheControl: "31536000" });
+  if (error) throw new Error(error.message);
+  return c.storage.from(COVERS).getPublicUrl(path).data.publicUrl;
+}
+
+export async function saveSettingsFile(settings: unknown) {
+  const c = client();
+  await ensureBucket(c, COVERS);
+  const { error } = await c.storage.from(COVERS).upload("ajustes.json", JSON.stringify(settings), {
+    contentType: "application/json",
+    cacheControl: "30",
+    upsert: true,
+  });
+  if (error) throw new Error(error.message);
+}

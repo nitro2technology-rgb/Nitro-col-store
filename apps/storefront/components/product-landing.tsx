@@ -60,9 +60,9 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
 
   return (
     <section className="mx-auto max-w-[1100px] px-4 pb-10 pt-6 md:px-6 md:pt-10">
-      <div className="grid gap-6 md:grid-cols-2 md:gap-10">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
         {/* Izquierda: foto principal fija mientras se recorre la columna derecha */}
-        <div className="md:sticky md:top-24 md:self-start">
+        <div className="min-w-0 md:sticky md:top-24 md:self-start">
           {photos.length > 0 ? (
             <ProductPhotos key={variant.sku} images={photos.slice(0, 6)} cover={moda} />
           ) : (

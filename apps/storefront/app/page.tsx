@@ -6,6 +6,8 @@ import { categories, featuredOf, productsIn, variantImages } from "@/lib/product
 import { HomeHero } from "@/components/home-hero";
 import { CategoryCover } from "@/components/category-cover";
 import { getCover } from "@/lib/covers";
+import { getSettings } from "@/lib/site-settings";
+import { HomeIgReviews, HomeInstagram } from "@/components/home-social";
 import { HomeAfterHero, HomeBenefits, HomeFaq, HomeMarquee, HomePromos, HomeReviews, HomeStory, type Promo } from "@/components/home-blocks";
 import { HomeShowcase, type ShowcaseGroup } from "@/components/home-showcase";
 
@@ -16,10 +18,13 @@ const firstPhoto = (p?: Product) => (p ? variantImages(p)[0]?.src : undefined);
 export default async function Home() {
   const all = await getProducts();
   const reviews = await getLatestReviews(8);
+  const settings = await getSettings();
   const cover = await getCover("inicio"); // portada de inicio editada en el panel; sin ella, la tarjeta de siempre
 
   // Pestañas: los destacados y cada subcategoría que tenga productos (las creadas en el panel aparecen solas).
-  const featured = featuredOf(all);
+  // Los elegidos en el panel (Admin → Inicio) salen primero; si no hay, los destacados de siempre.
+  const chosen = settings.featured.flatMap((slug) => all.filter((p) => p.slug === slug));
+  const featured = chosen.length > 0 ? [...chosen, ...featuredOf(all).filter((p) => !chosen.includes(p))] : featuredOf(all);
   const groups: ShowcaseGroup[] = [
     {
       key: "destacados",
@@ -66,6 +71,8 @@ export default async function Home() {
       <HomeBenefits />
       <HomeReviews reviews={reviews} />
       <HomeStory />
+      <HomeIgReviews reviews={settings.reviews} />
+      <HomeInstagram posts={settings.posts} profileUrl={settings.instagramUrl} />
       <HomeFaq items={commonFaq.slice(0, 5)} />
     </main>
   );

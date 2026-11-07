@@ -36,7 +36,7 @@ export default function TermsPage() {
 
       <InfoSection title="3. Descuentos por cantidad">
         <p>
-          En las gafas, el descuento se aplica automáticamente al pagar según las unidades del carrito:{" "}
+          En todos los productos, el descuento se aplica automáticamente al pagar sobre el total de la compra, según las unidades del carrito (se suman productos distintos):{" "}
           {GAFAS_TIERS.map((t, i) => `${t.min}${i === GAFAS_TIERS.length - 1 ? " o más" : ""} unidades ${t.pct}%`).join(", ")}. No es acumulable con
           otras promociones, salvo que se indique lo contrario.
         </p>

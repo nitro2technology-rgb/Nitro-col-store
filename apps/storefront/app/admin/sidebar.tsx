@@ -10,6 +10,7 @@ const LINKS: { href: string; label: string; icon: IconName }[] = [
   { href: "/admin/productos", label: "Productos", icon: "box" },
   { href: "/admin/categorias", label: "Categorías", icon: "box" },
   { href: "/admin/portadas", label: "Portadas", icon: "box" },
+  { href: "/admin/inicio", label: "Inicio", icon: "home" },
   { href: "/admin/devoluciones", label: "Devoluciones", icon: "returns" },
 ];
 

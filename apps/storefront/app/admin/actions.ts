@@ -732,3 +732,77 @@ export async function removeCover(form: FormData) {
   revalidatePath("/", "layout");
   back(path, { ok: "Portada quitada: la página vuelve a su diseño de siempre." });
 }
+
+/** Guarda de una vez los ajustes del inicio: destacados, Instagram y reseñas de Instagram. */
+export async function saveHome(form: FormData) {
+  const path = "/admin/inicio";
+  const user = await requireAdmin(path);
+  const { storageConfigured, uploadSiteImage, saveSettingsFile, removeCoverFiles, MAX_FILE_BYTES } = await import("@/lib/storage");
+  const { getSettings } = await import("@/lib/site-settings");
+  if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para guardar." });
+  const d = await db();
+
+  const instagramUrl = str(form, "instagramUrl").slice(0, 200);
+  if (instagramUrl && !/^https:\/\/(www\.)?instagram\.com\/\S*$/.test(instagramUrl)) back(path, { error: "El enlace de Instagram debe empezar por https://www.instagram.com/" });
+
+  const slugs = [...new Set([0, 1, 2, 3, 4].map((i) => str(form, `feat_${i}`)).filter(Boolean))];
+  if (slugs.length) {
+    const found = await d.product.findMany({ where: { slug: { in: slugs } }, select: { slug: true } });
+    if (found.length !== slugs.length) back(path, { error: "Algún producto destacado ya no existe." });
+  }
+
+  const before = await getSettings(true);
+  const file = (k: string) => {
+    const f = form.get(k);
+    return f instanceof File && f.size > 0 ? f : null;
+  };
+  const oldUrls = new Set([...before.posts.map((p) => p.image), ...before.reviews.map((r) => r.image)]);
+  const used = new Set<string>();
+  const uploaded: string[] = [];
+
+  /** Una fila (publicación o reseña): foto nueva, o la que ya tenía; null si se quitó o no tiene foto. */
+  async function imageOf(prefix: string, i: number, tag: string) {
+    if (form.get(`${prefix}_del_${i}`) === "on") return null;
+    const f = file(`${prefix}_image_${i}`);
+    if (f) {
+      if (f.size > MAX_FILE_BYTES) throw new Error("Cada foto debe pesar menos de 8 MB.");
+      const url = await uploadSiteImage(f, tag);
+      uploaded.push(url);
+      return url;
+    }
+    const keep = str(form, `${prefix}_keep_${i}`);
+    return keep && oldUrls.has(keep) ? keep : null;
+  }
+
+  try {
+    const posts: { image: string; caption: string; href: string }[] = [];
+    const nPosts = Math.min(Number(str(form, "ig_n")) || 0, 24);
+    for (let i = 0; i < nPosts; i++) {
+      const image = await imageOf("ig", i, "ig");
+      if (!image) continue;
+      const href = str(form, `ig_href_${i}`).slice(0, 300);
+      if (href && !/^https:\/\/\S+$/.test(href)) throw new Error("El enlace de cada publicación debe empezar por https://");
+      used.add(image);
+      posts.push({ image, caption: str(form, `ig_caption_${i}`).slice(0, 300), href });
+    }
+    const reviews: { image: string; text: string; name: string }[] = [];
+    const nRev = Math.min(Number(str(form, "rv_n")) || 0, 24);
+    for (let i = 0; i < nRev; i++) {
+      const image = await imageOf("rv", i, "res");
+      if (!image) continue;
+      used.add(image);
+      reviews.push({ image, text: str(form, `rv_text_${i}`).slice(0, 400), name: str(form, `rv_name_${i}`).slice(0, 60) });
+    }
+    await saveSettingsFile({ featured: slugs, instagramUrl, posts, reviews });
+    // Borra las fotos que ya no se usan (quitadas o reemplazadas).
+    await removeCoverFiles("ajustes", [...oldUrls].filter((u) => !used.has(u)), false);
+    await d.auditLog.create({ data: { actorId: user.id, action: "home.save", entity: "settings", entityId: "inicio", changes: { featured: slugs, posts: posts.length, reviews: reviews.length } } });
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e;
+    console.error("[inicio] guardar", e);
+    await removeCoverFiles("ajustes", uploaded, false).catch(() => {});
+    back(path, { error: e instanceof Error && /8 MB|https/.test(e.message) ? e.message : "No se pudo guardar. Usa fotos JPG, PNG o WebP de menos de 8 MB." });
+  }
+  revalidatePath("/", "layout");
+  back(path, { ok: "Inicio guardado." });
+}

@@ -6,6 +6,18 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Celular: las cuadrículas de una sola columna no se ensanchan por su contenido (fotos, filas que se deslizan, botones),
+   que era lo que sacaba fotos y botones de la pantalla. Las clases grid-cols-* siguen mandando. */
+@layer base {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background:
     radial-gradient(52rem 38rem at 8% 5%, rgb(156 163 175 / 0.42), transparent 70%),

@@ -1,14 +1,18 @@
 import type { Product, ProductImage } from "@nitro/shared";
 
-/** Descuento por llevar varias gafas (de cualquier modelo y color). PORCENTAJES PROVISIONALES: el dueño los confirma. */
+/**
+ * Descuento por cantidad, igual para TODOS los productos y sumando las unidades de todo el carrito (se pueden mezclar
+ * productos, modelos y colores): 2 unidades 10 %, 3 o más unidades 15 %, sobre el total de la compra. Definido por el dueño.
+ */
 export const GAFAS_TIERS = [
   { min: 2, pct: 10 },
   { min: 3, pct: 15 },
-  { min: 4, pct: 20 },
 ] as const;
+export const QTY_TIERS = GAFAS_TIERS;
 
 export const gafasDiscountPct = (units: number) =>
   [...GAFAS_TIERS].reverse().find((t) => units >= t.min)?.pct ?? 0;
+export const qtyDiscountPct = gafasDiscountPct;
 
 /** Texto común de la ficha de todas las gafas. */
 export const GAFAS_BULLETS = [
@@ -55,9 +59,8 @@ export function recommendationsFor(product: Product, all: Product[]): Recommenda
 
 /** Descuento por cantidad sobre las gafas de las filas del carrito (en centavos). */
 export function gafasDiscount(rows: { product: { category: string }; variant: { priceCents: number }; qty: number }[]) {
-  const gafas = rows.filter((r) => r.product.category === "gafas");
-  const units = gafas.reduce((n, r) => n + r.qty, 0);
+  const units = rows.reduce((n, r) => n + r.qty, 0);
   const pct = gafasDiscountPct(units);
-  const base = gafas.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0);
+  const base = rows.reduce((sum, r) => sum + r.variant.priceCents * r.qty, 0);
   return { units, pct, cents: Math.round((base * pct) / 100) };
 }

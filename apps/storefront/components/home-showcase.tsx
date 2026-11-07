@@ -29,6 +29,11 @@ export function HomeShowcase({ groups }: { groups: ShowcaseGroup[] }) {
     const max = el.scrollWidth - el.clientWidth;
     setProgress(max > 0 ? el.scrollLeft / max : 0);
   };
+  const go = (i: number) => {
+    setActive(Math.min(Math.max(i, 0), groups.length - 1));
+    rail.current?.scrollTo({ left: 0 });
+    setProgress(0);
+  };
   const move = (dir: 1 | -1) => rail.current?.scrollBy({ left: dir * Math.max(320, (rail.current?.clientWidth ?? 600) * 0.8), behavior: "smooth" });
 
   // Un producto con varios colores aparece una vez por color (como en las listas), salvo en las gafas, que ya son una tarjeta por modelo.
@@ -40,25 +45,32 @@ export function HomeShowcase({ groups }: { groups: ShowcaseGroup[] }) {
 
   return (
     <section aria-labelledby="coleccion" className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 pb-10 pt-12 md:px-8 md:pt-16">
-      <h2 id="coleccion" className="sr-only">
-        Colección
+      <h2 id="coleccion" className="mb-5 text-[clamp(26px,3.4vw,40px)] font-semibold">
+        Productos destacados
       </h2>
-      <div role="tablist" aria-label="Colecciones" className="flex gap-6 overflow-x-auto whitespace-nowrap pb-2 md:gap-9">
+      <div className="flex items-center gap-2">
+      <button type="button" onClick={() => go(active - 1)} disabled={active === 0} aria-label="Colección anterior" className="grid size-9 shrink-0 place-items-center rounded-full bg-ink/15 text-ink disabled:opacity-30">
+        ‹
+      </button>
+      <div role="tablist" aria-label="Colecciones" className="flex min-w-0 flex-1 gap-6 overflow-x-auto whitespace-nowrap pb-2 [scrollbar-width:none] md:gap-9 [&::-webkit-scrollbar]:hidden">
         {groups.map((g, i) => (
           <button
             key={g.key}
             role="tab"
             aria-selected={i === active}
-            onClick={() => {
-              setActive(i);
-              rail.current?.scrollTo({ left: 0 });
-              setProgress(0);
+            ref={(el) => {
+              if (el && i === active) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
             }}
+            onClick={() => go(i)}
             className={`text-[clamp(18px,2.2vw,26px)] font-medium uppercase tracking-[0.02em] transition-colors ${i === active ? "text-ink" : "text-muted hover:text-ink"}`}
           >
             {g.label}
           </button>
         ))}
+      </div>
+      <button type="button" onClick={() => go(active + 1)} disabled={active === groups.length - 1} aria-label="Colección siguiente" className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-canvas disabled:opacity-30">
+        ›
+      </button>
       </div>
 
       <div ref={rail} onScroll={onScroll} className="mt-5 flex snap-x gap-3 overflow-x-auto pb-3 md:gap-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

@@ -123,7 +123,7 @@ export function CartView() {
           </div>
           {t.discountCents > 0 && (
             <div className="flex justify-between">
-              <dt className="text-muted">Descuento por {t.gafasUnits} gafas ({t.discountPct}%)</dt>
+              <dt className="text-muted">Descuento por {t.units} unidades ({t.discountPct}%)</dt>
               <dd>−{formatCOP(t.discountCents)}</dd>
             </div>
           )}

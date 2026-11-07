@@ -5,7 +5,6 @@ import { Intro, INTRO_SCRIPT } from "@/components/intro";
 import { Foliage } from "@/components/foliage";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { BackButton } from "@/components/back-button";
 import { AnnouncementBar } from "@/components/announcement-bar";
 import { OrderModal } from "@/components/order-modal";
 import { CatalogProvider } from "@/lib/catalog-client";
@@ -43,7 +42,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteHeader />
           {children}
           <SiteFooter />
-          <BackButton />
           <OrderModal />
         </CatalogProvider>
       </body>

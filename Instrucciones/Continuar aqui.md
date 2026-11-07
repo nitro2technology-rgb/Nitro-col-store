@@ -308,3 +308,9 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 - Las gafas tienen precios inventados; la tienda se puede navegar y comprar (carrito local) con ellos.
 - No se probó en celular real ni con lectores de pantalla; sí en Chrome de escritorio. El efecto vidrio (`backdrop-filter`) puede rendir más lento en celulares viejos. El hover (mini carrito, cambio de foto, menú) no existe en pantallas táctiles: allí el clic abre la página.
 - El carrito de prueba de un navegador se guarda en `localStorage` (clave `nitro-cart`).
+
+### 5q. Ajustes de inicio, descuento universal y celular
+- **Descuento por cantidad para TODOS los productos** (`lib/gafas-promo.ts` GAFAS_TIERS, `lib/pricing.ts`): 2 unidades 10 %, 3 o más 15 % sobre el total del carrito (se suman productos distintos). El servidor lo recalcula al cobrar.
+- **Admin → Inicio** (`app/admin/inicio`, `lib/site-settings.ts`): hasta 5 productos destacados, publicaciones de Instagram (foto, descripción, enlace) y reseñas de Instagram (imagen + comentario). Un solo JSON `ajustes.json` en el bucket `portadas`; sin migración. Instagram NO se lee automáticamente (exigiría token de Meta): se sube a mano.
+- Inicio: sin botón «Ver colección»; títulos «Productos destacados» (con flechas entre colecciones) y «Categorías principales»; secciones de reseñas de Instagram e Instagram antes de preguntas frecuentes. Pie de página oscuro y compacto. Botón flotante «volver» eliminado.
+- Celular: cuadrículas `.grid` de una columna con `minmax(0,1fr)` (en `globals.css`) para que fotos y botones no se salgan de la pantalla.

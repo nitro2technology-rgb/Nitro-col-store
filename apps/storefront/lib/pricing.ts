@@ -13,17 +13,16 @@ export type PriceRow = { category: string; priceCents: number; qty: number };
  */
 export function priceCart(rows: PriceRow[]) {
   const subtotalCents = rows.reduce((s, r) => s + r.priceCents * r.qty, 0);
-  const gafas = rows.filter((r) => r.category === "gafas");
-  const gafasUnits = gafas.reduce((n, r) => n + r.qty, 0);
-  const discountPct = gafasDiscountPct(gafasUnits);
-  const gafasCents = gafas.reduce((s, r) => s + r.priceCents * r.qty, 0);
-  const discountCents = Math.round((gafasCents * discountPct) / 100);
+  // Descuento por cantidad para todos los productos: cuenta las unidades de todo el carrito y se aplica al total.
+  const units = rows.reduce((n, r) => n + r.qty, 0);
+  const discountPct = gafasDiscountPct(units);
+  const discountCents = Math.round((subtotalCents * discountPct) / 100);
   const afterDiscount = subtotalCents - discountCents;
   const shippingFree = afterDiscount >= FREE_SHIPPING_FROM_CENTS;
   const shippingCents = rows.length === 0 || shippingFree ? 0 : SHIPPING_FLAT_CENTS;
   return {
     subtotalCents,
-    gafasUnits,
+    units,
     discountPct,
     discountCents,
     shippingCents,
