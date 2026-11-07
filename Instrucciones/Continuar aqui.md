@@ -322,3 +322,7 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 ### 5s. Guardado con estado y borrado múltiple de fotos
 - `app/admin/save-button.tsx`: `SaveButton` (desactivado hasta que haya cambios, «Guardando…» y bloqueo contra doble envío) y `DeleteSelectedButton`. `back()` agrega `v` a la URL y las páginas con formulario usan `key={v}` para reiniciarse tras guardar. Usado en Portadas, Inicio, fotos de producto, venta manual, nuevo producto y nueva categoría.
 - Fotos de producto: casilla «Elegir» en cada foto y botón «Eliminar seleccionadas (n)» (`deletePhotosAction`, con confirmación).
+
+### 5t. Reseñas abiertas con fotos
+- `/api/reviews` ahora recibe FormData: nombre, correo, estrellas, opinión y hasta 3 fotos (6 MB c/u, a WebP en el bucket `portadas`, prefijo `rev-`). Ya no pide número de pedido; una reseña por correo y producto. Si el correo tiene un pedido pagado de ese producto queda con «Compra verificada» (`orderId`).
+- **MIGRACIÓN PENDIENTE** `20261107000000_resenas_fotos` (columnas `images` y `author_email` en `reviews`): hay que aplicarla ANTES de desplegar (`pnpm --filter @nitro/db exec prisma migrate deploy`). Sin ella las reseñas no se leen ni se guardan.

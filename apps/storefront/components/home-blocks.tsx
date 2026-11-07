@@ -178,7 +178,7 @@ export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
     <section id="resenas" className="mx-auto max-w-[1440px] scroll-mt-20 px-4 py-16 md:px-8 md:py-24">
       <div className="text-right">
         <h2 className="text-[clamp(32px,4.4vw,52px)]">Ellos ya lo tienen</h2>
-        <p className="mt-1 text-muted">Reseñas de compradores verificados</p>
+        <p className="mt-1 text-muted">Reseñas de nuestros clientes</p>
       </div>
       <div className="mt-8 flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r) => (
@@ -198,7 +198,7 @@ export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
               <Link href={`/p/${r.productSlug}`} className="text-muted underline-offset-4 hover:underline">
                 {r.product}
               </Link>
-              <p className="mt-1 text-[#c9a24d]">✓ Compra verificada</p>
+              {r.verified && <p className="mt-1 text-[#c9a24d]">✓ Compra verificada</p>}
             </div>
           </article>
         ))}

@@ -611,6 +611,10 @@ model Review {
   rating     Int
   title      String?
   body       String?
+  /// Fotos que subió quien reseña (hasta 3; direcciones públicas del almacenamiento)
+  images     String[] @default([])
+  /// Correo de quien reseña sin pedido (no se publica; la tabla no tiene políticas públicas)
+  authorEmail String? @map("author_email")
   /// false oculta la reseña sin borrarla (moderación)
   published  Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at")

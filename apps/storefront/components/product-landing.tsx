@@ -78,7 +78,7 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
             <p className="mt-2 flex items-center gap-2 text-[15px]">
               <Stars avg={rating.avg} />
               <span className="font-semibold">
-                {rating.avg.toFixed(1)} · {rating.count} {rating.count === 1 ? "reseña verificada" : "reseñas verificadas"}
+                {rating.avg.toFixed(1)} · {rating.count} {rating.count === 1 ? "reseña" : "reseñas"}
               </span>
             </p>
           )}

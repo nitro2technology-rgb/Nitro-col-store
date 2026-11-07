@@ -1,6 +1,6 @@
-// Reseñas de compradores verificados: se publican con el número de un pedido pagado (ver /api/reviews).
+// Reseñas de clientes: nombre, correo, opinión y hasta 3 fotos (ver /api/reviews). `verified` = el correo tiene un pedido pagado de ese producto.
 // Mientras no haya ninguna, la ficha muestra "Aún no hay reseñas": no hay reseñas de ejemplo.
-export type Review = { author: string; stars: number; date: string; text: string };
+export type Review = { author: string; stars: number; date: string; text: string; images: string[]; verified: boolean };
 
 export type ShopReview = Review & { product: string; productSlug: string };
 
@@ -13,7 +13,7 @@ export async function getLatestReviews(limit = 6): Promise<ShopReview[]> {
       where: { published: true, rating: { gte: 4 } },
       orderBy: { createdAt: "desc" },
       take: limit,
-      select: { authorName: true, rating: true, body: true, createdAt: true, product: { select: { name: true, slug: true } } },
+      select: { authorName: true, rating: true, body: true, createdAt: true, images: true, orderId: true, product: { select: { name: true, slug: true } } },
     });
     return rows
       .filter((r) => (r.body ?? "").trim().length > 0)
@@ -22,6 +22,8 @@ export async function getLatestReviews(limit = 6): Promise<ShopReview[]> {
         stars: r.rating,
         date: r.createdAt.toISOString(),
         text: r.body ?? "",
+        images: r.images ?? [],
+        verified: r.orderId !== null,
         product: r.product.name,
         productSlug: r.product.slug,
       }));
@@ -40,13 +42,15 @@ export async function getReviews(slug: string): Promise<Review[]> {
       where: { published: true, product: { slug } },
       orderBy: { createdAt: "desc" },
       take: 50,
-      select: { authorName: true, rating: true, body: true, createdAt: true },
+      select: { authorName: true, rating: true, body: true, createdAt: true, images: true, orderId: true },
     });
     return rows.map((r) => ({
       author: r.authorName ?? "Cliente",
       stars: r.rating,
       date: r.createdAt.toISOString(),
       text: r.body ?? "",
+      images: r.images ?? [],
+      verified: r.orderId !== null,
     }));
   } catch (error) {
     console.error(`[reviews] No se pudieron leer las reseñas de ${slug}:`, error);

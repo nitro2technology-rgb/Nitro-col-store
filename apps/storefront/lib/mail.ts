@@ -67,7 +67,7 @@ export function customerEmail(order: MailOrder) {
        ${table(order)}
        <h2 style="font-size:16px;margin:24px 0 8px">Dirección de envío</h2>
        <p style="margin:0;line-height:1.5">${esc(a.line)}<br>${esc(a.city)}, ${esc(a.department)}</p>
-       <p style="margin-top:24px;line-height:1.5;color:#555">Cuando recibas tu pedido, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña con el número <b>NC-${order.number}</b> y este correo.</p>`,
+       <p style="margin-top:24px;line-height:1.5;color:#555">Cuando recibas tu pedido, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña (con fotos si quieres) usando tu nombre y este correo.</p>`,
     ),
   };
 }
@@ -118,7 +118,7 @@ export function deliveredEmail(order: MailOrder) {
       `¡Gracias por tu compra${first ? `, ${first}` : ""}!`,
       `<p style="line-height:1.5">Tu pedido <b>NC-${order.number}</b> fue entregado. Gracias por confiar en Nitro Col Store: esperamos que lo disfrutes mucho.</p>
        ${table(order)}
-       <p style="margin-top:24px;line-height:1.5;color:#555">Si tienes cualquier duda o algo no quedó como esperabas, escríbenos y lo resolvemos. Y si te gustó, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña con el número <b>NC-${order.number}</b> y este correo.</p>`,
+       <p style="margin-top:24px;line-height:1.5;color:#555">Si tienes cualquier duda o algo no quedó como esperabas, escríbenos y lo resolvemos. Y si te gustó, cuéntanos qué tal te fue: en la página de cada producto puedes dejar tu reseña (con fotos si quieres) usando tu nombre y este correo.</p>`,
     ),
   };
 }
