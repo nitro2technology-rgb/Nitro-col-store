@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
+// En Render gratis (512 MB) la revisión de tipos y de estilo del build agota la memoria. Allí se omite (RENDER=true);
+// se revisa antes en el computador con `npx tsc --noEmit` y `pnpm build`, que sí la hacen.
+const enRender = process.env.RENDER === "true";
+
 const config: NextConfig = {
+  typescript: { ignoreBuildErrors: enRender },
+  eslint: { ignoreDuringBuilds: enRender },
   transpilePackages: ["@nitro/ui", "@nitro/shared", "@nitro/db"],
   // Las fotos salen de miniaturas pregeneradas (scripts/miniaturas.py), no del optimizador de Next:
   // en Render gratis (512 MB, 1 CPU) redimensionar al vuelo tumbaba el servicio y tardaba segundos.
