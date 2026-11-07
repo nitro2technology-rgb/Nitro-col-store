@@ -15,7 +15,7 @@ function Media({ m, className }: { m: CoverMedia; className: string }) {
  * de la página pero de altura moderada, sin textos añadidos (si los hay, van dentro del propio medio). En celular es vertical (3:4, casi toda la
  * pantalla, con la barra de arriba encima); si se subió un medio para celular, ese se usa.
  */
-export function CategoryCover({ cover, title }: { cover: Cover; title: string }) {
+export function CategoryCover({ cover, title, home = false }: { cover: Cover; title: string; home?: boolean }) {
   const body = (
     <div className="relative overflow-hidden bg-[#111827]">
       {cover.mobile ? (
@@ -37,7 +37,7 @@ export function CategoryCover({ cover, title }: { cover: Cover; title: string })
     </div>
   );
   return (
-    <section aria-label={title} className="relative -mx-6 -mt-16 md:-mt-24">
+    <section aria-label={title} className={home ? "relative -mt-16 md:-mt-14" : "relative -mx-6 -mt-16 md:-mt-24"}>
       <h1 className="sr-only">{title}</h1>
       {cover.href ? (
         <Link href={cover.href} className="block">

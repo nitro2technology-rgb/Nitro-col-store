@@ -681,7 +681,7 @@ export async function saveCovers(form: FormData) {
   const { getCover } = await import("@/lib/covers");
   if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para guardar portadas." });
   const d = await db();
-  const cats = await d.category.findMany({ where: { deletedAt: null }, select: { slug: true, name: true } });
+  const cats = [{ slug: "inicio", name: "Inicio" }, ...(await d.category.findMany({ where: { deletedAt: null }, select: { slug: true, name: true } }))];
   const file = (k: string) => {
     const f = form.get(k);
     return f instanceof File && f.size > 0 ? f : null;

@@ -24,7 +24,7 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
   await requireAdmin("/admin/portadas");
   const { ok, error } = await searchParams;
   const { db } = await import("@nitro/db");
-  const cats = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true } });
+  const cats = [{ slug: "inicio", name: "Inicio" }, ...(await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true } }))];
   const covers = await Promise.all(cats.map((c) => getCover(c.slug, true)));
   const enabled = storageConfigured();
 
@@ -50,7 +50,7 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
             <section key={c.slug} className={card}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardHead title={c.name} sub={cover ? "Tiene portada propia." : "Sin portada propia: usa el diseño de siempre."} />
-                <Link href={`/c/${c.slug}`} target="_blank" className="text-[14px] font-semibold text-[#5b4fe0] underline">
+                <Link href={c.slug === "inicio" ? "/" : `/c/${c.slug}`} target="_blank" className="text-[14px] font-semibold text-[#5b4fe0] underline">
                   Ver página
                 </Link>
               </div>

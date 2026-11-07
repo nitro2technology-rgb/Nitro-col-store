@@ -4,6 +4,8 @@ import { commonFaq } from "@/lib/faq";
 import { getLatestReviews } from "@/lib/reviews";
 import { categories, featuredOf, productsIn, variantImages } from "@/lib/products";
 import { HomeHero } from "@/components/home-hero";
+import { CategoryCover } from "@/components/category-cover";
+import { getCover } from "@/lib/covers";
 import { HomeAfterHero, HomeBenefits, HomeFaq, HomeMarquee, HomePromos, HomeReviews, HomeStory, type Promo } from "@/components/home-blocks";
 import { HomeShowcase, type ShowcaseGroup } from "@/components/home-showcase";
 
@@ -14,6 +16,7 @@ const firstPhoto = (p?: Product) => (p ? variantImages(p)[0]?.src : undefined);
 export default async function Home() {
   const all = await getProducts();
   const reviews = await getLatestReviews(8);
+  const cover = await getCover("inicio"); // portada de inicio editada en el panel; sin ella, la tarjeta de siempre
 
   // Pestañas: los destacados y cada subcategoría que tenga productos (las creadas en el panel aparecen solas).
   const featured = featuredOf(all);
@@ -55,7 +58,7 @@ export default async function Home() {
 
   return (
     <main>
-      <HomeHero />
+      {cover ? <CategoryCover cover={cover} title="Nitro Col Store: todo lo que necesitas, en un solo lugar." home /> : <HomeHero />}
       <HomeAfterHero hasReviews={reviews.length > 0} />
       <HomeShowcase groups={groups} />
       <HomeMarquee />

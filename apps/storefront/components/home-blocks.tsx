@@ -31,14 +31,29 @@ export function HomeAfterHero({ hasReviews }: { hasReviews: boolean }) {
   );
 }
 
-/** Franja gris con tres promesas (portada de inicio y de cada categoría). */
+/** Franja gris con tres promesas (portada de inicio y de cada categoría). En celular corre horizontal, en movimiento. */
 export function PromiseStrip({ className = "" }: { className?: string }) {
+  const items = ["Envío a toda Colombia", "Pago seguro con Wompi", "Garantía y devoluciones"];
   return (
     <div data-theme="dark" className={`bg-[#4b5563]/90 text-[13px] text-white backdrop-blur-md ${className}`}>
-      <ul className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-x-10 gap-y-1 px-4 py-2.5 md:justify-between md:px-8">
-        <li className="flex items-center gap-2">{check} Envío a toda Colombia</li>
-        <li className="flex items-center gap-2">{check} Pago seguro con Wompi</li>
-        <li className="flex items-center gap-2">{check} Garantía y devoluciones</li>
+      <div className="md:hidden">
+        <Marquee
+          items={items.map((t) => (
+            <span key={t} className="flex items-center gap-2">
+              {check} {t}
+            </span>
+          ))}
+          speed={22}
+          itemClass="py-2.5 whitespace-nowrap"
+          separator="•"
+        />
+      </div>
+      <ul className="mx-auto hidden max-w-[1440px] items-center justify-between gap-x-10 px-8 py-2.5 md:flex">
+        {items.map((t) => (
+          <li key={t} className="flex items-center gap-2">
+            {check} {t}
+          </li>
+        ))}
       </ul>
     </div>
   );
