@@ -1,5 +1,7 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
+import { BulkPrices } from "./bulk-prices";
 import { cop, Icon, Notice, PageTitle, pct, thumb } from "../ui";
 
 export const metadata = { title: "Productos" };
@@ -12,9 +14,9 @@ const FILTERS = [
   { key: "sin-costo", label: "Sin costo" },
 ] as const;
 
-export default async function ProductsAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; q?: string; ver?: string }> }) {
+export default async function ProductsAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; q?: string; ver?: string; v?: string }> }) {
   await requireAdmin("/admin/productos");
-  const { ok, error, q = "", ver = "todos" } = await searchParams;
+  const { ok, error, q = "", ver = "todos", v } = await searchParams;
   const search = q.trim().slice(0, 60);
 
   const { db } = await import("@nitro/db");
@@ -56,7 +58,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
   const fromDb = process.env.CATALOG_SOURCE === "db";
 
   return (
-    <>
+    <Fragment key={v ?? "0"}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageTitle sub="Toca un producto para cambiar textos, precios, oferta, costo y stock.">Productos</PageTitle>
         <form action="/admin/productos" className="flex flex-wrap gap-2">
@@ -93,12 +95,18 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
+      {products.length > 0 && <BulkPrices />}
+
       {products.length === 0 ? (
         <p className="mt-10 text-[16px] text-[#6b6b80]">No hay productos con ese filtro.</p>
       ) : (
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {products.map(({ p, photo, stock, low, missingCost, min, max, onSale, margin }) => (
-            <li key={p.id}>
+            <li key={p.id} className="relative">
+              <label className="absolute right-3 top-3 z-10 flex cursor-pointer items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[12px] font-semibold text-[#3d3d55] shadow has-[:checked]:bg-[#5b4fe0] has-[:checked]:text-white">
+                <input type="checkbox" name="slug" value={p.slug} form="bulk" className="size-4 accent-[#5b4fe0]" aria-label={`Marcar ${p.name}`} />
+                Marcar
+              </label>
               <Link href={`/admin/productos/${p.slug}`} className={`group flex h-full flex-col rounded-[14px] border border-[#e6e6ee] bg-white transition hover:border-[#5b4fe0] hover:shadow-[0_6px_24px_-12px_rgba(91,79,224,0.35)]`}>
                 <div className="relative aspect-square overflow-hidden rounded-t-[13px] bg-[#f3f3f8]">
                   {photo ? (
@@ -139,7 +147,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
           ))}
         </ul>
       )}
-    </>
+    </Fragment>
   );
 }
 

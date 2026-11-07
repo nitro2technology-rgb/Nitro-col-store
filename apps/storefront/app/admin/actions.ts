@@ -343,6 +343,71 @@ export async function saveProduct(form: FormData) {
   back(path, { ok: `Todo guardado (${parts.join(", ")}).${hidden}` });
 }
 
+/**
+ * Aplica el mismo precio normal, precio de oferta y/o costo a todos los colores de los productos elegidos en el catálogo.
+ * Lo que se deja vacío no se toca. Se revisa todo antes de escribir.
+ */
+export async function applyPrices(form: FormData) {
+  const path = "/admin/productos";
+  const user = await requireAdmin(path);
+  const slugs = [...new Set(form.getAll("slug").map(String))];
+  const priceRaw = str(form, "price");
+  const offerRaw = str(form, "offer");
+  const costRaw = str(form, "cost");
+  const clearOffer = form.get("clearOffer") === "on";
+  const price = priceRaw ? int(priceRaw) : undefined;
+  const offer = clearOffer ? 0 : offerRaw ? int(offerRaw) : undefined;
+  const cost = costRaw ? int(costRaw) : undefined;
+
+  if (slugs.length === 0) back(path, { error: "Marca al menos un producto." });
+  if (price === undefined && offer === undefined && cost === undefined) back(path, { error: "Escribe al menos un valor: precio, oferta o costo." });
+  if (price === null || offer === null || cost === null) back(path, { error: "Revisa los números (solo dígitos, sin decimales)." });
+  if ((price !== undefined && (price! < 1000 || price! > MAX_PRICE_PESOS)) || (offer !== undefined && offer! > MAX_PRICE_PESOS) || (cost !== undefined && cost! > MAX_PRICE_PESOS))
+    back(path, { error: "Algún valor está fuera de rango." });
+
+  const d = await db();
+  const variants = await d.productVariant.findMany({
+    where: { deletedAt: null, product: { slug: { in: slugs }, deletedAt: null } },
+    include: { inventory: true, product: { select: { name: true } } },
+  });
+  if (variants.length === 0) back(path, { error: "No se encontraron colores en esos productos." });
+
+  const plan = variants.map((v) => {
+    const curRegular = (v.compareAtCents ?? v.priceCents) / 100;
+    const curOffer = v.compareAtCents ? v.priceCents / 100 : 0;
+    const regular = price ?? curRegular;
+    const off = offer ?? curOffer;
+    return { v, regular, off };
+  });
+  const bad = plan.find((x) => x.off > 0 && x.off >= x.regular);
+  if (bad) back(path, { error: `${bad.v.product.name} (${bad.v.label}): el precio de oferta debe ser menor que el precio normal.` });
+
+  await d.$transaction(async (t) => {
+    for (const { v, regular, off } of plan) {
+      const data = { priceCents: (off > 0 ? off : regular) * 100, compareAtCents: off > 0 ? regular * 100 : null };
+      await t.productVariant.update({ where: { id: v.id }, data });
+      if (cost !== undefined) {
+        await t.inventoryItem.upsert({
+          where: { variantId: v.id },
+          update: { unitCostCents: cost! * 100, version: { increment: 1 } },
+          create: { variantId: v.id, onHand: 0, unitCostCents: cost! * 100 },
+        });
+      }
+      await t.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: "variant.bulk_price",
+          entity: "product_variant",
+          entityId: v.id,
+          changes: { sku: v.sku, before: { priceCents: v.priceCents, compareAtCents: v.compareAtCents, unitCostCents: v.inventory?.unitCostCents ?? null }, after: { ...data, ...(cost !== undefined ? { unitCostCents: cost! * 100 } : {}) } },
+        },
+      });
+    }
+  });
+  revalidatePath("/", "layout");
+  back(path, { ok: `Listo: precios aplicados a ${variants.length} ${variants.length === 1 ? "color" : "colores"} de ${slugs.length} ${slugs.length === 1 ? "producto" : "productos"}.` });
+}
+
 // ───────────── Devoluciones ─────────────
 
 const RETURN_KINDS = ["retracto", "garantia", "otro"];

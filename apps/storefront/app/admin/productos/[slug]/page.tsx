@@ -8,6 +8,7 @@ import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } fr
 import { getPalette } from "../../palette";
 import { storageConfigured } from "@/lib/storage";
 import { ColorFields } from "../color-fields";
+import { CopyPrices } from "../copy-prices";
 import { VariantForm, type VariantRow } from "../variant-form";
 import { Group, PhotoManager, UploadNotice, type PhotoGroup } from "./photos";
 
@@ -139,6 +140,7 @@ export default async function ProductEdit({
           title="Colores, precios y stock"
           sub="Cada color tiene su nombre, el color del círculo, precio, stock y fotos. Todo se guarda junto con el botón «Guardar todo» de abajo: datos de todos los colores, información del producto y fotos elegidas. Ordenar o borrar fotos sí se hace al instante."
         />
+        <CopyPrices skus={rows.map((r) => r.sku)} />
         <div className="mt-4 space-y-4">
           {rows.map((v, i) => (
             <VariantForm key={v.sku} v={v} form={F} palette={palette}>
