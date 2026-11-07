@@ -12,7 +12,7 @@ import { formatCOP, formatPrice, type Product, type ProductImage } from "@nitro/
 import { BuyCta } from "@/components/buy-cta";
 import { PriceTag } from "@/components/price-tag";
 import { ProductPhotos } from "@/components/product-photos";
-import { ProductVideo } from "@/components/product-media";
+import { IgStoryVideo } from "@/components/ig-story";
 import { useVariant } from "@/components/variant-context";
 import { useCart } from "@/lib/cart";
 import { useOrderModal } from "@/lib/order-modal";
@@ -185,8 +185,8 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
           )}
 
           {product.videoUrl && (
-            <div className="mt-6 overflow-hidden rounded-[20px] bg-black">
-              <ProductVideo product={product} />
+            <div className="relative mx-auto mt-6 aspect-[9/16] w-full max-w-[340px] overflow-hidden rounded-[20px] bg-black">
+              <IgStoryVideo src={product.videoUrl} />
             </div>
           )}
         </div>
