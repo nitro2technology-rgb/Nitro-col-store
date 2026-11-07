@@ -832,13 +832,19 @@ export async function saveHome(form: FormData) {
       images.forEach((u) => used.add(u));
       posts.push({ image: images[0]!, images, caption: str(form, `ig_caption_${i}`).slice(0, 300), href, date: str(form, `ig_date_${i}`).slice(0, 40) });
     }
-    const reviews: { image: string; text: string; name: string }[] = [];
+    const reviews: { image: string; text: string; name: string; places: string[] }[] = [];
+    const validPlaces = new Set(["inicio", ...(await d.category.findMany({ where: { deletedAt: null }, select: { slug: true } })).map((c) => c.slug)]);
     const nRev = Math.min(Number(str(form, "rv_n")) || 0, 24);
     for (let i = 0; i < nRev; i++) {
       const image = await imageOf("rv", i, "res");
       if (!image) continue;
       used.add(image);
-      reviews.push({ image, text: str(form, `rv_text_${i}`).slice(0, 400), name: str(form, `rv_name_${i}`).slice(0, 60) });
+      reviews.push({
+        image,
+        text: str(form, `rv_text_${i}`).slice(0, 400),
+        name: str(form, `rv_name_${i}`).slice(0, 60),
+        places: [...new Set(form.getAll(`rv_places_${i}`).map(String).filter((s) => validPlaces.has(s)))],
+      });
     }
     await saveSettingsFile({ featured: slugs, instagramUrl, posts, reviews });
     // Borra las fotos que ya no se usan (quitadas o reemplazadas).

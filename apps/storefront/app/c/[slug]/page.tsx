@@ -7,6 +7,10 @@ import { ModaHero } from "@/components/moda-hero";
 import { CategoryCover } from "@/components/category-cover";
 import { PromiseStrip } from "@/components/home-blocks";
 import { getCover } from "@/lib/covers";
+import { getSettings } from "@/lib/site-settings";
+import { getReviewsForProducts } from "@/lib/reviews";
+import { HomeIgReviews } from "@/components/home-social";
+import { HomeReviews } from "@/components/home-blocks";
 
 export const revalidate = 300;
 
@@ -27,7 +31,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     ...parent.children,
   ];
   const items = productsIn(slug, await getProducts());
-  const cover = await getCover(slug); // portada propia editada en el panel; sin ella, el diseño de siempre
+  const cover = await getCover(slug);
+  // Reseñas de esta categoría: las de Instagram que se marcaron para ella (o para su categoría principal) y las de los clientes
+  // que compraron sus productos. Cada bloque solo sale si tiene algo.
+  const settings = await getSettings();
+  const igReviews = settings.reviews.filter((r) => r.places.includes(slug) || r.places.includes(parent.slug));
+  const customerReviews = await getReviewsForProducts(items.map((p) => p.slug), 8); // portada propia editada en el panel; sin ella, el diseño de siempre
 
   return (
     <main
@@ -66,6 +75,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       </nav>
 
       <CatalogGrid products={items} byColor={parent.byColor} />
+      </div>
+
+      <div className={parent.cover || cover ? "-mx-6" : ""}>
+        <HomeIgReviews reviews={igReviews} title={`Reseñas de ${found.name} en Instagram`} />
+        <HomeReviews reviews={customerReviews} title={`Reseñas de ${found.name}`} sub="Lo que dicen quienes compraron" id="resenas-categoria" />
       </div>
     </main>
   );

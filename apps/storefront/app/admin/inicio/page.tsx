@@ -18,6 +18,7 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
   const { db } = await import("@nitro/db");
   const products = await db.product.findMany({ where: { status: "published" }, orderBy: { name: "asc" }, select: { slug: true, name: true } });
   const s = await getSettings(true);
+  const cats = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true } });
   const enabled = storageConfigured();
   const posts = [...s.posts, ...Array.from({ length: EXTRA }, () => null)];
   const reviews = [...s.reviews, ...Array.from({ length: EXTRA }, () => null)];
@@ -108,7 +109,7 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
         </section>
 
         <section className={card}>
-          <CardHead title="Reseñas de Instagram" sub="Son historias de Instagram: sube la imagen o el video en vertical (9:16, por ejemplo 1080 × 1920 px; MP4 o WebM de hasta 30 MB) y escribe lo que dijo el cliente. Siempre salen con 5 estrellas. Van en el inicio, antes de Instagram y de las preguntas frecuentes." />
+          <CardHead title="Reseñas de Instagram" sub="Son historias de Instagram: sube la imagen o el video en vertical (9:16, por ejemplo 1080 × 1920 px; MP4 o WebM de hasta 30 MB) y escribe lo que dijo el cliente. Siempre salen con 5 estrellas. Elige dónde sale cada una: en el inicio y/o en las páginas de las categorías (en una categoría salen junto a las reseñas de los clientes que compraron ahí)." />
           <input type="hidden" name="rv_n" value={reviews.length} />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {reviews.map((r, i) => (
@@ -137,6 +138,17 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
                   Nombre o usuario (opcional)
                   <input name={`rv_name_${i}`} defaultValue={r?.name ?? ""} maxLength={60} className={`${field} mt-1`} />
                 </label>
+                <fieldset className="mt-3">
+                  <legend className={label}>Dónde sale esta reseña</legend>
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
+                    {[{ slug: "inicio", name: "Inicio" }, ...cats].map((c) => (
+                      <label key={c.slug} className="flex items-center gap-1.5 text-[13px] text-[#3d3d55]">
+                        <input type="checkbox" name={`rv_places_${i}`} value={c.slug} defaultChecked={r ? r.places.includes(c.slug) : c.slug === "inicio"} className="size-4" />
+                        {c.name}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 {r && (
                   <label className="mt-3 flex items-center gap-2 text-[13px] text-red-700">
                     <input type="checkbox" name={`rv_del_${i}`} /> Quitar esta reseña

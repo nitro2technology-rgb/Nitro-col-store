@@ -5,12 +5,12 @@ import { Rail } from "@/components/rail";
 import { isVideoUrl, type IgPost, type IgReview } from "@/lib/site-settings";
 
 /** Reseñas que los clientes dejaron en Instagram, en formato de historia (vertical 9:16, imagen o video), subidas desde el panel. */
-export function HomeIgReviews({ reviews }: { reviews: IgReview[] }) {
+export function HomeIgReviews({ reviews, title = "Lo que dicen de nosotros en Instagram" }: { reviews: IgReview[]; title?: string }) {
   if (reviews.length === 0) return null;
   return (
     <section aria-labelledby="reseñas-ig" className="mx-auto max-w-[1440px] px-4 py-14 md:px-8 md:py-20">
       <h2 id="reseñas-ig" className="text-[clamp(26px,3.4vw,40px)] font-semibold">
-        Lo que dicen de nosotros en Instagram
+        {title}
       </h2>
       <div className="mt-6">
         <Rail label="Reseñas de Instagram">

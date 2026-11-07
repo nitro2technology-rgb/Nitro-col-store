@@ -70,7 +70,7 @@ export default async function Home() {
       <HomePromos promos={promos} />
       <HomeBenefits />
       <HomeStory />
-      <HomeIgReviews reviews={settings.reviews} />
+      <HomeIgReviews reviews={settings.reviews.filter((r) => r.places.includes("inicio"))} />
       <HomeReviews reviews={reviews} />
       <HomeInstagram posts={settings.posts} profileUrl={settings.instagramUrl} />
       <HomeFaq items={commonFaq.slice(0, 5)} />

@@ -3,7 +3,8 @@
 import { COVERS } from "./covers";
 
 export type IgPost = { image: string; /** Todas las fotos de la publicación (1 a 5); la primera es `image`. */ images: string[]; caption: string; href: string; /** Fecha en texto, ej. «23 de abril de 2024». */ date: string };
-export type IgReview = { image: string; text: string; name: string };
+/** `places`: dónde sale la reseña: «inicio» y/o el slug de cada categoría. Las anteriores a esta opción salen solo en el inicio. */
+export type IgReview = { image: string; text: string; name: string; places: string[] };
 export type SiteSettings = {
   /** Slugs de los productos que salen primero en «Productos destacados» (hasta 5, en orden). */
   featured: string[];
@@ -48,7 +49,7 @@ export async function getSettings(fresh = false): Promise<SiteSettings> {
         const imgs = (Array.isArray(x.images) ? x.images.filter((u): u is string => typeof u === "string" && !!u) : typeof x.image === "string" && x.image ? [x.image] : []).slice(0, 5);
         return imgs.length ? { image: imgs[0]!, images: imgs, caption: str(x.caption, 300), href: str(x.href, 300), date: str(x.date, 40) } : null;
       }),
-      reviews: rows<IgReview>(d.reviews, (x) => (typeof x.image === "string" && x.image ? { image: x.image, text: str(x.text, 400), name: str(x.name, 60) } : null)),
+      reviews: rows<IgReview>(d.reviews, (x) => (typeof x.image === "string" && x.image ? { image: x.image, text: str(x.text, 400), name: str(x.name, 60), places: Array.isArray(x.places) ? x.places.filter((s): s is string => typeof s === "string").slice(0, 40) : ["inicio"] } : null)),
     };
   } catch {
     return EMPTY_SETTINGS;

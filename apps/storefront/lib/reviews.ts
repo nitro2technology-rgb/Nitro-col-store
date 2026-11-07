@@ -33,6 +33,35 @@ export async function getLatestReviews(limit = 6): Promise<ShopReview[]> {
   }
 }
 
+/** Últimas reseñas publicadas de un conjunto de productos (los de una categoría). Sin base de datos o sin reseñas devuelve []. */
+export async function getReviewsForProducts(slugs: string[], limit = 8): Promise<ShopReview[]> {
+  if (process.env.CATALOG_SOURCE !== "db" || slugs.length === 0) return [];
+  try {
+    const { db } = await import("@nitro/db");
+    const rows = await db.review.findMany({
+      where: { published: true, product: { slug: { in: slugs } } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: { authorName: true, rating: true, body: true, createdAt: true, images: true, orderId: true, product: { select: { name: true, slug: true } } },
+    });
+    return rows
+      .filter((r) => (r.body ?? "").trim().length > 0)
+      .map((r) => ({
+        author: r.authorName ?? "Cliente",
+        stars: r.rating,
+        date: r.createdAt.toISOString(),
+        text: r.body ?? "",
+        images: r.images ?? [],
+        verified: r.orderId !== null,
+        product: r.product.name,
+        productSlug: r.product.slug,
+      }));
+  } catch (error) {
+    console.error("[reviews] No se pudieron leer las reseñas de la categoría:", error);
+    return [];
+  }
+}
+
 /** Reseñas publicadas de un producto, las más recientes primero. Sin base de datos devuelve []; nunca rompe la ficha. */
 export async function getReviews(slug: string): Promise<Review[]> {
   if (process.env.CATALOG_SOURCE !== "db") return [];

@@ -173,13 +173,13 @@ export function HomeBenefits() {
 }
 
 /** Reseñas reales y publicadas (nunca de ejemplo). Si aún no hay ninguna, no se muestra la sección. */
-export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
+export function HomeReviews({ reviews, title = "Ellos ya lo tienen", sub = "Las 5 últimas reseñas de nuestros clientes", id = "resenas" }: { reviews: ShopReview[]; title?: string; sub?: string; id?: string }) {
   if (reviews.length === 0) return null;
   return (
-    <section id="resenas" className="mx-auto max-w-[1440px] scroll-mt-20 px-4 py-16 md:px-8 md:py-24">
+    <section id={id} className="mx-auto max-w-[1440px] scroll-mt-20 px-4 py-16 md:px-8 md:py-24">
       <div className="text-right">
-        <h2 className="text-[clamp(32px,4.4vw,52px)]">Ellos ya lo tienen</h2>
-        <p className="mt-1 text-muted">Las 5 últimas reseñas de nuestros clientes</p>
+        <h2 className="text-[clamp(32px,4.4vw,52px)]">{title}</h2>
+        <p className="mt-1 text-muted">{sub}</p>
       </div>
       <div className="mt-8 flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r) => (
