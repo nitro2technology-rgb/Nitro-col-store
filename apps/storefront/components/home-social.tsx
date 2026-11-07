@@ -1,7 +1,7 @@
 import { BrandMark } from "@/components/brand-mark";
 import { IgSlides } from "@/components/ig-slides";
 import { Rail } from "@/components/rail";
-import type { IgPost, IgReview } from "@/lib/site-settings";
+import { isVideoUrl, type IgPost, type IgReview } from "@/lib/site-settings";
 
 /** Reseñas que los clientes dejaron en Instagram (imagen + comentario), subidas desde el panel. */
 export function HomeIgReviews({ reviews }: { reviews: IgReview[] }) {
@@ -15,9 +15,16 @@ export function HomeIgReviews({ reviews }: { reviews: IgReview[] }) {
         <Rail label="Reseñas de Instagram">
           {reviews.map((r, i) => (
             <figure key={i} className="flex w-[78vw] max-w-[340px] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-[#111827] text-white">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={r.image} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+              {isVideoUrl(r.image) ? (
+                <video src={`${r.image}#t=0.1`} controls playsInline preload="metadata" className="aspect-square w-full bg-black object-cover" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={r.image} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+              )}
               <figcaption className="flex flex-1 flex-col justify-between gap-3 p-5">
+                <p className="tracking-[0.2em] text-[#c9a24d]" role="img" aria-label="5 de 5 estrellas">
+                  ★★★★★
+                </p>
                 {r.text && <blockquote className="text-[15px] leading-snug text-white/90">“{r.text}”</blockquote>}
                 {r.name && <span className="text-[13px] font-semibold text-white/70">{r.name}</span>}
               </figcaption>

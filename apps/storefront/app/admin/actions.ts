@@ -797,8 +797,9 @@ export async function saveHome(form: FormData) {
     if (form.get(`${prefix}_del_${i}`) === "on") return null;
     const f = file(`${prefix}_image_${i}`);
     if (f) {
-      if (f.size > MAX_FILE_BYTES) throw new Error("Cada foto debe pesar menos de 8 MB.");
-      const url = await uploadSiteImage(f, tag);
+      const video = f.type === "video/mp4" || f.type === "video/webm";
+      if (video ? f.size > SITE_VIDEO_MAX_BYTES : f.size > MAX_FILE_BYTES) throw new Error(video ? "Cada video debe pesar menos de 30 MB." : "Cada foto debe pesar menos de 8 MB.");
+      const url = await uploadSiteMedia(f, tag);
       uploaded.push(url);
       return url;
     }

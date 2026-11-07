@@ -108,21 +108,24 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
         </section>
 
         <section className={card}>
-          <CardHead title="Reseñas de Instagram" sub="Sube la captura o foto de la reseña y escribe lo que dijo el cliente. Salen en el inicio, antes de Instagram y de las preguntas frecuentes." />
+          <CardHead title="Reseñas de Instagram" sub="Sube la captura, foto o video de la reseña (MP4 o WebM de hasta 30 MB) y escribe lo que dijo el cliente. Siempre salen con 5 estrellas. Van en el inicio, antes de Instagram y de las preguntas frecuentes." />
           <input type="hidden" name="rv_n" value={reviews.length} />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {reviews.map((r, i) => (
               <div key={i} className="rounded-[12px] border border-[#e6e6ee] p-4">
                 <div className="flex gap-3">
                   <div className="size-20 shrink-0 overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
-                    {r && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.image} alt="" className="size-full object-cover" />
-                    )}
+                    {r &&
+                      (isVideoUrl(r.image) ? (
+                        <video src={`${r.image}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover" />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image} alt="" className="size-full object-cover" />
+                      ))}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-[#1d1b3a]">{r ? `Reseña ${i + 1}` : "Nueva reseña"}</p>
-                    <FilePicker name={`rv_image_${i}`} accept={IMG} text={r ? "Cambiar imagen" : "Elegir imagen"} />
+                    <FilePicker name={`rv_image_${i}`} accept={IMG_VIDEO} text={r ? "Cambiar imagen o video" : "Elegir imagen o video"} />
                   </div>
                 </div>
                 {r && <input type="hidden" name={`rv_keep_${i}`} value={r.image} />}
