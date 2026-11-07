@@ -2,13 +2,14 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { categories, isBuiltInCategory } from "@/lib/products";
 import { createCategory, deleteCategory } from "../actions";
-import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../ui";
+import { card, CardHead, field, label, Notice, PageTitle } from "../ui";
+import { SaveButton } from "../save-button";
 
 export const metadata = { title: "Categorías" };
 
-export default async function CategoriesAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function CategoriesAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
   await requireAdmin("/admin/categorias");
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
   const { db } = await import("@nitro/db");
   const rows = await db.category.findMany({
     where: { deletedAt: null },
@@ -28,7 +29,7 @@ export default async function CategoriesAdmin({ searchParams }: { searchParams: 
       )}
       <Notice ok={ok} error={error} />
 
-      <form action={createCategory} className={`${card} mt-6`}>
+      <form key={v ?? "0"} action={createCategory} className={`${card} mt-6`}>
         <CardHead
           title="Crear categoría"
           sub="Va dentro de Moda o Tecnología y copia su diseño: en Moda, la misma portada, la lista por color con tarjetas de fotos y la ficha corta, igual que Gafas."
@@ -53,9 +54,9 @@ export default async function CategoriesAdmin({ searchParams }: { searchParams: 
           </label>
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-4">
-          <button type="submit" className={primaryBtn}>
+          <SaveButton requireChange={false} pendingText="Creando la categoría…">
             Crear categoría
-          </button>
+          </SaveButton>
           <p className="text-[13px] text-[#6b6b80]">
             Después créale productos en{" "}
             <Link href="/admin/productos/nuevo" className="text-[#5b4fe0] underline">

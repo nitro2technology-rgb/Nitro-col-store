@@ -2,15 +2,16 @@ import Link from "next/link";
 import { formatCOP } from "@nitro/shared";
 import { requireAdmin } from "@/lib/admin";
 import { createManualSale } from "../../actions";
-import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../../ui";
+import { card, CardHead, field, label, Notice, PageTitle } from "../../ui";
+import { SaveButton } from "../../save-button";
 
 export const metadata = { title: "Registrar venta" };
 
 const LINES = 6;
 
-export default async function NewSale({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function NewSale({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
   await requireAdmin("/admin/pedidos/nuevo");
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
   const { db } = await import("@nitro/db");
   const variants = await db.productVariant.findMany({
     where: { deletedAt: null, product: { deletedAt: null } },
@@ -30,7 +31,7 @@ export default async function NewSale({ searchParams }: { searchParams: Promise<
       </PageTitle>
       <Notice ok={ok} error={error} />
 
-      <form action={createManualSale} className="mt-6 space-y-6">
+      <form key={v ?? "0"} action={createManualSale} className="mt-6 space-y-6">
         <section className={card}>
           <CardHead title="Qué se vendió" sub="Elige el producto y el color, la cantidad y, si quieres, un precio distinto al de la página (por unidad, en pesos)." />
           <div className="mt-4 space-y-3">
@@ -111,9 +112,9 @@ export default async function NewSale({ searchParams }: { searchParams: Promise<
         </section>
 
         <div className="sticky bottom-4 z-10 rounded-[14px] border border-[#e6e6ee] bg-white/95 p-4 shadow-lg backdrop-blur">
-          <button type="submit" className={primaryBtn}>
+          <SaveButton requireChange={false} pendingText="Registrando la venta… no cierres esta página">
             Registrar venta
-          </button>
+          </SaveButton>
         </div>
       </form>
     </>

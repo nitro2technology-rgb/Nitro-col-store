@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { addVariant, removeVariant, updateProduct, uploadPhotos } from "../../actions";
+import { Fragment } from "react";
+import { addVariant, deletePhotosAction, removeVariant, updateProduct, uploadPhotos } from "../../actions";
+import { DeleteSelectedButton, SaveButton } from "../../save-button";
 import { card, CardHead, cop, field, Icon, label, Notice, primaryBtn, thumb } from "../../ui";
 import { getPalette } from "../../palette";
 import { storageConfigured } from "@/lib/storage";
@@ -21,11 +23,11 @@ export default async function ProductEdit({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; v?: string }>;
 }) {
   const { slug } = await params;
   await requireAdmin(`/admin/productos/${slug}`);
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
 
   const { db } = await import("@nitro/db");
   const p = await db.product.findUnique({
@@ -98,7 +100,7 @@ export default async function ProductEdit({
   };
 
   return (
-    <>
+    <Fragment key={v ?? "0"}>
       <p className="text-[14px]">
         <Link href="/admin/productos" className="text-[#6b6b80] hover:text-[#5b4fe0]">
           ← Productos
@@ -147,11 +149,18 @@ export default async function ProductEdit({
               <form id="fotos-todas" action={uploadPhotos}>
                 <input type="hidden" name="slug" value={p.slug} />
               </form>
+              <form id="fotos-borrar" action={deletePhotosAction}>
+                <input type="hidden" name="slug" value={p.slug} />
+              </form>
               <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-[14px] border border-[#e6e6ee] bg-white/95 p-4 shadow-lg backdrop-blur">
-                <button type="submit" form="fotos-todas" className={primaryBtn}>
+                <SaveButton form="fotos-todas" pendingText="Subiendo fotos… no cierres esta página">
                   Subir todas las fotos elegidas
-                </button>
-                <span className="text-[13px] text-[#6b6b80]">Elige las fotos en cada color (y en las generales de abajo) y súbelas todas con un solo clic.</span>
+                </SaveButton>
+                <span className="mx-1 hidden h-6 w-px bg-[#e6e6ee] sm:block" aria-hidden="true" />
+                <DeleteSelectedButton form="fotos-borrar" name="id" />
+                <span className="basis-full text-[13px] text-[#6b6b80]">
+                  Para subir: elige las fotos en cada color y pulsa el botón. Para eliminar: marca «Elegir» en las fotos que quieras quitar y pulsa «Eliminar seleccionadas».
+                </span>
               </div>
             </>
           )}
@@ -251,6 +260,6 @@ export default async function ProductEdit({
           <p className="text-[13px] text-[#6b6b80]">La dirección de la página (/p/{p.slug}) no cambia aunque cambies el título.</p>
         </div>
       </form>
-    </>
+    </Fragment>
   );
 }

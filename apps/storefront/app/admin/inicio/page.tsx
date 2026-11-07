@@ -3,16 +3,17 @@ import { getSettings } from "@/lib/site-settings";
 import { storageConfigured } from "@/lib/storage";
 import { saveHome } from "../actions";
 import { FilePicker } from "../file-picker";
-import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../ui";
+import { SaveButton } from "../save-button";
+import { card, CardHead, field, label, Notice, PageTitle } from "../ui";
 
 export const metadata = { title: "Inicio" };
 
 const IMG = "image/jpeg,image/png,image/webp";
 const EXTRA = 3; // filas vacías para agregar nuevas en cada guardado
 
-export default async function HomeAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function HomeAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
   await requireAdmin("/admin/inicio");
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
   const { db } = await import("@nitro/db");
   const products = await db.product.findMany({ where: { status: "published" }, orderBy: { name: "asc" }, select: { slug: true, name: true } });
   const s = await getSettings(true);
@@ -30,7 +31,7 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
       )}
       <Notice ok={ok} error={error} />
 
-      <form action={saveHome} className="mt-6 space-y-6">
+      <form key={v ?? "0"} action={saveHome} className="mt-6 space-y-6">
         <section className={card}>
           <CardHead title="Productos destacados" sub="Elige hasta 5 productos: salen de primeros en «Productos destacados» del inicio, en este orden. El resto se completa solo." />
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -139,9 +140,7 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
         </section>
 
         <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-[14px] border border-[#e6e6ee] bg-white/95 p-4 shadow-lg backdrop-blur">
-          <button type="submit" disabled={!enabled} className={primaryBtn}>
-            Guardar todo
-          </button>
+          <SaveButton disabled={!enabled}>Guardar todo</SaveButton>
           <span className="text-[13px] text-[#6b6b80]">Al guardar aparecen 3 filas vacías nuevas para seguir agregando. Los cambios pueden tardar hasta 1 minuto en verse.</span>
         </div>
       </form>

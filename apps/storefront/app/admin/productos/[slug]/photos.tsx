@@ -1,4 +1,4 @@
-import { deletePhotoAction, movePhoto, uploadPhotos } from "../../actions";
+import { movePhoto } from "../../actions";
 import { card, CardHead, thumb } from "../../ui";
 import { FilePicker } from "../../file-picker";
 
@@ -42,13 +42,10 @@ export function Group({ slug, g, canUpload }: { slug: string; g: PhotoGroup; can
                   </button>
                 </form>
               </div>
-              <form action={deletePhotoAction}>
-                <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="id" value={p.id} />
-                <button type="submit" aria-label="Eliminar foto" className={`${mini} hover:!border-red-500 hover:!text-red-600`}>
-                  ✕
-                </button>
-              </form>
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#dcdce6] bg-white px-2 py-1 text-[12px] text-[#3d3d55] has-[:checked]:border-red-400 has-[:checked]:bg-red-50 has-[:checked]:text-red-700">
+                <input type="checkbox" name="id" value={p.id} form="fotos-borrar" aria-label="Seleccionar para eliminar" className="size-4 accent-red-600" />
+                Elegir
+              </label>
             </div>
           </div>
         ))}

@@ -318,3 +318,7 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 ### 5r. Ventas por fuera y favoritos
 - **Admin → Pedidos → «Registrar una venta por fuera de la página»** (`app/admin/pedidos/nuevo`, acción `createManualSale`): hasta 6 productos con cantidad y precio opcional, descuento, contacto (nombre, teléfono, correo opcional), forma de pago y estado (entregado o por entregar). Descuenta inventario (con movimiento de stock), crea Order con pago `provider: manual` y `attribution.source = manual`. Si se marca entregado y hay correo, envía `deliveredEmail` (gracias por tu compra). También se envía al marcar «entregado» en cualquier pedido (`setOrderStatus`); los pedidos manuales «por entregar» se pueden marcar entregados sin guía.
 - **Favoritos** (`lib/favorites.ts`, `favorite-button.tsx`, `favorites-section.tsx`): corazón en tarjetas y ficha; se guardan en el navegador del visitante (localStorage, sin cuenta) y «Tus favoritos» aparece sobre el pie de página en todas las páginas de la tienda.
+
+### 5s. Guardado con estado y borrado múltiple de fotos
+- `app/admin/save-button.tsx`: `SaveButton` (desactivado hasta que haya cambios, «Guardando…» y bloqueo contra doble envío) y `DeleteSelectedButton`. `back()` agrega `v` a la URL y las páginas con formulario usan `key={v}` para reiniciarse tras guardar. Usado en Portadas, Inicio, fotos de producto, venta manual, nuevo producto y nueva categoría.
+- Fotos de producto: casilla «Elegir» en cada foto y botón «Eliminar seleccionadas (n)» (`deletePhotosAction`, con confirmación).

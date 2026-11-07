@@ -19,8 +19,10 @@ const ALLOWED_FROM: Partial<Record<OrderStatus, OrderStatus[]>> = {
   cancelled: ["pending_payment"],
 };
 
+// `v` cambia en cada redirección: las páginas con formularios la usan como `key` para que se reinicien por completo
+// (campos vacíos, botón de guardar bloqueado hasta el próximo cambio).
 const back = (path: string, msg: { ok?: string; error?: string }): never =>
-  redirect(`${path}?${new URLSearchParams(msg as Record<string, string>).toString()}`);
+  redirect(`${path}?${new URLSearchParams({ ...(msg as Record<string, string>), v: Date.now().toString(36) }).toString()}`);
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
@@ -445,6 +447,30 @@ export async function deletePhotoAction(form: FormData) {
   }
   revalidatePath("/", "layout");
   back(path, { ok: "Foto eliminada." });
+}
+
+/** Elimina de una vez todas las fotos marcadas (campo `id` repetido). */
+export async function deletePhotosAction(form: FormData) {
+  const slug = str(form, "slug");
+  const path = `/admin/productos/${slug}`;
+  const user = await requireAdmin(path);
+  const ids = [...new Set(form.getAll("id").map(String).filter(Boolean))].slice(0, 100);
+  if (ids.length === 0) back(path, { error: "Marca al menos una foto para eliminar." });
+  const d = await db();
+  const imgs = await d.productImage.findMany({ where: { id: { in: ids }, product: { slug } } });
+  if (imgs.length === 0) back(path, { error: "Esas fotos ya no existen." });
+  await d.productImage.deleteMany({ where: { id: { in: imgs.map((i) => i.id) } } });
+  await d.auditLog.createMany({
+    data: imgs.map((img) => ({ actorId: user.id, action: "photo.delete", entity: "product_image", entityId: img.id, changes: { slug, url: img.url } })),
+  });
+  try {
+    const { deletePhoto } = await import("@/lib/storage");
+    for (const img of imgs) await deletePhoto(img.url);
+  } catch (e) {
+    console.error("[fotos] borrar archivos", e);
+  }
+  revalidatePath("/", "layout");
+  back(path, { ok: imgs.length === 1 ? "Foto eliminada." : `${imgs.length} fotos eliminadas.` });
 }
 
 /** Sube o baja una foto dentro de su grupo (mismo color y tipo, o las generales). */

@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { createProduct } from "../../actions";
-import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../../ui";
+import { card, CardHead, field, label, Notice, PageTitle } from "../../ui";
+import { SaveButton } from "../../save-button";
 import { getPalette } from "../../palette";
 import { ColorFields } from "../color-fields";
 
 export const metadata = { title: "Producto nuevo" };
 
-export default async function NewProduct({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function NewProduct({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
   await requireAdmin("/admin/productos/nuevo");
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
   const { db } = await import("@nitro/db");
   const all = await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], include: { _count: { select: { children: true } } } });
   const palette = await getPalette();
@@ -26,7 +27,7 @@ export default async function NewProduct({ searchParams }: { searchParams: Promi
       <PageTitle sub="Se crea oculto: después subes las fotos y lo haces visible.">Producto nuevo</PageTitle>
       <Notice ok={ok} error={error} />
 
-      <form action={createProduct} className={`${card} mt-6`}>
+      <form key={v ?? "0"} action={createProduct} className={`${card} mt-6`}>
         <CardHead title="Información" sub="Lo básico. Lo demás (especificaciones, lo principal, etiquetas…) se completa al editar." />
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <label className={`${label} md:col-span-2`}>
@@ -64,9 +65,9 @@ export default async function NewProduct({ searchParams }: { searchParams: Promi
         <p className="text-[13px] text-[#6b6b80]">Precios en pesos, sin puntos. Más colores se agregan después, en la ficha del producto.</p>
         <ColorFields palette={palette} />
         <div className="mt-6">
-          <button type="submit" className={primaryBtn}>
+          <SaveButton requireChange={false} pendingText="Creando el producto… no cierres esta página">
             Crear producto
-          </button>
+          </SaveButton>
         </div>
       </form>
     </>

@@ -4,7 +4,8 @@ import { getCover, type CoverMedia } from "@/lib/covers";
 import { storageConfigured } from "@/lib/storage";
 import { removeCover, saveCovers } from "../actions";
 import { FilePicker } from "../file-picker";
-import { card, CardHead, field, label, Notice, PageTitle, primaryBtn } from "../ui";
+import { SaveButton } from "../save-button";
+import { card, CardHead, field, label, Notice, PageTitle } from "../ui";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm";
 
@@ -20,9 +21,9 @@ function Preview({ m }: { m?: CoverMedia }) {
   );
 }
 
-export default async function CoversAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+export default async function CoversAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
   await requireAdmin("/admin/portadas");
-  const { ok, error } = await searchParams;
+  const { ok, error, v } = await searchParams;
   const { db } = await import("@nitro/db");
   const cats = [{ slug: "inicio", name: "Inicio" }, ...(await db.category.findMany({ where: { deletedAt: null }, orderBy: [{ path: "asc" }], select: { slug: true, name: true } }))];
   const covers = await Promise.all(cats.map((c) => getCover(c.slug, true)));
@@ -43,7 +44,7 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
         Medida recomendada para computador: <b>2600 × 1000 px</b> (proporción 2,6 : 1). Para celular, vertical <b>1080 × 1440 px</b> (3 : 4, ocupa casi toda la pantalla; si no subes una, se recorta la de computador). JPG, PNG, WebP, GIF, MP4 o WebM de menos de 20 MB.
       </p>
 
-      <form action={saveCovers} className="mt-6 space-y-5">
+      <form key={v ?? "0"} action={saveCovers} className="mt-6 space-y-5">
         {cats.map((c, i) => {
           const cover = covers[i];
           return (
@@ -100,9 +101,7 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
           );
         })}
         <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-[14px] border border-[#e6e6ee] bg-white/95 p-4 shadow-lg backdrop-blur">
-          <button type="submit" disabled={!enabled} className={primaryBtn}>
-            Guardar todas las portadas
-          </button>
+          <SaveButton disabled={!enabled}>Guardar todas las portadas</SaveButton>
           <span className="text-[13px] text-[#6b6b80]">Elige los archivos de todas las categorías que quieras y guarda una sola vez. Solo se guardan las que tengan cambios.</span>
         </div>
       </form>
