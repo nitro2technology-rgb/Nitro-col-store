@@ -81,6 +81,10 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
                   Enlace de la publicación
                   <input name={`ig_href_${i}`} defaultValue={p?.href ?? ""} placeholder="https://www.instagram.com/p/..." maxLength={300} className={`${field} mt-1`} />
                 </label>
+                <label className={`${label} mt-3`}>
+                  Fecha (opcional)
+                  <input name={`ig_date_${i}`} defaultValue={p?.date ?? ""} placeholder="23 de abril de 2024" maxLength={40} className={`${field} mt-1`} />
+                </label>
                 {p && (
                   <label className="mt-3 flex items-center gap-2 text-[13px] text-red-700">
                     <input type="checkbox" name={`ig_del_${i}`} /> Quitar esta publicación

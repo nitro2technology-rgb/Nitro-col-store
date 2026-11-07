@@ -781,7 +781,7 @@ export async function saveHome(form: FormData) {
   }
 
   try {
-    const posts: { image: string; caption: string; href: string }[] = [];
+    const posts: { image: string; caption: string; href: string; date: string }[] = [];
     const nPosts = Math.min(Number(str(form, "ig_n")) || 0, 24);
     for (let i = 0; i < nPosts; i++) {
       const image = await imageOf("ig", i, "ig");
@@ -789,7 +789,7 @@ export async function saveHome(form: FormData) {
       const href = str(form, `ig_href_${i}`).slice(0, 300);
       if (href && !/^https:\/\/\S+$/.test(href)) throw new Error("El enlace de cada publicación debe empezar por https://");
       used.add(image);
-      posts.push({ image, caption: str(form, `ig_caption_${i}`).slice(0, 300), href });
+      posts.push({ image, caption: str(form, `ig_caption_${i}`).slice(0, 300), href, date: str(form, `ig_date_${i}`).slice(0, 40) });
     }
     const reviews: { image: string; text: string; name: string }[] = [];
     const nRev = Math.min(Number(str(form, "rv_n")) || 0, 24);
