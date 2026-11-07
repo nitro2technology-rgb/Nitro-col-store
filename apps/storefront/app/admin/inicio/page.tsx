@@ -60,19 +60,25 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {posts.map((p, i) => (
               <div key={i} className="rounded-[12px] border border-[#e6e6ee] p-4">
-                <div className="flex gap-3">
-                  <div className="size-20 shrink-0 overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
-                    {p && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.image} alt="" className="size-full object-cover" />
-                    )}
+                <p className="text-[13px] font-semibold text-[#1d1b3a]">{p ? `Publicación ${i + 1}` : "Nueva publicación"}</p>
+                {p && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {p.images.map((u, k) => (
+                      <div key={u} className="w-[72px]">
+                        <div className="size-[72px] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={u} alt="" className="size-full object-cover" />
+                        </div>
+                        <input type="hidden" name={`ig_keep_${i}`} value={u} />
+                        <label className="mt-1 flex items-center gap-1 text-[11px] text-red-700">
+                          <input type="checkbox" name={`ig_rm_${i}`} value={u} /> Quitar {k + 1}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-[#1d1b3a]">{p ? `Publicación ${i + 1}` : "Nueva publicación"}</p>
-                    <FilePicker name={`ig_image_${i}`} accept={IMG} text={p ? "Cambiar foto" : "Elegir foto"} />
-                  </div>
-                </div>
-                {p && <input type="hidden" name={`ig_keep_${i}`} value={p.image} />}
+                )}
+                <FilePicker name={`ig_image_${i}`} accept={IMG} multiple text={p ? "Agregar fotos" : "Elegir fotos"} />
+                <p className="mt-1 text-[12px] text-[#6b6b80]">Hasta 5 fotos por publicación (las que ya tiene cuentan). La primera es la portada.</p>
                 <label className={`${label} mt-3`}>
                   Descripción
                   <textarea name={`ig_caption_${i}`} defaultValue={p?.caption ?? ""} rows={2} maxLength={300} className={`${field} mt-1`} />

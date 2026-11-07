@@ -762,7 +762,7 @@ export async function saveHome(form: FormData) {
     const f = form.get(k);
     return f instanceof File && f.size > 0 ? f : null;
   };
-  const oldUrls = new Set([...before.posts.map((p) => p.image), ...before.reviews.map((r) => r.image)]);
+  const oldUrls = new Set([...before.posts.flatMap((p) => p.images), ...before.reviews.map((r) => r.image)]);
   const used = new Set<string>();
   const uploaded: string[] = [];
 
@@ -781,15 +781,28 @@ export async function saveHome(form: FormData) {
   }
 
   try {
-    const posts: { image: string; caption: string; href: string; date: string }[] = [];
+    const posts: { image: string; images: string[]; caption: string; href: string; date: string }[] = [];
     const nPosts = Math.min(Number(str(form, "ig_n")) || 0, 24);
     for (let i = 0; i < nPosts; i++) {
-      const image = await imageOf("ig", i, "ig");
-      if (!image) continue;
+      if (form.get(`ig_del_${i}`) === "on") continue;
+      // Fotos de la publicación: las que ya tenía (menos las quitadas) y las nuevas; máximo 5.
+      const rm = new Set(form.getAll(`ig_rm_${i}`).map(String));
+      const keep = form.getAll(`ig_keep_${i}`).map(String).filter((u) => oldUrls.has(u) && !rm.has(u));
+      const fresh = form.getAll(`ig_image_${i}`).filter((f): f is File => f instanceof File && f.size > 0);
+      if (keep.length + fresh.length > 5) throw new Error("Cada publicación admite hasta 5 fotos.");
+      const added: string[] = [];
+      for (const f of fresh) {
+        if (f.size > MAX_FILE_BYTES) throw new Error("Cada foto debe pesar menos de 8 MB.");
+        const url = await uploadSiteImage(f, "ig");
+        uploaded.push(url);
+        added.push(url);
+      }
+      const images = [...keep, ...added];
+      if (images.length === 0) continue;
       const href = str(form, `ig_href_${i}`).slice(0, 300);
       if (href && !/^https:\/\/\S+$/.test(href)) throw new Error("El enlace de cada publicación debe empezar por https://");
-      used.add(image);
-      posts.push({ image, caption: str(form, `ig_caption_${i}`).slice(0, 300), href, date: str(form, `ig_date_${i}`).slice(0, 40) });
+      images.forEach((u) => used.add(u));
+      posts.push({ image: images[0]!, images, caption: str(form, `ig_caption_${i}`).slice(0, 300), href, date: str(form, `ig_date_${i}`).slice(0, 40) });
     }
     const reviews: { image: string; text: string; name: string }[] = [];
     const nRev = Math.min(Number(str(form, "rv_n")) || 0, 24);
@@ -807,7 +820,7 @@ export async function saveHome(form: FormData) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     console.error("[inicio] guardar", e);
     await removeCoverFiles("ajustes", uploaded, false).catch(() => {});
-    back(path, { error: e instanceof Error && /8 MB|https/.test(e.message) ? e.message : "No se pudo guardar. Usa fotos JPG, PNG o WebP de menos de 8 MB." });
+    back(path, { error: e instanceof Error && /8 MB|https|5 fotos/.test(e.message) ? e.message : "No se pudo guardar. Usa fotos JPG, PNG o WebP de menos de 8 MB." });
   }
   revalidatePath("/", "layout");
   back(path, { ok: "Inicio guardado." });

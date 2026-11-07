@@ -1,4 +1,5 @@
 import { BrandMark } from "@/components/brand-mark";
+import { IgSlides } from "@/components/ig-slides";
 import { Rail } from "@/components/rail";
 import type { IgPost, IgReview } from "@/lib/site-settings";
 
@@ -70,8 +71,7 @@ export function HomeInstagram({ posts, profileUrl }: { posts: IgPost[]; profileU
                     <circle cx="19" cy="12" r="1.6" />
                   </svg>
                 </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image} alt={p.caption.slice(0, 80)} loading="lazy" className="aspect-[4/5] w-full object-cover" />
+                <IgSlides images={p.images} alt={p.caption.slice(0, 80)} />
                 <div className="flex items-center gap-4 px-3.5 pb-1 pt-3">
                   <svg viewBox="0 0 24 24" className={icon} {...stroke} aria-hidden="true">
                     <path d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.1 3.4 5 6.6 5c1.9 0 3.5 1 5.4 3 1.9-2 3.5-3 5.4-3 3.2 0 5.1 3.1 3.9 6.3-1.8 4.6-9.3 9.2-9.3 9.2Z" />
