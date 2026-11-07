@@ -12,15 +12,15 @@ function Media({ m, className }: { m: CoverMedia; className: string }) {
 
 /**
  * Portada de una página de categoría, como la de inicio de la referencia: un medio (imagen, GIF o video) a todo el ancho
- * de la página pero de altura moderada, sin textos añadidos (si los hay, van dentro del propio medio). Si se subió un
- * medio para celular, ese se usa en pantallas pequeñas.
+ * de la página pero de altura moderada, sin textos añadidos (si los hay, van dentro del propio medio). En celular es vertical (3:4, casi toda la
+ * pantalla, con la barra de arriba encima); si se subió un medio para celular, ese se usa.
  */
 export function CategoryCover({ cover, title }: { cover: Cover; title: string }) {
   const body = (
     <div className="relative overflow-hidden bg-[#111827]">
       {cover.mobile ? (
         <>
-          <div className="aspect-[4/5] md:hidden">
+          <div className="aspect-[3/4] md:hidden">
             <Media m={cover.mobile} className="size-full object-cover" />
           </div>
           <div className="hidden aspect-[2.6/1] md:block">
@@ -28,7 +28,9 @@ export function CategoryCover({ cover, title }: { cover: Cover; title: string })
           </div>
         </>
       ) : (
-        <div className="aspect-[16/9] sm:aspect-[2/1] md:aspect-[2.6/1]">
+        // Sin medio de celular: en pantallas pequeñas la portada es alta (3:4, casi toda la pantalla), como en la referencia,
+        // y el medio de computador se recorta al centro.
+        <div className="aspect-[3/4] sm:aspect-[3/2] md:aspect-[2.6/1]">
           <Media m={cover.media} className="size-full object-cover" />
         </div>
       )}

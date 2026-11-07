@@ -40,7 +40,7 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
       )}
       <Notice ok={ok} error={error} />
       <p className="mt-4 text-[14px] text-[#6b6b80]">
-        Medida recomendada para computador: <b>2600 × 1000 px</b> (proporción 2,6 : 1). Para celular, vertical <b>1080 × 1350 px</b>. JPG, PNG, WebP, GIF, MP4 o WebM de menos de 20 MB.
+        Medida recomendada para computador: <b>2600 × 1000 px</b> (proporción 2,6 : 1). Para celular, vertical <b>1080 × 1440 px</b> (3 : 4, ocupa casi toda la pantalla; si no subes una, se recorta la de computador). JPG, PNG, WebP, GIF, MP4 o WebM de menos de 20 MB.
       </p>
 
       <form action={saveCovers} className="mt-6 space-y-5">
@@ -55,11 +55,11 @@ export default async function CoversAdmin({ searchParams }: { searchParams: Prom
                 </Link>
               </div>
               <div className="mt-4 space-y-4">
-                <div className="grid gap-4 md:grid-cols-[1fr_140px]">
-                  <div className="aspect-[2.6/1] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
+                <div className="grid grid-cols-[1fr_110px] gap-4 md:grid-cols-[1fr_150px]">
+                  <div className="aspect-[2.6/1] self-start overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
                     <Preview m={cover?.media} />
                   </div>
-                  <div className="hidden aspect-[4/5] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8] md:block">
+                  <div className="aspect-[3/4] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
                     <Preview m={cover?.mobile} />
                   </div>
                 </div>
