@@ -17,7 +17,7 @@ import { BrandMark } from "@/components/brand-mark";
 export const INTRO_KEY = "nitro-intro-v7";
 
 /** Se ejecuta en <head>, antes de pintar: marca <html> para que el CSS oculte la intro si no corresponde. */
-export const INTRO_SCRIPT = `try{if(!/[?&]intro/.test(location.search)&&(localStorage.getItem("${INTRO_KEY}")||matchMedia("(prefers-reduced-motion: reduce)").matches))document.documentElement.dataset.introSeen="1"}catch(e){document.documentElement.dataset.introSeen="1"}`;
+export const INTRO_SCRIPT = `try{if(!/[?&]intro/.test(location.search)&&(localStorage.getItem("${INTRO_KEY}")))document.documentElement.dataset.introSeen="1"}catch(e){document.documentElement.dataset.introSeen="1"}`;
 
 /** Duración desde que arranca el video hasta que la intro desaparece (coincide con globals.css). */
 const RUN_MS = 3650;

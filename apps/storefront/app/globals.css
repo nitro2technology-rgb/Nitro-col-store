@@ -47,7 +47,7 @@ p {
   animation: ring-spin 60s linear infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media not all { /* los efectos se ven igual en celular */
   .ring-spin {
     animation: none;
   }
@@ -74,7 +74,7 @@ p {
   animation: menu-in 160ms ease-out;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media not all { /* los efectos se ven igual en celular */
   .menu-in {
     animation: none;
   }
@@ -118,7 +118,7 @@ p {
   transform: scaleX(1);
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media not all { /* los efectos se ven igual en celular */
   .nav-fx,
   .nav-link::after {
     transition: none;
@@ -167,7 +167,7 @@ p {
   animation: brand-write 1.7s cubic-bezier(0.65, 0, 0.35, 1) 0.25s both;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media not all { /* los efectos se ven igual en celular */
   .brand-write {
     animation: none;
   }
@@ -250,7 +250,7 @@ p {
   to { transform: translate3d(14px, 6px, 0) rotate(0.8deg); }
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   .fol-left {
     transform-origin: 0 100%;
     animation: fol-sway-l 11s ease-in-out infinite alternate;
@@ -343,7 +343,7 @@ p {
   to { transform: translateY(-50px); }
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   .fol-fall span {
     animation-name: fol-fall;
     animation-timing-function: linear;
@@ -367,19 +367,10 @@ p {
 }
 
 /* Sin movimiento no hay hojas cayendo (quedarían quietas a mitad de pantalla). */
-@media (prefers-reduced-motion: reduce) {
-  .fol-fall {
-    display: none;
-  }
-}
+
 
 /* Celulares: menos capas para que el desplazamiento siga fluido. */
-@media (max-width: 767px) {
-  .fol-rays,
-  .fol-fall span:nth-child(even) {
-    display: none;
-  }
-}
+/* (Las capas de rayos y hojas se ven igual en celular que en computador.) */
 
 /* Texto legible sobre hojas: un halo suave del color del lienzo, invisible sobre fondo liso. */
 main :where(h1, h2, h3, p, dt, dd, legend, li) {
@@ -590,7 +581,7 @@ html:not([data-intro-seen]) .hero .brand-write {
   opacity: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   .hero-bg {
     animation: hero-breathe 18s ease-in-out infinite alternate;
     will-change: transform;
@@ -627,7 +618,7 @@ html:not([data-intro-seen]) .hero .brand-write {
   opacity: 0.42;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   .hero-branches {
     transform-origin: 50% 0;
     animation: hero-sway 9s ease-in-out infinite alternate;
@@ -686,7 +677,7 @@ html:not([data-intro-seen]) .hero .brand-write {
   from { opacity: 0; transform: scale(1.02); }
   to { opacity: 1; transform: none; }
 }
-@media (prefers-reduced-motion: reduce) {
+@media not all { /* los efectos se ven igual en celular */
   .watch-fade { animation: none; }
 }
 
@@ -699,7 +690,7 @@ html:not([data-intro-seen]) .hero .brand-write {
   width: max-content;
   animation: marquee-move var(--marquee-speed, 38s) linear infinite;
 }
-.marquee:hover .marquee-track { animation-play-state: paused; }
+@media (hover: hover) { .marquee:hover .marquee-track { animation-play-state: paused; } }
 @keyframes marquee-move {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -728,7 +719,4 @@ html:not([data-intro-seen]) .hero .brand-write {
   mask: radial-gradient(60% 100% at 50% 100%, #000 99%, transparent 100%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .marquee { overflow-x: auto; }
-  .marquee-track, .cta-pulse { animation: none !important; }
-}
+/* Las cintas y el botón que palpita se mueven siempre, también en celulares con «reducir movimiento» activado. */

@@ -68,17 +68,17 @@ export function HomePromos({ promos }: { promos: Promo[] }) {
         <Link
           key={p.title}
           href={p.href}
-          className="group relative isolate flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[20px] bg-[#111827] p-7 md:min-h-[560px] md:p-10"
+          className="group relative isolate flex aspect-[16/9] flex-col justify-between overflow-hidden rounded-[20px] bg-[#111827] p-5 md:aspect-auto md:min-h-[560px] md:p-10"
         >
           {p.image && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={p.image} alt="" className="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
           )}
           <span className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/10 to-black/20" />
-          <span className="text-[clamp(32px,4vw,52px)] font-semibold leading-[1.02] text-white">{p.title}</span>
+          <span className="text-[clamp(24px,4vw,52px)] font-semibold leading-[1.02] text-white">{p.title}</span>
           <span>
-            <span className="block max-w-[34ch] text-[16px] text-white/90">{p.text}</span>
-            <span className="mt-4 inline-block rounded-button border border-white px-5 py-2 text-[15px] text-white transition-colors group-hover:bg-white group-hover:text-black">
+            <span className="block max-w-[34ch] text-[14px] text-white/90 md:text-[16px]">{p.text}</span>
+            <span className="mt-3 inline-block rounded-button border border-white px-4 py-1.5 text-[14px] md:mt-4 md:px-5 md:py-2 md:text-[15px] text-white transition-colors group-hover:bg-white group-hover:text-black">
               {p.cta}
             </span>
           </span>
