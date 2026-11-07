@@ -13,6 +13,9 @@ export type SiteSettings = {
   reviews: IgReview[];
 };
 
+/** Las publicaciones pueden mezclar fotos y videos (MP4 o WebM) en la misma lista `images`; el tipo se deduce de la extensión. */
+export const isVideoUrl = (u: string) => /\.(mp4|webm)(\?|#|$)/i.test(u);
+
 export const EMPTY_SETTINGS: SiteSettings = { featured: [], instagramUrl: "", posts: [], reviews: [] };
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");

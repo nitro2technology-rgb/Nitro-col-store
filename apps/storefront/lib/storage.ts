@@ -131,6 +131,20 @@ export async function uploadSiteImage(file: File, prefix: string): Promise<strin
   return c.storage.from(COVERS).getPublicUrl(path).data.publicUrl;
 }
 
+export const SITE_VIDEO_MAX_BYTES = 30 * 1024 * 1024;
+
+/** Sube una foto (se convierte a WebP) o un video MP4/WebM (tal cual) para las publicaciones de Instagram. */
+export async function uploadSiteMedia(file: File, prefix: string): Promise<string> {
+  const ext = file.type === "video/mp4" ? "mp4" : file.type === "video/webm" ? "webm" : null;
+  if (!ext) return uploadSiteImage(file, prefix);
+  const c = client();
+  await ensureBucket(c, COVERS);
+  const path = `${prefix}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await c.storage.from(COVERS).upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, cacheControl: "31536000" });
+  if (error) throw new Error(error.message);
+  return c.storage.from(COVERS).getPublicUrl(path).data.publicUrl;
+}
+
 export async function saveSettingsFile(settings: unknown) {
   const c = client();
   await ensureBucket(c, COVERS);

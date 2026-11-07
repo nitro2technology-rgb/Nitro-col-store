@@ -769,7 +769,7 @@ export async function removeCover(form: FormData) {
 export async function saveHome(form: FormData) {
   const path = "/admin/inicio";
   const user = await requireAdmin(path);
-  const { storageConfigured, uploadSiteImage, saveSettingsFile, removeCoverFiles, MAX_FILE_BYTES } = await import("@/lib/storage");
+  const { storageConfigured, uploadSiteImage, uploadSiteMedia, saveSettingsFile, removeCoverFiles, MAX_FILE_BYTES, SITE_VIDEO_MAX_BYTES } = await import("@/lib/storage");
   const { getSettings } = await import("@/lib/site-settings");
   if (!storageConfigured()) back(path, { error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para guardar." });
   const d = await db();
@@ -815,11 +815,12 @@ export async function saveHome(form: FormData) {
       const rm = new Set(form.getAll(`ig_rm_${i}`).map(String));
       const keep = form.getAll(`ig_keep_${i}`).map(String).filter((u) => oldUrls.has(u) && !rm.has(u));
       const fresh = form.getAll(`ig_image_${i}`).filter((f): f is File => f instanceof File && f.size > 0);
-      if (keep.length + fresh.length > 5) throw new Error("Cada publicación admite hasta 5 fotos.");
+      if (keep.length + fresh.length > 5) throw new Error("Cada publicación admite hasta 5 fotos o videos.");
       const added: string[] = [];
       for (const f of fresh) {
-        if (f.size > MAX_FILE_BYTES) throw new Error("Cada foto debe pesar menos de 8 MB.");
-        const url = await uploadSiteImage(f, "ig");
+        const video = f.type === "video/mp4" || f.type === "video/webm";
+        if (video ? f.size > SITE_VIDEO_MAX_BYTES : f.size > MAX_FILE_BYTES) throw new Error(video ? "Cada video debe pesar menos de 30 MB." : "Cada foto debe pesar menos de 8 MB.");
+        const url = await uploadSiteMedia(f, "ig");
         uploaded.push(url);
         added.push(url);
       }
@@ -846,7 +847,7 @@ export async function saveHome(form: FormData) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     console.error("[inicio] guardar", e);
     await removeCoverFiles("ajustes", uploaded, false).catch(() => {});
-    back(path, { error: e instanceof Error && /8 MB|https|5 fotos/.test(e.message) ? e.message : "No se pudo guardar. Usa fotos JPG, PNG o WebP de menos de 8 MB." });
+    back(path, { error: e instanceof Error && /8 MB|30 MB|https|5 fotos/.test(e.message) ? e.message : "No se pudo guardar. Usa fotos JPG, PNG o WebP de menos de 8 MB o videos MP4 o WebM de menos de 30 MB." });
   }
   revalidatePath("/", "layout");
   back(path, { ok: "Inicio guardado." });

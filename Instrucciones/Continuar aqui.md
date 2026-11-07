@@ -328,3 +328,5 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 - **MIGRACIÓN PENDIENTE** `20261107000000_resenas_fotos` (columnas `images` y `author_email` en `reviews`): hay que aplicarla ANTES de desplegar (`pnpm --filter @nitro/db exec prisma migrate deploy`). Sin ella las reseñas no se leen ni se guardan.
 
 - Reseñas ahora exigen sesión: `/api/reviews/context` (GET) devuelve los pedidos pagados de la persona que incluyen el producto; el formulario deja elegir «¿De cuál pedido es tu reseña?» y guarda `profileId`, `orderId` (compra verificada) y `authorEmail` de la sesión. Una reseña por cuenta y producto.
+
+- Instagram: cada publicación admite hasta 5 fotos o videos (MP4/WebM, 30 MB c/u; `uploadSiteMedia`). El tipo se deduce de la extensión (`isVideoUrl`); los videos corren mudos, en bucle y solo mientras se ven (`IgSlides`).

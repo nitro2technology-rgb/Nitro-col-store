@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin";
-import { getSettings } from "@/lib/site-settings";
+import { getSettings, isVideoUrl } from "@/lib/site-settings";
 import { storageConfigured } from "@/lib/storage";
 import { saveHome } from "../actions";
 import { FilePicker } from "../file-picker";
@@ -9,6 +9,7 @@ import { card, CardHead, field, label, Notice, PageTitle } from "../ui";
 export const metadata = { title: "Inicio" };
 
 const IMG = "image/jpeg,image/png,image/webp";
+const IMG_VIDEO = `${IMG},video/mp4,video/webm`;
 const EXTRA = 3; // filas vacías para agregar nuevas en cada guardado
 
 export default async function HomeAdmin({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string; v?: string }> }) {
@@ -67,8 +68,12 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
                     {p.images.map((u, k) => (
                       <div key={u} className="w-[72px]">
                         <div className="size-[72px] overflow-hidden rounded-[10px] border border-[#e6e6ee] bg-[#f3f3f8]">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={u} alt="" className="size-full object-cover" />
+                          {isVideoUrl(u) ? (
+                            <video src={`${u}#t=0.1`} muted playsInline preload="metadata" className="size-full object-cover" />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={u} alt="" className="size-full object-cover" />
+                          )}
                         </div>
                         <input type="hidden" name={`ig_keep_${i}`} value={u} />
                         <label className="mt-1 flex items-center gap-1 text-[11px] text-red-700">
@@ -78,8 +83,8 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
                     ))}
                   </div>
                 )}
-                <FilePicker name={`ig_image_${i}`} accept={IMG} multiple text={p ? "Agregar fotos" : "Elegir fotos"} />
-                <p className="mt-1 text-[12px] text-[#6b6b80]">Hasta 5 fotos por publicación (las que ya tiene cuentan). La primera es la portada.</p>
+                <FilePicker name={`ig_image_${i}`} accept={IMG_VIDEO} multiple text={p ? "Agregar fotos o videos" : "Elegir fotos o videos"} />
+                <p className="mt-1 text-[12px] text-[#6b6b80]">Hasta 5 fotos o videos por publicación (los que ya tiene cuentan). Fotos JPG, PNG o WebP de hasta 8 MB; videos MP4 o WebM de hasta 30 MB. El primero es la portada.</p>
                 <label className={`${label} mt-3`}>
                   Descripción
                   <textarea name={`ig_caption_${i}`} defaultValue={p?.caption ?? ""} rows={2} maxLength={300} className={`${field} mt-1`} />
