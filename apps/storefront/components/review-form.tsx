@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@nitro/ui";
 
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
+type Ctx = { signedIn: false } | { signedIn: true; email: string; name: string; reviewed: boolean; orders: { number: number; date: string; items: string }[] };
+const dateFmt = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" });
 const MAX = 3;
 const MAX_BYTES = 6 * 1024 * 1024;
 
@@ -17,6 +19,8 @@ export function ReviewForm({ slug }: { slug: string }) {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [ctx, setCtx] = useState<Ctx | null>(null);
+  const [loading, setLoading] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -31,6 +35,20 @@ export function ReviewForm({ slug }: { slug: string }) {
     if (input.current) input.current.value = "";
   }
 
+  async function openForm() {
+    setOpen(true);
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/reviews/context?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
+      setCtx(res.ok ? ((await res.json()) as Ctx) : { signedIn: false });
+    } catch {
+      setError("No se pudo cargar tu cuenta. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -38,7 +56,7 @@ export function ReviewForm({ slug }: { slug: string }) {
     const body = new FormData();
     body.set("slug", slug);
     body.set("stars", String(stars));
-    for (const k of ["name", "email", "text"]) body.set(k, String(f.get(k) ?? ""));
+    for (const k of ["name", "text", "order"]) body.set(k, String(f.get(k) ?? ""));
     files.forEach((file) => body.append("photos", file));
     setBusy(true);
     setError("");
@@ -58,15 +76,39 @@ export function ReviewForm({ slug }: { slug: string }) {
   if (done) return <p className="mt-8 text-[17px]">¡Gracias! Tu reseña ya está publicada.</p>;
   if (!open) {
     return (
-      <Button type="button" variant="ghost" className="mt-8" onClick={() => setOpen(true)}>
+      <Button type="button" variant="ghost" className="mt-8" onClick={openForm}>
         Escribir una reseña
       </Button>
     );
   }
+  if (loading || !ctx) {
+    return <p className="mt-8 text-[16px] text-muted">{error || "Cargando tu cuenta…"}</p>;
+  }
+  if (!ctx.signedIn) {
+    return (
+      <div className="glass mt-8 max-w-xl rounded-card p-5 sm:p-7">
+        <h3 className="text-[22px] font-semibold">Inicia sesión para reseñar</h3>
+        <p className="mt-2 text-[15px] text-muted">Para dejar una reseña entra con el correo con el que compraste. Así podrás elegir tu pedido y nos ayudas a reconocer tu compra.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <a href={`/ingresar?next=${encodeURIComponent(`/p/${slug}`)}`} className="inline-flex items-center justify-center rounded-button bg-action px-6 py-3 text-[15px] font-semibold text-on-action hover:opacity-90">
+            Iniciar sesión o crear cuenta
+          </a>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  if (ctx.reviewed) {
+    return <p className="mt-8 text-[17px]">Ya dejaste tu reseña de este producto. ¡Gracias!</p>;
+  }
   return (
     <form onSubmit={submit} className="glass mt-8 max-w-xl rounded-card p-5 sm:p-7">
       <h3 className="text-[22px] font-semibold">Tu reseña</h3>
-      <p className="mt-2 text-[15px] text-muted">Cuéntanos qué tal te fue. Tu correo no se publica.</p>
+      <p className="mt-2 text-[15px] text-muted">
+        Reseña con tu cuenta <b className="text-ink">{ctx.email}</b>. Tu correo no se publica.
+      </p>
       <div className="mt-5" role="radiogroup" aria-label="Calificación">
         {/* Cada estrella es un botón grande (52 px) y toda la fila ocupa el ancho: fácil de tocar en el celular. */}
         <div className="flex w-full max-w-[340px] justify-between">
@@ -88,16 +130,25 @@ export function ReviewForm({ slug }: { slug: string }) {
           {stars} de 5 · {["", "Muy malo", "Malo", "Regular", "Bueno", "Excelente"][stars]}
         </p>
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label className="block text-sm text-muted">
-          Tu nombre
-          <input name="name" required minLength={2} maxLength={60} autoComplete="name" className={field} />
+      <label className="mt-4 block text-sm text-muted">
+        Tu nombre
+        <input name="name" required minLength={2} maxLength={60} autoComplete="name" defaultValue={ctx.name} className={field} />
+      </label>
+      {ctx.orders.length > 0 ? (
+        <label className="mt-4 block text-sm text-muted">
+          ¿De cuál pedido es tu reseña?
+          <select name="order" defaultValue={String(ctx.orders[0]!.number)} className={field}>
+            {ctx.orders.map((o) => (
+              <option key={o.number} value={o.number}>
+                NC-{o.number} · {dateFmt.format(new Date(o.date))} · {o.items}
+              </option>
+            ))}
+            <option value="">Otro pedido (no aparece en la lista)</option>
+          </select>
         </label>
-        <label className="block text-sm text-muted">
-          Tu correo
-          <input name="email" type="email" required maxLength={160} autoComplete="email" className={field} />
-        </label>
-      </div>
+      ) : (
+        <p className="mt-4 text-[14px] text-muted">No encontramos pedidos tuyos con este producto: tu reseña saldrá sin la marca de compra verificada.</p>
+      )}
       <label className="mt-4 block text-sm text-muted">
         Tu opinión
         <textarea name="text" required minLength={10} maxLength={600} rows={4} className={field} />

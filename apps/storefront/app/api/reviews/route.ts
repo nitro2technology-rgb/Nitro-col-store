@@ -1,7 +1,9 @@
-// Recibe una reseña abierta: nombre, correo, estrellas, opinión y hasta 3 fotos. No exige número de pedido.
-// El correo no se publica. Si la persona coincide con un pedido pagado de ese producto (mismo correo), la reseña
-// queda marcada como compra verificada; si no, se publica igual pero sin esa marca.
+// Recibe una reseña: solo de quien tiene sesión iniciada. Lleva nombre, estrellas, opinión, hasta 3 fotos y, si la persona
+// elige uno, el pedido que respalda la reseña (debe ser suyo y de ese producto: así queda como «compra verificada»).
+// El correo sale de la sesión, no de lo que se escriba. No se publica.
 import { revalidatePath } from "next/cache";
+import { ensureProfile } from "@/lib/profile";
+import { currentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,11 @@ export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "?";
   if (tooMany(ip)) return fail("Demasiados intentos. Prueba de nuevo más tarde.", 429);
 
+  const user = await currentUser().catch(() => null);
+  const profile = user ? await ensureProfile(user) : null;
+  if (!user?.email || !profile) return fail("Inicia sesión con tu correo para dejar una reseña.", 401);
+  const email = user.email.toLowerCase();
+
   let form: FormData;
   try {
     form = await req.formData();
@@ -42,14 +49,13 @@ export async function POST(req: Request) {
   const get = (k: string) => String(form.get(k) ?? "").trim();
   const slug = get("slug");
   const name = get("name");
-  const email = get("email").toLowerCase();
   const stars = Number(get("stars"));
   const text = get("text");
+  const orderRaw = get("order");
   const photos = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
 
   if (!slug) return fail("Solicitud inválida.");
   if (name.length < 2 || name.length > 60) return fail("Escribe tu nombre.");
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 160) return fail("Revisa tu correo: no parece válido.");
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) return fail("Elige de 1 a 5 estrellas.");
   if (text.length < 10 || text.length > 600) return fail("Cuéntanos tu experiencia en 10 a 600 caracteres.");
   if (photos.length > MAX_PHOTOS) return fail(`Puedes subir hasta ${MAX_PHOTOS} fotos.`);
@@ -60,17 +66,29 @@ export async function POST(req: Request) {
   const product = await db.product.findFirst({ where: { slug, status: "published", deletedAt: null }, select: { id: true } });
   if (!product) return fail("Ese producto ya no está disponible.", 404);
 
-  // Una reseña por correo y producto.
-  const already = await db.review.findFirst({ where: { productId: product.id, authorEmail: email }, select: { id: true } });
-  if (already) return fail("Ya dejaste una reseña de este producto con ese correo.", 409);
+  // Una reseña por cuenta y producto.
+  const already = await db.review.findFirst({ where: { productId: product.id, profileId: profile.id }, select: { id: true } });
+  if (already) return fail("Ya dejaste una reseña de este producto.", 409);
 
-  // Compra verificada: el mismo correo tiene un pedido pagado con este producto (sin pedirle el número).
-  const order = await db.order.findFirst({
-    where: { email: { equals: email, mode: "insensitive" }, status: { in: [...REVIEWABLE] }, items: { some: { variant: { productId: product.id } } } },
-    select: { id: true },
-    orderBy: { createdAt: "desc" },
-  });
-  const orderTaken = order ? await db.review.findFirst({ where: { productId: product.id, orderId: order.id }, select: { id: true } }) : null;
+  // Pedido elegido: debe ser de esta persona, estar pagado e incluir este producto.
+  let orderId: string | null = null;
+  if (orderRaw) {
+    const number = Number(orderRaw.replace(/^NC-?/i, ""));
+    const order = Number.isInteger(number)
+      ? await db.order.findFirst({
+          where: {
+            number,
+            OR: [{ profileId: profile.id }, { email: { equals: email, mode: "insensitive" } }],
+            status: { in: [...REVIEWABLE] },
+            items: { some: { variant: { productId: product.id } } },
+          },
+          select: { id: true },
+        })
+      : null;
+    if (!order) return fail("Ese pedido no es tuyo o no incluye este producto.", 403);
+    if (await db.review.findFirst({ where: { productId: product.id, orderId: order.id }, select: { id: true } })) return fail("Ese pedido ya tiene una reseña de este producto.", 409);
+    orderId = order.id;
+  }
 
   // Fotos: se convierten a WebP y se guardan en el almacenamiento público.
   const urls: string[] = [];
@@ -83,7 +101,8 @@ export async function POST(req: Request) {
     await db.review.create({
       data: {
         productId: product.id,
-        orderId: order && !orderTaken ? order.id : null,
+        profileId: profile.id,
+        orderId,
         authorName: publicName(name),
         authorEmail: email,
         rating: stars,
@@ -93,6 +112,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     if (urls.length > 0) await removeCoverFiles("rev", urls, false).catch(() => {});
+    if ((error as { code?: string }).code === "P2002") return fail("Ya dejaste una reseña de este producto.", 409);
     console.error("[reviews] No se pudo guardar:", error);
     return fail("No se pudo guardar la reseña. Revisa las fotos e intenta de nuevo.", 500);
   }
