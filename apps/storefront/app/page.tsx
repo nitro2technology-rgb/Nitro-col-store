@@ -17,7 +17,7 @@ const firstPhoto = (p?: Product) => (p ? variantImages(p)[0]?.src : undefined);
 
 export default async function Home() {
   const all = await getProducts();
-  const reviews = await getLatestReviews(8);
+  const reviews = await getLatestReviews(5);
   const settings = await getSettings();
   const cover = await getCover("inicio"); // portada de inicio editada en el panel; sin ella, la tarjeta de siempre
 
@@ -69,9 +69,9 @@ export default async function Home() {
       <HomeMarquee />
       <HomePromos promos={promos} />
       <HomeBenefits />
-      <HomeReviews reviews={reviews} />
       <HomeStory />
       <HomeIgReviews reviews={settings.reviews} />
+      <HomeReviews reviews={reviews} />
       <HomeInstagram posts={settings.posts} profileUrl={settings.instagramUrl} />
       <HomeFaq items={commonFaq.slice(0, 5)} />
     </main>

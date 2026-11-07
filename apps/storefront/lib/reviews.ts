@@ -4,13 +4,13 @@ export type Review = { author: string; stars: number; date: string; text: string
 
 export type ShopReview = Review & { product: string; productSlug: string };
 
-/** Últimas reseñas publicadas de toda la tienda (para la portada). Sin base de datos o sin reseñas devuelve []. */
+/** Últimas reseñas publicadas de toda la tienda, de cualquier calificación (para el inicio). Sin base de datos o sin reseñas devuelve []. */
 export async function getLatestReviews(limit = 6): Promise<ShopReview[]> {
   if (process.env.CATALOG_SOURCE !== "db") return [];
   try {
     const { db } = await import("@nitro/db");
     const rows = await db.review.findMany({
-      where: { published: true, rating: { gte: 4 } },
+      where: { published: true },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: { authorName: true, rating: true, body: true, createdAt: true, images: true, orderId: true, product: { select: { name: true, slug: true } } },

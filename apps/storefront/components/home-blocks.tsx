@@ -178,7 +178,7 @@ export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
     <section id="resenas" className="mx-auto max-w-[1440px] scroll-mt-20 px-4 py-16 md:px-8 md:py-24">
       <div className="text-right">
         <h2 className="text-[clamp(32px,4.4vw,52px)]">Ellos ya lo tienen</h2>
-        <p className="mt-1 text-muted">Reseñas de nuestros clientes</p>
+        <p className="mt-1 text-muted">Las 5 últimas reseñas de nuestros clientes</p>
       </div>
       <div className="mt-8 flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r) => (
@@ -192,6 +192,16 @@ export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
                 {"★".repeat(r.stars)}
               </p>
               <p className="mt-4 text-[17px] leading-[1.5]">“{r.text}”</p>
+              {r.images.length > 0 && (
+                <div className="mt-4 flex gap-2">
+                  {r.images.slice(0, 3).map((src, i) => (
+                    <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={`Ver la foto ${i + 1} de ${r.author}`} className="block size-16 overflow-hidden rounded-[10px] bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="" loading="lazy" className="size-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="mt-6 text-[14px]">
               <p className="font-semibold">{r.author}</p>
