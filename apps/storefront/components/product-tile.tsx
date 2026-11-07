@@ -34,7 +34,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
   if (showColor && isEditorial(product) && chosen) {
     return (
       <div className="relative w-full">
-      <FavoriteButton slug={product.slug} name={product.name} className="absolute left-4 top-4 z-10" />
+      <FavoriteButton sku={chosen.sku} name={product.name} className="absolute left-4 top-4 z-10" />
       {soldOut && <SoldOutBadge className="right-4 top-4" />}
       <Link
         href={href}
@@ -71,7 +71,7 @@ export function ProductTile({ product, sku, showColor = false }: { product: Prod
 
   return (
     <div className="relative w-full max-w-[420px]">
-    <FavoriteButton slug={product.slug} name={product.name} className="absolute left-6 top-6 z-10" />
+    <FavoriteButton sku={(chosen ?? first).sku} name={product.name} className="absolute left-6 top-6 z-10" />
     {soldOut && <SoldOutBadge className="right-6 top-6" />}
     <Link
       href={href}

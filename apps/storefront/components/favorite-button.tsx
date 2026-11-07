@@ -9,10 +9,13 @@ const heart = (filled: boolean) => (
   </svg>
 );
 
-/** Corazón para guardar un producto en favoritos. Con `label` es un botón con texto (ficha); sin él, un círculo sobre la tarjeta. */
-export function FavoriteButton({ slug, name, label = false, className = "" }: { slug: string; name: string; label?: boolean; className?: string }) {
+/**
+ * Corazón para guardar UN color de un modelo (su SKU) en favoritos; otros colores del mismo producto no se marcan.
+ * Con `label` es un botón con texto (ficha); sin él, un círculo sobre la tarjeta.
+ */
+export function FavoriteButton({ sku, name, label = false, className = "" }: { sku: string; name: string; label?: boolean; className?: string }) {
   const hydrated = useHydrated();
-  const on = useFavorites((s) => s.slugs.includes(slug)) && hydrated;
+  const on = useFavorites((s) => s.items.includes(sku)) && hydrated;
   const toggle = useFavorites((s) => s.toggle);
   const text = on ? "Quitar de favoritos" : "Guardar en favoritos";
   return (
@@ -24,7 +27,7 @@ export function FavoriteButton({ slug, name, label = false, className = "" }: { 
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggle(slug);
+        toggle(sku);
       }}
       className={
         label

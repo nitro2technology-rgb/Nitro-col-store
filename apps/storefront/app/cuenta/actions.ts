@@ -27,7 +27,7 @@ async function me(path: string) {
 // ───────────── Datos y direcciones ─────────────
 
 export async function saveProfileData(form: FormData) {
-  const path = "/cuenta";
+  const path = "/cuenta/datos";
   const { profile, db } = await me(path);
   const fullName = str(form, "fullName").slice(0, 120);
   const phone = str(form, "phone").slice(0, 20);
@@ -39,7 +39,7 @@ export async function saveProfileData(form: FormData) {
 }
 
 export async function saveAddress(form: FormData) {
-  const path = "/cuenta";
+  const path = "/cuenta/datos";
   const { profile, db } = await me(path);
   const id = str(form, "id");
   const data = {
@@ -66,7 +66,7 @@ export async function saveAddress(form: FormData) {
 }
 
 export async function deleteAddress(form: FormData) {
-  const { profile, db } = await me("/cuenta");
+  const { profile, db } = await me("/cuenta/datos");
   const a = await db.address.findFirst({ where: { id: str(form, "id"), profileId: profile.id } });
   if (a) {
     await db.address.delete({ where: { id: a.id } });
@@ -76,11 +76,11 @@ export async function deleteAddress(form: FormData) {
     }
   }
   revalidatePath("/cuenta");
-  back("/cuenta", { ok: "Dirección borrada." });
+  back("/cuenta/datos", { ok: "Dirección borrada." });
 }
 
 export async function setDefaultAddress(form: FormData) {
-  const { profile, db } = await me("/cuenta");
+  const { profile, db } = await me("/cuenta/datos");
   const id = str(form, "id");
   const a = await db.address.findFirst({ where: { id, profileId: profile.id }, select: { id: true } });
   if (a) {
@@ -90,7 +90,7 @@ export async function setDefaultAddress(form: FormData) {
     ]);
   }
   revalidatePath("/cuenta");
-  back("/cuenta", { ok: "Dirección principal cambiada." });
+  back("/cuenta/datos", { ok: "Dirección principal cambiada." });
 }
 
 // ───────────── Cancelar un pedido (solo si no ha sido enviado) ─────────────
@@ -99,7 +99,7 @@ export async function cancelMyOrder(form: FormData) {
   const number = Number(str(form, "number"));
   const path = `/cuenta/pedidos/${number}`;
   const { profile, db } = await me(path);
-  if (!Number.isInteger(number)) back("/cuenta", { error: "Solicitud inválida." });
+  if (!Number.isInteger(number)) back("/cuenta/pedidos", { error: "Solicitud inválida." });
 
   const result = await db.$transaction(async (t) => {
     const order = await t.order.findFirst({ where: { number, profileId: profile.id }, include: { items: true, payments: true } });
@@ -148,7 +148,7 @@ export async function requestMyReturn(form: FormData) {
   const kind = str(form, "kind");
   const reason = str(form, "reason").slice(0, 1000);
   const qty = Number(str(form, "qty"));
-  if (!Number.isInteger(number)) back("/cuenta", { error: "Solicitud inválida." });
+  if (!Number.isInteger(number)) back("/cuenta/pedidos", { error: "Solicitud inválida." });
   if (!["retracto", "garantia", "otro"].includes(kind)) back(path, { error: "Elige el motivo de la devolución." });
   if (reason.length < 5) back(path, { error: "Cuéntanos qué pasó (mínimo 5 letras)." });
   if (!Number.isInteger(qty) || qty < 1) back(path, { error: "Indica cuántas unidades devuelves." });
@@ -185,4 +185,47 @@ export async function requestMyReturn(form: FormData) {
   );
   revalidatePath("/", "layout");
   back(path, { ok: "Pedimos la devolución. Te escribiremos pronto para coordinar cómo nos llega el producto." });
+}
+
+// ───────────── Corregir los datos de envío (solo si el pedido aún no salió) ─────────────
+
+export async function updateMyOrderShipping(form: FormData) {
+  const number = Number(str(form, "number"));
+  const path = `/cuenta/pedidos/${number}`;
+  const { profile, db } = await me(path);
+  if (!Number.isInteger(number)) back("/cuenta/pedidos", { error: "Solicitud inválida." });
+  const name = str(form, "name").slice(0, 120);
+  const phone = str(form, "phone").slice(0, 20);
+  const department = str(form, "department").slice(0, 80);
+  const city = str(form, "city").slice(0, 80);
+  const line = str(form, "line").slice(0, 200);
+  const notes = str(form, "notes").slice(0, 300);
+  if (name.length < 2) back(path, { error: "Escribe el nombre de quien recibe." });
+  if (!/^[0-9+() -]{7,20}$/.test(phone)) back(path, { error: "Revisa el teléfono." });
+  if (department.length < 2 || city.length < 2 || line.length < 5) back(path, { error: "Completa departamento, ciudad y dirección." });
+
+  const result = await db.$transaction(async (t) => {
+    const order = await t.order.findFirst({ where: { number, profileId: profile.id } });
+    if (!order || !(CANCELLABLE as readonly string[]).includes(order.status)) return null;
+    const before = (order.shippingAddress ?? {}) as Record<string, string>;
+    const after = { ...before, name, department, city, line, notes };
+    // Con el estado esperado: si el pedido salió en este instante, no se cambia nada.
+    const moved = await t.order.updateMany({ where: { id: order.id, status: order.status }, data: { phone, shippingAddress: after } });
+    if (moved.count === 0) return null;
+    await t.auditLog.create({
+      data: { actorId: profile.id, action: "order.shipping_update_by_customer", entity: "order", entityId: order.id, changes: { number, before: { ...before, phone: order.phone }, after: { ...after, phone } } },
+    });
+    return { before, oldPhone: order.phone, status: order.status };
+  });
+  if (!result) back(path, { error: "Este pedido ya no se puede modificar (puede que ya haya sido enviado). Escríbenos por WhatsApp." });
+
+  const { before, oldPhone, status } = result!;
+  const fmt = (a: Record<string, string>, p: string) => `${esc(a.name ?? "")}<br>${esc(a.line ?? "")}<br>${esc(a.city ?? "")}, ${esc(a.department ?? "")}${a.notes ? `<br><i>${esc(a.notes)}</i>` : ""}<br>Tel. ${esc(p)}`;
+  await sendOwnerNotice(
+    `Datos de envío cambiados · NC-${number}${status === "processing" ? " (YA EN PREPARACIÓN)" : ""}`,
+    `El cliente corrigió los datos de envío de NC-${number}`,
+    `<p style="line-height:1.5"><b>Antes:</b><br>${fmt(before, oldPhone)}</p><p style="line-height:1.5"><b>Ahora:</b><br>${fmt({ name, department, city, line, notes }, phone)}</p>`,
+  );
+  revalidatePath("/", "layout");
+  back(path, { ok: "Listo, actualizamos los datos de envío de este pedido." });
 }

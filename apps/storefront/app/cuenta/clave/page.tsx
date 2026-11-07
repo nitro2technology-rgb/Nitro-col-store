@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function NewPasswordPage() {
   if (!(await currentUser())) redirect("/ingresar");
   return (
-    <main className="mx-auto max-w-[820px] px-6 pb-28 pt-16 md:pt-24">
-      <h1 className="text-[clamp(40px,7vw,64px)]">Nueva contraseña</h1>
+    <>
+      <h1 className="text-[clamp(30px,4vw,44px)]">Contraseña</h1>
       <NewPasswordForm />
-    </main>
+    </>
   );
 }

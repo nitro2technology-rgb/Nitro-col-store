@@ -2,6 +2,7 @@ import Link from "next/link";
 import { categories } from "@/lib/products";
 import { CategoryMenu } from "@/components/category-menu";
 import { CartLink } from "@/components/cart-link";
+import { FavoritesLink } from "@/components/favorites-link";
 import { SiteSearch } from "@/components/site-search";
 import { BrandMark } from "@/components/brand-mark";
 import { AccountLink } from "@/components/account-link";
@@ -27,6 +28,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-5">
           <SiteSearch />
           <AccountLink />
+          <FavoritesLink />
           <CartLink />
         </div>
       </nav>
@@ -44,6 +46,7 @@ export function SiteHeader() {
         </Link>
         <div className="flex items-center justify-end gap-2">
           <AccountLink icon />
+          <FavoritesLink />
           <CartLink />
         </div>
       </nav>

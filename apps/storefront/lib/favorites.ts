@@ -3,20 +3,28 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-/** Favoritos de quien visita la tienda: se guardan en su navegador (sin cuenta) por el slug del producto. */
+/**
+ * Favoritos de quien visita la tienda, guardados en su navegador. Cada favorito es UN color de UN modelo (su SKU), no el
+ * producto entero. Versiones anteriores guardaban el slug del producto: esos valores se siguen entendiendo (se muestran con
+ * el primer color disponible) y `FavoritesLink` los convierte a SKU.
+ */
 type FavState = {
-  slugs: string[];
-  toggle: (slug: string) => void;
-  set: (slugs: string[]) => void;
+  items: string[];
+  toggle: (sku: string) => void;
+  set: (items: string[]) => void;
 };
 
 export const useFavorites = create<FavState>()(
   persist(
     (set) => ({
-      slugs: [],
-      set: (slugs) => set({ slugs: slugs.slice(0, 60) }),
-      toggle: (slug) => set((s) => ({ slugs: s.slugs.includes(slug) ? s.slugs.filter((x) => x !== slug) : [slug, ...s.slugs].slice(0, 60) })),
+      items: [],
+      set: (items) => set({ items: [...new Set(items)].slice(0, 60) }),
+      toggle: (sku) => set((s) => ({ items: s.items.includes(sku) ? s.items.filter((x) => x !== sku) : [sku, ...s.items].slice(0, 60) })),
     }),
-    { name: "nitro-favoritos" },
+    {
+      name: "nitro-favoritos",
+      version: 2,
+      migrate: (old) => ({ items: Array.isArray((old as { slugs?: unknown })?.slugs) ? ((old as { slugs: string[] }).slugs) : [] }),
+    },
   ),
 );

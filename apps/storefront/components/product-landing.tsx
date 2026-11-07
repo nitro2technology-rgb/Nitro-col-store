@@ -87,7 +87,7 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
           )}
 
           <div className="mt-3">
-            <FavoriteButton slug={product.slug} name={product.name} label />
+            <FavoriteButton sku={variant.sku} name={product.name} label />
           </div>
 
           <div className="mt-3 rounded-[12px] border border-ink/20 px-4 py-3 text-[14px] leading-snug">

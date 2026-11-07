@@ -7,7 +7,7 @@ import { dateFmt, dateTimeFmt, ORDER_STATUS } from "@/lib/order-status";
 import { photosForVariants, smallPhoto } from "@/lib/order-photos";
 import { canRequestReturn, CANCELLABLE, deliveredAt, RETURN_DAYS, returnDeadline } from "@/lib/returns-policy";
 import { currentUser } from "@/lib/supabase/server";
-import { cancelMyOrder, requestMyReturn } from "../../actions";
+import { cancelMyOrder, requestMyReturn, updateMyOrderShipping } from "../../actions";
 
 export const metadata: Metadata = { title: "Mi pedido", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -51,8 +51,8 @@ export default async function MyOrderPage({
   const shipment = order.shipments[0];
 
   return (
-    <main className="mx-auto max-w-[900px] px-6 pb-28 pt-16 md:pt-24">
-      <Link href="/cuenta" className="text-[15px] text-link hover:underline">← Mi cuenta</Link>
+    <>
+      <Link href="/cuenta/pedidos" className="text-[15px] text-link hover:underline">← Mis pedidos</Link>
       <h1 className="mt-3 text-[clamp(36px,6vw,64px)]">Pedido NC-{order.number}</h1>
       <p className="mt-3 flex flex-wrap items-center gap-3 text-[17px] text-muted">
         <span>{dateFmt.format(order.createdAt)}</span>
@@ -159,6 +159,42 @@ export default async function MyOrderPage({
           {a.city}, {a.department}
           {a.notes ? <><br /><span className="text-muted">{a.notes}</span></> : null}
         </p>
+        {canCancel && (
+          <details className="mt-4">
+            <summary className="cursor-pointer text-[14px] font-semibold text-link">¿Te equivocaste? Corrige tus datos de envío</summary>
+            <form key={`s-${v}`} action={updateMyOrderShipping} className="mt-3 grid gap-3 sm:grid-cols-2">
+              <input type="hidden" name="number" value={order.number} />
+              <label className="block text-[13px] text-muted">
+                Nombre de quien recibe
+                <input name="name" required minLength={2} maxLength={120} defaultValue={a.name} className={input} />
+              </label>
+              <label className="block text-[13px] text-muted">
+                Celular / WhatsApp
+                <input name="phone" type="tel" required minLength={7} maxLength={20} defaultValue={order.phone} className={input} />
+              </label>
+              <label className="block text-[13px] text-muted">
+                Departamento
+                <input name="department" required minLength={2} maxLength={80} defaultValue={a.department} className={input} />
+              </label>
+              <label className="block text-[13px] text-muted">
+                Ciudad
+                <input name="city" required minLength={2} maxLength={80} defaultValue={a.city} className={input} />
+              </label>
+              <label className="block text-[13px] text-muted sm:col-span-2">
+                Dirección
+                <input name="line" required minLength={5} maxLength={200} defaultValue={a.line} className={input} />
+              </label>
+              <label className="block text-[13px] text-muted sm:col-span-2">
+                Indicaciones (opcional)
+                <input name="notes" maxLength={300} defaultValue={a.notes} className={input} />
+              </label>
+              <div className="sm:col-span-2">
+                <button type="submit" className={buttonClasses("buy")}>Guardar cambios</button>
+                <span className="ml-3 text-[13px] text-muted">Solo se puede cambiar mientras el pedido no haya sido enviado.</span>
+              </div>
+            </form>
+          </details>
+        )}
         {shipment && (
           <p className="mt-3 text-[15px]">
             {shipment.carrier}
@@ -200,6 +236,6 @@ export default async function MyOrderPage({
           </form>
         </section>
       )}
-    </main>
+    </>
   );
 }
