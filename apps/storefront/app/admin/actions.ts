@@ -1101,3 +1101,52 @@ export async function setReviewPublished(form: FormData) {
   revalidatePath("/", "layout");
   back(path, { ok: publish ? "Reseña visible de nuevo en la tienda." : "Reseña oculta; ya no se ve en la tienda." });
 }
+
+// ───────────── Eliminar un pedido de prueba ─────────────
+
+/**
+ * Borra por completo un pedido (con sus productos, pagos, envíos, devoluciones e historial). Es para pedidos de PRUEBA:
+ * un pedido real debe conservarse (contabilidad). Pide escribir el número del pedido; opcionalmente devuelve las unidades
+ * al inventario (solo tiene sentido si el pedido llegó a descontarlo, es decir, si estuvo pagado). Queda en la auditoría.
+ */
+export async function deleteTestOrder(form: FormData) {
+  const number = int(str(form, "number"));
+  const path = `/admin/pedidos/${number}`;
+  const user = await requireAdmin(path);
+  if (number === null) back("/admin/pedidos", { error: "Solicitud inválida." });
+  if (str(form, "confirm") !== String(number)) back(path, { error: `Para eliminarlo escribe el número del pedido (${number}) en la casilla de confirmación.` });
+  const restock = str(form, "restock") === "on";
+
+  const done = await (await db()).$transaction(async (t) => {
+    const order = await t.order.findUnique({ where: { number: number! }, include: { items: true, payments: true } });
+    if (!order) return null;
+    if (restock) {
+      for (const i of order.items) {
+        const inv = await t.inventoryItem.findUnique({ where: { variantId: i.variantId }, select: { id: true } });
+        if (!inv) continue;
+        await t.inventoryItem.update({ where: { id: inv.id }, data: { onHand: { increment: i.quantity } } });
+        await t.stockMovement.create({ data: { inventoryItemId: inv.id, delta: i.quantity, reason: `Pedido de prueba NC-${number} eliminado`, actorId: user.id } });
+      }
+    }
+    // Las tablas sin borrado en cascada se vacían primero; productos e historial se borran con el pedido.
+    await t.stockReservation.deleteMany({ where: { orderId: order.id } });
+    await t.couponRedemption.deleteMany({ where: { orderId: order.id } });
+    await t.orderReturn.deleteMany({ where: { orderId: order.id } });
+    await t.shipment.deleteMany({ where: { orderId: order.id } });
+    await t.payment.deleteMany({ where: { orderId: order.id } });
+    await t.order.delete({ where: { id: order.id } });
+    await t.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: "order.delete_test",
+        entity: "order",
+        entityId: order.id,
+        changes: { number, email: order.email, status: order.status, totalCents: Number(order.totalCents), restock, items: order.items.map((i) => ({ sku: i.sku, quantity: i.quantity })) },
+      },
+    });
+    return order;
+  });
+  revalidatePath("/", "layout");
+  if (!done) back("/admin/pedidos", { error: "Ese pedido ya no existe." });
+  back("/admin/pedidos", { ok: `Pedido NC-${number} eliminado${restock ? " y sus unidades volvieron al inventario" : ""}.` });
+}

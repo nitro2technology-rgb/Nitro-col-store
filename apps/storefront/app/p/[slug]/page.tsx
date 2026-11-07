@@ -37,7 +37,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
 
   const gafas = product.category === "gafas";
-  const others = products.filter((p) => p.slug !== product.slug);
+  // Recomendados: solo productos con stock (los agotados no se sugieren; se piden más para compensar los que se filtren)
+  const others = products.filter((p) => p.slug !== product.slug && p.variants.some((v) => v.stock > 0 && v.priceCents > 0));
   // Recomendados: Moda y Tecnología. En las gafas, primero las del mismo tipo (casuales/deportivas).
   const moda = others
     .filter((p) => p.category === "gafas")

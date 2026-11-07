@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { formatCOP } from "@nitro/shared";
 import { requireAdmin } from "@/lib/admin";
 import { dateTimeFmt, ORDER_STATUS } from "@/lib/order-status";
-import { createReturn, setOrderStatus, shipOrder } from "../../actions";
+import { createReturn, deleteTestOrder, setOrderStatus, shipOrder } from "../../actions";
 import { card, field, ghostBtn, label, Notice, primaryBtn, StatusBadge } from "../../ui";
 
 const PAYMENT: Record<string, string> = { pending: "Pendiente", approved: "Aprobado", declined: "Rechazado", voided: "Anulado", refunded: "Reembolsado" };
@@ -287,6 +287,28 @@ export default async function OrderDetail({
           )}
         </div>
       </div>
+
+      <details className={`${card} mt-6 border-red-200`}>
+        <summary className="cursor-pointer text-[15px] font-semibold text-red-700">Eliminar este pedido (solo pedidos de prueba)</summary>
+        <form action={deleteTestOrder} className="mt-4 space-y-3 text-[15px]">
+          <input type="hidden" name="number" value={order.number} />
+          <p className="text-[#6b6b80]">
+            Borra el pedido para siempre, con sus productos, pagos, envíos y devoluciones, y deja de contar en el resumen de ventas y ganancias. No lo hagas con una venta real: sirve
+            para limpiar pruebas. Si el cliente pagó de verdad, devuélvele el dinero antes.
+          </p>
+          <label className="flex items-start gap-3">
+            <input type="checkbox" name="restock" defaultChecked={["paid", "processing", "shipped", "delivered", "return_requested", "returned"].includes(order.status)} className="mt-1 size-4" />
+            <span>Devolver las unidades al inventario (marca esto si el pedido llegó a descontar stock, es decir, si estuvo pagado).</span>
+          </label>
+          <label className={label}>
+            Para confirmar escribe el número del pedido ({order.number})
+            <input name="confirm" inputMode="numeric" autoComplete="off" required className={`${field} mt-1 max-w-[200px]`} />
+          </label>
+          <button type="submit" className="rounded-[10px] bg-red-700 px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-red-800">
+            Eliminar pedido NC-{order.number}
+          </button>
+        </form>
+      </details>
     </>
   );
 }
