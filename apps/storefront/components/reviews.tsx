@@ -1,5 +1,6 @@
 import type { Review } from "@/lib/reviews";
 import { ReviewForm } from "./review-form";
+import { ReviewPhotos } from "./review-photos";
 
 function Stars({ n }: { n: number }) {
   return (
@@ -30,16 +31,7 @@ export function Reviews({ reviews, slug, titleClass }: { reviews: Review[]; slug
               <article key={`${r.author}-${r.date}`} className="glass p-7">
                 <Stars n={r.stars} />
                 <p className="mt-4 text-[17px] leading-[1.47]">{r.text}</p>
-                {r.images.length > 0 && (
-                  <div className="mt-4 flex gap-2">
-                    {r.images.slice(0, 3).map((src, i) => (
-                      <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={`Ver la foto ${i + 1} de ${r.author}`} className="block size-20 overflow-hidden rounded-[12px] bg-white sm:size-24">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-                      </a>
-                    ))}
-                  </div>
-                )}
+                <ReviewPhotos images={r.images} author={r.author} className="mt-4" />
                 <p className="mt-5 text-[14px] text-muted">
                   {r.author} · {fmt.format(new Date(r.date))}{r.verified ? " · ✓ Compra verificada" : ""}
                 </p>

@@ -108,7 +108,7 @@ export default async function HomeAdmin({ searchParams }: { searchParams: Promis
         </section>
 
         <section className={card}>
-          <CardHead title="Reseñas de Instagram" sub="Sube la captura, foto o video de la reseña (MP4 o WebM de hasta 30 MB) y escribe lo que dijo el cliente. Siempre salen con 5 estrellas. Van en el inicio, antes de Instagram y de las preguntas frecuentes." />
+          <CardHead title="Reseñas de Instagram" sub="Son historias de Instagram: sube la imagen o el video en vertical (9:16, por ejemplo 1080 × 1920 px; MP4 o WebM de hasta 30 MB) y escribe lo que dijo el cliente. Siempre salen con 5 estrellas. Van en el inicio, antes de Instagram y de las preguntas frecuentes." />
           <input type="hidden" name="rv_n" value={reviews.length} />
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {reviews.map((r, i) => (

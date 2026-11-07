@@ -5,6 +5,7 @@ import { BUSINESS } from "@/lib/business";
 import { FREE_SHIPPING_FROM_CENTS, SHIPPING_FLAT_CENTS } from "@/lib/pricing";
 import type { ShopReview } from "@/lib/reviews";
 import { Marquee } from "@/components/marquee";
+import { ReviewPhotos } from "@/components/review-photos";
 
 const check = (
   <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
@@ -192,16 +193,7 @@ export function HomeReviews({ reviews }: { reviews: ShopReview[] }) {
                 {"★".repeat(r.stars)}
               </p>
               <p className="mt-4 text-[17px] leading-[1.5]">“{r.text}”</p>
-              {r.images.length > 0 && (
-                <div className="mt-4 flex gap-2">
-                  {r.images.slice(0, 3).map((src, i) => (
-                    <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={`Ver la foto ${i + 1} de ${r.author}`} className="block size-16 overflow-hidden rounded-[10px] bg-white">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-                    </a>
-                  ))}
-                </div>
-              )}
+              <ReviewPhotos images={r.images} author={r.author} className="mt-4" />
             </div>
             <div className="mt-6 text-[14px]">
               <p className="font-semibold">{r.author}</p>

@@ -1,9 +1,10 @@
 import { BrandMark } from "@/components/brand-mark";
 import { IgSlides } from "@/components/ig-slides";
+import { IgStoryVideo } from "@/components/ig-story";
 import { Rail } from "@/components/rail";
 import { isVideoUrl, type IgPost, type IgReview } from "@/lib/site-settings";
 
-/** Reseñas que los clientes dejaron en Instagram (imagen + comentario), subidas desde el panel. */
+/** Reseñas que los clientes dejaron en Instagram, en formato de historia (vertical 9:16, imagen o video), subidas desde el panel. */
 export function HomeIgReviews({ reviews }: { reviews: IgReview[] }) {
   if (reviews.length === 0) return null;
   return (
@@ -14,19 +15,25 @@ export function HomeIgReviews({ reviews }: { reviews: IgReview[] }) {
       <div className="mt-6">
         <Rail label="Reseñas de Instagram">
           {reviews.map((r, i) => (
-            <figure key={i} className="flex w-[78vw] max-w-[340px] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-[#111827] text-white">
+            <figure key={i} className="relative aspect-[9/16] w-[62vw] max-w-[280px] shrink-0 snap-start overflow-hidden rounded-[20px] bg-[#111827] text-white ring-1 ring-white/10">
               {isVideoUrl(r.image) ? (
-                <video src={`${r.image}#t=0.1`} controls playsInline preload="metadata" className="aspect-square w-full bg-black object-cover" />
+                <IgStoryVideo src={r.image} />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.image} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+                <img src={r.image} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
               )}
-              <figcaption className="flex flex-1 flex-col justify-between gap-3 p-5">
-                <p className="tracking-[0.2em] text-[#c9a24d]" role="img" aria-label="5 de 5 estrellas">
+              {/* Cabecera como en una historia: barra de progreso y nombre */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-8 pt-3">
+                <div className="h-[3px] rounded-full bg-white/35">
+                  <div className="h-full w-1/3 rounded-full bg-white" />
+                </div>
+                {r.name && <p className="mt-2 pr-12 text-[13px] font-semibold drop-shadow">{r.name}</p>}
+              </div>
+              <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-4 pb-4 pt-16">
+                <p className="tracking-[0.2em] text-[#e0b24d]" role="img" aria-label="5 de 5 estrellas">
                   ★★★★★
                 </p>
-                {r.text && <blockquote className="text-[15px] leading-snug text-white/90">“{r.text}”</blockquote>}
-                {r.name && <span className="text-[13px] font-semibold text-white/70">{r.name}</span>}
+                {r.text && <blockquote className="mt-1 text-[14px] leading-snug text-white">“{r.text}”</blockquote>}
               </figcaption>
             </figure>
           ))}
