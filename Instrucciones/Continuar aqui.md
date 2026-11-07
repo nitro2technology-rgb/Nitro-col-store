@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 6 de noviembre de 2026 (tienda en vivo en Render en `https://nitrocol.nitro2tech.com`, rama `main`; catálogo desde la base, inicio de sesión con Google activo, fichas estilo Apple de smartwatch y audífonos, **panel de administración v2** en `/admin` con resumen de ganancias, edición de productos, costos y devoluciones)
+**Última actualización:** 7 de noviembre de 2026 (ver la sección 9: lista para salir a producción) (tienda en vivo en Render en `https://nitrocol.nitro2tech.com`, rama `main`; catálogo desde la base, inicio de sesión con Google activo, fichas estilo Apple de smartwatch y audífonos, **panel de administración v2** en `/admin` con resumen de ganancias, edición de productos, costos y devoluciones)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -372,3 +372,36 @@ Decisiones de negocio marcadas `[DEFINIR]` en `especificaciones-de-uso.md` (env�
 - **Admin → Pedidos → (un pedido) → «Eliminar este pedido (solo pedidos de prueba)»** (`deleteTestOrder`): borra el pedido con sus productos, pagos, envíos, devoluciones, reservas y canjes de cupón; pide escribir el número; la casilla «Devolver las unidades al inventario» viene marcada si el pedido estuvo pagado (descontó stock). Queda `AuditLog` (`order.delete_test`). Deja de contar en el resumen de ventas. Los pedidos reales no deben borrarse.
 - **Recomendados** (`components/recommended.tsx` y `app/p/[slug]/page.tsx`): solo se sugieren productos con algún color en stock y con precio; los agotados no salen.
 - Pedidos que había en la base el 7 nov: NC-4 a NC-12 (correos nitro16k, npcuasquer, praxis.ia.sas); el dueño decide cuáles son de prueba.
+
+## 9. Lista para salir a producción y pagar publicidad (anotada el 7 nov 2026)
+
+Objetivo del dueño: lanzar en producción y empezar publicidad pagada; todo debe funcionar al 100 %. Estado: **nada de esta lista está hecho**, salvo lo marcado. El dueño decide el orden; Claude puede hacer los puntos de código (A).
+
+### Bloquea el lanzamiento (lo hace el dueño, salvo nota)
+1. **Pagos reales con Wompi.** `WOMPI_ENV=production` y las 4 llaves de producción en Render (`WOMPI_PUBLIC_KEY`, `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET`); la URL de eventos `https://nitrocol.nitro2tech.com/api/webhooks/wompi` en el modo producción de Wompi (es distinta de la de pruebas); cuenta de producción activada. Nunca poner llaves en el repo ni en `packages/db/.env`. Luego una **compra real de monto bajo de punta a punta** (pedido pagado, stock baja, llegan los correos) y devolverla.
+2. **Copias de seguridad de Supabase.** El plan gratis NO hace copias. Con pedidos reales, pasar a Pro (~25 USD/mes, copias diarias) o definir otro respaldo.
+3. **Facturación electrónica (DIAN).** Hoy no existe. Hablar con el contador: proveedor externo, o facturar a mano al inicio.
+4. **Revisión legal** de `/terminos`, `/privacidad` y `/ayuda` por un abogado (retracto, garantía, datos personales). La dirección del negocio se decidió no publicarla.
+5. **Correo `pedidos@nitro2tech.com`:** hoy solo envía (Resend). Activar el reenvío en Namecheap (Email Forwarding) para recibir respuestas de clientes.
+
+### Antes de pagar publicidad
+6. **Probar con sesión real** lo que solo se probó con `tsc` y curl: cuenta de cliente (ver pedidos con fotos, cancelar, pedir devolución, corregir datos de envío, direcciones guardadas, favoritos), y en el panel guardar un producto, crear un color, subir fotos y el flujo completo de una devolución (usar un pedido de prueba y borrarlo después con «Eliminar este pedido»).
+7. **Revisar en celular real** (la publicidad llega sobre todo por celular; nada se ha visto en uno): inicio, ficha, «Completa tu pedido», pago, cuenta, menú y corazón de favoritos.
+8. **Textos reales:** descripciones, eslóganes y especificaciones fueron redactados por Claude con pocos datos; confirmarlos, en especial afirmaciones como UV400 en las gafas (publicidad engañosa si no es cierto) y el texto de «historia» del inicio. Revisar también `Instrucciones/Datos de productos.xlsx`.
+9. **Seguimiento de la publicidad y cookies (A):** instalar Meta Pixel / Google Ads / Analytics con eventos de compra y un **banner de consentimiento** (Ley 1581 de 2012). Hoy no hay ni seguimiento ni banner.
+10. **Stock y pedidos sin pagar (A):** hoy no se reserva stock al crear el pedido (si dos pagan la última unidad solo queda un error en el log) y no se cancelan solos los pedidos que quedan sin pagar. Hacer reservas con vencimiento (la columna `reserved` ya existe) y una tarea que cancele los pendientes viejos. Con publicidad es más probable que pase.
+11. **SEO básico (A):** sitemap, robots, imágenes para compartir (Open Graph), datos estructurados de producto. No se ha revisado.
+12. **Monitor de `/api/health`** en cron-job.org o UptimeRobot (cada 5 min). Con Render pago ya no hace falta para mantener Render despierto, pero sirve de alerta si el sitio cae.
+
+### Render (plan de pago de 7 USD/mes, decidido por el dueño)
+- Beneficios: el servicio **no duerme** (en el plan gratis la primera visita tras 15 min sin tráfico tarda 30–50 s: se perdería la primera visita pagada), más CPU, despliegues sin cortes.
+- **Corrección:** más arriba (sección 5d, riesgos) se dice que Starter trae 2 GB; es probable que sea falso (Starter ≈ 512 MB; 2 GB ≈ plan de ~25 USD). **Confirmar en render.com/pricing.** Si con tráfico vuelve a salir «Out of memory», subir de plan.
+- Render pago no resuelve Supabase: la base sigue gratis, sin copias y puede pausarse tras 7 días sin actividad.
+
+### Puede esperar
+Cupones, exportar pedidos, Beanies, roles por vendedor (marketplace), inicio de sesión con Apple (cuenta de desarrollador de 99 USD/año), verificación de marca de Google para que el ingreso diga «Nitro Col Store» con logo, y reembolso automático con Wompi (falta confirmar con su soporte producción, comisión, plazo y métodos sin API; hoy es manual desde el panel: pedido cancelado y pagado → devolver el dinero → «Ya le devolví el dinero»).
+
+### Estado al 7 nov 2026
+- Código subido a `main` hasta el commit `efdb2b3`. Base de datos: solo queda el pedido NC-11 (X8 Pro, entregado, venta manual, costo $48.000, ganancia $47.000); los pedidos de prueba se eliminaron sin mover el inventario.
+- Hecho por el dueño: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAILS`, `CATALOG_SOURCE=db`, costos y precios de las gafas.
+- Pendiente aparte: subida de fotos y creación de productos, que se probarán cuando el dueño agregue productos.
