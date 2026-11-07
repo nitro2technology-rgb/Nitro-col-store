@@ -67,20 +67,26 @@ export function ReviewForm({ slug }: { slug: string }) {
     <form onSubmit={submit} className="glass mt-8 max-w-xl rounded-card p-5 sm:p-7">
       <h3 className="text-[22px] font-semibold">Tu reseña</h3>
       <p className="mt-2 text-[15px] text-muted">Cuéntanos qué tal te fue. Tu correo no se publica.</p>
-      <div className="mt-5 flex gap-1" role="radiogroup" aria-label="Calificación">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={stars === n}
-            aria-label={`${n} ${n === 1 ? "estrella" : "estrellas"}`}
-            onClick={() => setStars(n)}
-            className={`text-[30px] leading-none ${n <= stars ? "" : "text-muted/40"}`}
-          >
-            ★
-          </button>
-        ))}
+      <div className="mt-5" role="radiogroup" aria-label="Calificación">
+        {/* Cada estrella es un botón grande (52 px) y toda la fila ocupa el ancho: fácil de tocar en el celular. */}
+        <div className="flex w-full max-w-[340px] justify-between">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={stars === n}
+              aria-label={`${n} ${n === 1 ? "estrella" : "estrellas"}`}
+              onClick={() => setStars(n)}
+              className={`grid size-[52px] touch-manipulation place-items-center rounded-full text-[40px] leading-none transition-transform active:scale-90 ${n <= stars ? "text-[#e0a800]" : "text-ink/25"}`}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-[14px] text-muted" aria-live="polite">
+          {stars} de 5 · {["", "Muy malo", "Malo", "Regular", "Bueno", "Excelente"][stars]}
+        </p>
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block text-sm text-muted">

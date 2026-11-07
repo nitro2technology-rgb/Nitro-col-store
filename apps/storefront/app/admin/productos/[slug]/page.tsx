@@ -76,7 +76,7 @@ export default async function ProductEdit({
     {
       key: `${v.sku}-card`,
       title: "Fotos principales",
-      hint: "Carrusel de la tarjeta y de la cabecera. La primera es la portada de este color.",
+      hint: "Son las que se ven primero: la foto grande de la ficha con sus miniaturas al lado (hasta 8) y la tarjeta del catálogo. La primera es la portada de este color.",
       sku: v.sku,
       kind: "card",
       photos: p.images.filter((im) => im.variantId === v.id && im.kind === "card"),
@@ -84,7 +84,7 @@ export default async function ProductEdit({
     {
       key: `${v.sku}-gallery`,
       title: "Galería",
-      hint: "Fotos adicionales de este color (por ejemplo, con modelo).",
+      hint: "Salen en la galería de la ficha: la columna de fotos grandes debajo de la información del producto (por ejemplo, con modelo o en uso). No aparecen entre las miniaturas.",
       sku: v.sku,
       kind: "gallery",
       photos: p.images.filter((im) => im.variantId === v.id && im.kind === "gallery"),

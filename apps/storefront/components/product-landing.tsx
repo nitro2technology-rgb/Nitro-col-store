@@ -50,11 +50,14 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
     return () => io.disconnect();
   }, []);
 
-  // Todas las fotos del color, sin repetir; si el color no tiene, las generales del producto.
+  // Principales: lo primero que se ve (foto grande y miniaturas a su lado, hasta 8). Galería: la columna de fotos debajo
+  // de la información (con modelo, en uso…). Sin principales se usa la galería, y sin ninguna, las generales del producto.
   const seen = new Set<string>();
-  const own = [...(variant.images ?? []), ...(variant.gallery ?? [])].filter((p) => !seen.has(p.src) && seen.add(p.src));
-  const photos: ProductImage[] = own.length > 0 ? own : (product.images ?? []);
-  const stacked = photos.slice(1);
+  const fresh = (list: ProductImage[] = []) => list.filter((p) => !seen.has(p.src) && seen.add(p.src));
+  const main = fresh(variant.images);
+  const gallery = fresh(variant.gallery);
+  const photos: ProductImage[] = main.length > 0 ? main : gallery.length > 0 ? gallery : (product.images ?? []);
+  const stacked: ProductImage[] = main.length > 0 ? [...main.slice(8), ...gallery] : [];
   const soldOut = variant.stock === 0;
   const priced = variant.priceCents > 0;
   const saving = variant.compareAtCents && variant.compareAtCents > variant.priceCents ? variant.compareAtCents - variant.priceCents : 0;
@@ -65,7 +68,7 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
         {/* Izquierda: foto principal fija mientras se recorre la columna derecha */}
         <div className="min-w-0 md:sticky md:top-24 md:self-start">
           {photos.length > 0 ? (
-            <ProductPhotos key={variant.sku} images={photos.slice(0, 6)} cover={moda} />
+            <ProductPhotos key={variant.sku} images={photos.slice(0, 8)} cover={moda} />
           ) : (
             <div className="aspect-square rounded-[20px] bg-soft/30" />
           )}
