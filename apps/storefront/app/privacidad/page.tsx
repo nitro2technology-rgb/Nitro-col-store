@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DraftNotice, InfoPage, InfoSection, List } from "@/components/info-page";
 import { BUSINESS, biz } from "@/lib/business";
+import { trackingEnabled } from "@/lib/tracking-config";
 
 export const metadata: Metadata = { title: "Política de privacidad" };
 
@@ -24,7 +25,12 @@ export default function PrivacyPage() {
           <li>Al comprar: nombre, correo, teléfono, dirección de envío e indicaciones de entrega, y los productos del pedido.</li>
           <li>Al reseñar: tu reseña y tu nombre con la inicial del apellido.</li>
           <li>Datos de pago: <b>no los recibimos ni los guardamos</b>. Los captura Wompi en su sitio seguro; a nosotros solo nos informa si el pago fue aprobado.</li>
-          <li>Tu carrito se guarda en el almacenamiento de tu navegador. No usamos cookies de publicidad ni de seguimiento.</li>
+          <li>Tu carrito se guarda en el almacenamiento de tu navegador.</li>
+          {trackingEnabled ? (
+            <li>Con tu permiso (el aviso de cookies te deja aceptar o rechazar) usamos el Pixel de Meta y las etiquetas de Google (Analytics y Ads) para medir nuestra publicidad: qué páginas ves, qué productos agregas al carrito y si compras. Si rechazas, no se carga nada de eso. Puedes cambiar tu decisión cuando quieras en «Preferencias de cookies», al final de la página.</li>
+          ) : (
+            <li>No usamos cookies de publicidad ni de seguimiento.</li>
+          )}
         </List>
       </InfoSection>
 

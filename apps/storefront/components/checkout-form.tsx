@@ -8,6 +8,7 @@ import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
 import { priceCart } from "@/lib/pricing";
 import { SavedFill } from "@/components/saved-fill";
+import { track } from "@/lib/track";
 
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
 const label = "block text-sm text-muted";
@@ -44,6 +45,7 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
     const get = (k: string) => String(f.get(k) ?? "");
     setBusy(true);
     setError("");
+    track("begin_checkout", { value: totals.totalCents / 100, items: rows.map((r) => ({ sku: r.variant.sku, name: `${r.product.name} ${r.variant.label}`, price: r.variant.priceCents / 100, qty: r.qty })) });
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",

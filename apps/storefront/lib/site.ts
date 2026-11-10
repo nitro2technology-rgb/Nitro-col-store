@@ -6,3 +6,9 @@ export function requestOrigin(req: Request) {
   const proto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}`;
 }
+
+/** Dirección pública fija de la tienda (para sitemap, enlaces canónicos y datos para buscadores). */
+export const SITE_URL = (process.env.SITE_URL || "https://nitrocol.nitro2tech.com").replace(/\/$/, "");
+
+/** Vuelve absoluta una ruta de imagen (/products/... o ya completa). */
+export const absoluteUrl = (src: string) => (/^https?:\/\//.test(src) ? src : `${SITE_URL}${src.startsWith("/") ? "" : "/"}${src}`);

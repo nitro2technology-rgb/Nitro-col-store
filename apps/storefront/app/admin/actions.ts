@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import type { OrderStatus, Prisma } from "@nitro/db";
 import { requireAdmin } from "@/lib/admin";
 import { sendDeliveredEmail, sendShippedEmail } from "@/lib/mail";
+import { releaseOrder } from "@/lib/reservations";
 
 const MAX_PRICE_PESOS = 50_000_000;
 const MAX_STOCK = 100_000;
@@ -74,6 +75,7 @@ export async function setOrderStatus(form: FormData) {
   const reasons = { processing: "Preparando el pedido", delivered: "Entregado al cliente", cancelled: "Cancelado desde el panel", refunded: "Dinero devuelto al cliente" } as const;
   const done = await moveOrder(number!, to, user.id, reasons[to as keyof typeof reasons], async (t, orderId) => {
     if (to === "delivered") await t.shipment.updateMany({ where: { orderId, status: "in_transit" }, data: { status: "delivered" } });
+    if (to === "cancelled") await releaseOrder(t, orderId); // pedido sin pagar: suelta las unidades apartadas
     if (to === "refunded") await t.payment.updateMany({ where: { orderId, status: "approved" }, data: { status: "refunded" } });
   });
   revalidatePath("/admin", "layout");
@@ -1129,6 +1131,7 @@ export async function deleteTestOrder(form: FormData) {
       }
     }
     // Las tablas sin borrado en cascada se vacían primero; productos e historial se borran con el pedido.
+    await releaseOrder(t, order.id); // si había unidades apartadas, se sueltan antes de borrar la reserva
     await t.stockReservation.deleteMany({ where: { orderId: order.id } });
     await t.couponRedemption.deleteMany({ where: { orderId: order.id } });
     await t.orderReturn.deleteMany({ where: { orderId: order.id } });

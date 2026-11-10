@@ -15,6 +15,7 @@ import { ProductPhotos } from "@/components/product-photos";
 import { IgStoryVideo } from "@/components/ig-story";
 import { useVariant } from "@/components/variant-context";
 import { useCart } from "@/lib/cart";
+import { track } from "@/lib/track";
 import { useOrderModal } from "@/lib/order-modal";
 import { FREE_SHIPPING_FROM_CENTS } from "@/lib/pricing";
 import { BUSINESS } from "@/lib/business";
@@ -41,6 +42,10 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
   const [barVisible, setBarVisible] = useState(false);
 
   useEffect(() => setNotice(null), [sku]);
+  // Publicidad: «vio el producto» (por producto y color; solo si la persona aceptó las cookies)
+  useEffect(() => {
+    track("view_item", { value: variant.priceCents / 100, items: [{ sku: variant.sku, name: `${product.name} ${variant.label}`, price: variant.priceCents / 100, qty: 1 }] });
+  }, [variant.sku]); // eslint-disable-line react-hooks/exhaustive-deps
   // La barra de compra del celular aparece cuando el botón principal sale de la pantalla.
   useEffect(() => {
     const el = ctaRef.current;
@@ -137,7 +142,11 @@ export function ProductLanding({ product, rating }: { product: Product; rating?:
             {priced && !soldOut && (
               <button
                 type="button"
-                onClick={() => setNotice(addToCart(variant.sku) > 0 ? "added" : "max")}
+                onClick={() => {
+                  const added = addToCart(variant.sku);
+                  if (added > 0) track("add_to_cart", { value: variant.priceCents / 100, items: [{ sku: variant.sku, name: `${product.name} ${variant.label}`, price: variant.priceCents / 100, qty: 1 }] });
+                  setNotice(added > 0 ? "added" : "max");
+                }}
                 className="mt-3 w-full rounded-button border border-ink/40 px-5 py-2.5 text-[14px] font-medium hover:bg-ink hover:text-canvas"
               >
                 Agregar al carrito

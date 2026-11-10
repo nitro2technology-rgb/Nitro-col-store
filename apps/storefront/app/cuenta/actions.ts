@@ -8,6 +8,7 @@ import { formatCOP } from "@nitro/shared";
 import { sendCancelledEmail, sendOwnerNotice } from "@/lib/mail";
 import { ensureProfile } from "@/lib/profile";
 import { canRequestReturn, CANCELLABLE, deliveredAt, RETURN_DAYS } from "@/lib/returns-policy";
+import { releaseOrder } from "@/lib/reservations";
 import { currentUser } from "@/lib/supabase/server";
 
 const back = (path: string, msg: { ok?: string; error?: string }): never =>
@@ -112,6 +113,7 @@ export async function cancelMyOrder(form: FormData) {
       data: { orderId: order.id, fromStatus: order.status, toStatus: "cancelled", reason: paid ? "Cancelado por el cliente · REEMBOLSO PENDIENTE" : "Cancelado por el cliente", actorId: profile.id },
     });
     await t.auditLog.create({ data: { actorId: profile.id, action: "order.cancel_by_customer", entity: "order", entityId: order.id, changes: { number, from: order.status, refundDue: paid } } });
+    if (!paid) await releaseOrder(t, order.id); // suelta las unidades apartadas
     if (paid) {
       for (const i of order.items) {
         const inv = await t.inventoryItem.findUnique({ where: { variantId: i.variantId }, select: { id: true } });

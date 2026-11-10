@@ -6,6 +6,8 @@ import { categories, featuredOf, productsIn, totalStock, variantImages } from "@
 import { HomeHero } from "@/components/home-hero";
 import { CategoryCover } from "@/components/category-cover";
 import { getCover } from "@/lib/covers";
+import { BUSINESS } from "@/lib/business";
+import { SITE_URL } from "@/lib/site";
 import { getSettings } from "@/lib/site-settings";
 import { HomeIgReviews, HomeInstagram } from "@/components/home-social";
 import { HomeAfterHero, HomeBenefits, HomeFaq, HomeMarquee, HomePromos, HomeReviews, HomeStory, type Promo } from "@/components/home-blocks";
@@ -61,8 +63,21 @@ export default async function Home() {
     image: c.cover?.[0]?.src ?? firstPhoto(productsIn(c.slug, all)[0]),
   }));
 
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: BUSINESS.tradeName,
+    legalName: BUSINESS.legalName,
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/logo-full.png`,
+    email: BUSINESS.email,
+    telephone: BUSINESS.whatsapp,
+    areaServed: "CO",
+  };
+
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }} />
       {cover ? <CategoryCover cover={cover} title="Nitro Col Store: todo lo que necesitas, en un solo lugar." home /> : <HomeHero />}
       <HomeAfterHero hasReviews={reviews.length > 0} />
       <HomeShowcase groups={groups} />

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getExtraCategories, getProducts } from "@/lib/catalog";
@@ -12,6 +13,15 @@ export const revalidate = 300;
 
 export function generateStaticParams() {
   return allCategorySlugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  await getExtraCategories();
+  const found = findCategory(slug);
+  if (!found) return {};
+  const description = `Compra ${found.name.toLowerCase()} en Nitro Col Store: envío a toda Colombia y pago seguro con Wompi.`;
+  return { title: found.name, description, alternates: { canonical: `/c/${slug}` }, openGraph: { title: found.name, description, url: `/c/${slug}` } };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {

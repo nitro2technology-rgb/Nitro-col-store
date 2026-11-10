@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatCOP } from "@nitro/shared";
 import { buttonClasses } from "@nitro/ui";
+import { TrackPurchase } from "@/components/analytics";
 import { ClearCart } from "@/components/clear-cart";
 import { applyTransaction, fetchTransaction, parseReference } from "@/lib/wompi";
 
@@ -37,7 +38,7 @@ export default async function OrderPage({
   const { db } = await import("@nitro/db");
   const order = await db.order.findUnique({
     where: { number },
-    select: { status: true, totalCents: true, payments: { select: { status: true }, take: 1 } },
+    select: { status: true, totalCents: true, items: { select: { sku: true, name: true, unitCents: true, quantity: true } }, payments: { select: { status: true }, take: 1 } },
   });
   if (!order) notFound();
 
@@ -48,6 +49,13 @@ export default async function OrderPage({
   return (
     <main className="mx-auto max-w-[1440px] px-6 pb-28 pt-16 md:pt-24">
       {paid && <ClearCart />}
+      {paid && (
+        <TrackPurchase
+          orderRef={ref}
+          value={Number(order.totalCents) / 100}
+          items={order.items.map((i) => ({ sku: i.sku, name: i.name, price: i.unitCents / 100, qty: i.quantity }))}
+        />
+      )}
       <p className="text-[17px] font-semibold text-eyebrow">Pedido {ref}</p>
       <h1 className="mt-3 text-[clamp(36px,6vw,72px)]">{msg.title}</h1>
       <p className="mt-6 max-w-[40rem] text-[19px] leading-[1.47] text-muted">{msg.body}</p>

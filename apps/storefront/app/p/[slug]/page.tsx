@@ -9,6 +9,7 @@ import { VariantProvider } from "@/components/variant-context";
 import { getProducts } from "@/lib/catalog";
 import { findCategory, getProduct, productsIn } from "@/lib/products";
 import { getReviews, getReviewsForProducts } from "@/lib/reviews";
+import { absoluteUrl, SITE_URL } from "@/lib/site";
 import { getSettings } from "@/lib/site-settings";
 import { HomeIgReviews } from "@/components/home-social";
 import { HomeReviews } from "@/components/home-blocks";
@@ -28,7 +29,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const product = getProduct((await params).slug, await getProducts());
   if (!product) return {};
-  return { title: product.name, description: product.description };
+  const image = product.variants[0]?.images?.[0] ?? product.images?.[0];
+  const description = product.description.slice(0, 200);
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: `/p/${product.slug}` }, // ?color=… no crea otra página para Google
+    openGraph: {
+      type: "website",
+      title: product.name,
+      description,
+      url: `/p/${product.slug}`,
+      ...(image && { images: [{ url: absoluteUrl(image.src), alt: image.alt }] }),
+    },
+    twitter: { card: "summary_large_image" },
+  };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -64,15 +79,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     "@type": "Product",
     name: product.name,
     description: product.description,
+    url: `${SITE_URL}/p/${product.slug}`,
     brand: { "@type": "Brand", name: product.brand },
+    image: [...new Set(product.variants.flatMap((v) => (v.images ?? []).slice(0, 2).map((i) => absoluteUrl(i.src))))].slice(0, 6),
     ...(rating && {
       aggregateRating: { "@type": "AggregateRating", ratingValue: Number(rating.avg.toFixed(1)), reviewCount: rating.count },
     }),
     offers: product.variants.map((v) => ({
       "@type": "Offer",
       sku: v.sku,
+      name: `${product.name} ${v.label}`,
+      url: `${SITE_URL}/p/${product.slug}?color=${v.sku}`,
+      itemCondition: "https://schema.org/NewCondition",
+      seller: { "@type": "Organization", name: "Nitro Col Store" },
       priceCurrency: "COP",
       price: v.priceCents / 100,
+      priceValidUntil: new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10),
       availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     })),
   };

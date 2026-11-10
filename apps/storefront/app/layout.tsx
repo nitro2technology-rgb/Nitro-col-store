@@ -8,8 +8,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { FavoritesSection } from "@/components/favorites-section";
 import { FavoritesSync } from "@/components/favorites-sync";
 import { AnnouncementBar } from "@/components/announcement-bar";
+import { Analytics } from "@/components/analytics";
 import { OrderModal } from "@/components/order-modal";
 import { CatalogProvider } from "@/lib/catalog-client";
+import { SITE_URL } from "@/lib/site";
 import { getCartCatalog, getExtraCategories, getSearchIndex } from "@/lib/catalog";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -24,8 +26,20 @@ const interTight = Inter_Tight({
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "Nitro Col Store", template: "%s | Nitro Col Store" },
-  description: "Tecnología con envío a toda Colombia.",
+  description: "Tecnología y moda con envío a toda Colombia: audífonos, smartwatch y gafas. Paga seguro con Wompi.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_CO",
+    siteName: "Nitro Col Store",
+    url: "/",
+    title: "Nitro Col Store",
+    description: "Tecnología y moda con envío a toda Colombia.",
+    images: [{ url: "/brand/portada-tarjeta.webp", alt: "Nitro Col Store" }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -47,6 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <FavoritesSection />
           <SiteFooter />
           <OrderModal />
+          <Analytics />
         </CatalogProvider>
       </body>
     </html>

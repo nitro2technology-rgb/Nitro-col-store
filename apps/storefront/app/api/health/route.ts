@@ -8,7 +8,9 @@ export async function GET() {
   try {
     const { db } = await import("@nitro/db");
     await db.$queryRaw`select 1`;
-    return Response.json({ ok: true, db: "ok" }, { headers });
+    // Aprovecha la visita del monitor para vencer pedidos sin pagar y soltar su stock. Un fallo aquí no tumba el health.
+    const expired = await import("@/lib/reservations").then((m) => m.expireStaleOrders()).catch((e) => { console.error("[health] vencer pedidos:", e); return -1; });
+    return Response.json({ ok: true, db: "ok", expired }, { headers });
   } catch (error) {
     console.error("[health] la base no responde:", error);
     return Response.json({ ok: false, db: "error" }, { status: 503, headers });

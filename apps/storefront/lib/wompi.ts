@@ -3,6 +3,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Prisma } from "@nitro/db";
 import { sendOrderEmails } from "./mail";
+import { commitOrder, EXPIRED_REASON } from "./reservations";
 
 export const wompiApi = () =>
   process.env.WOMPI_ENV === "production" ? "https://production.wompi.co/v1" : "https://sandbox.wompi.co/v1";
@@ -103,19 +104,27 @@ export async function applyTransaction(tx: WompiTransaction) {
       });
     }
     if (status !== "approved") return;
-    if (order.status === "cancelled") console.error(`[wompi] ¡Pago aprobado de un pedido CANCELADO (NC-${order.number})! Hay que devolver el dinero a mano.`);
 
-    // Solo una llamada logra pasar el pedido de pendiente a pagado; así el inventario se descuenta una vez.
-    const moved = await t.order.updateMany({ where: { id: order.id, status: "pending_payment" }, data: { status: "paid" } });
+    // Un pedido vencido (sin pagar a tiempo) se puede reactivar si el pago llega tarde y todavía hay stock.
+    const lastReason = order.status === "cancelled" ? (await t.orderStatusHistory.findFirst({ where: { orderId: order.id }, orderBy: { createdAt: "desc" }, select: { reason: true } }))?.reason : null;
+    const revive = order.status === "cancelled" && !!lastReason?.startsWith(EXPIRED_REASON);
+
+    if (order.status === "cancelled" && !revive) console.error(`[wompi] ¡Pago aprobado de un pedido CANCELADO (NC-${order.number})! Hay que devolver el dinero a mano.`);
+
+    // Solo una llamada logra pasar el pedido a pagado; así el inventario se descuenta una vez.
+    const moved = await t.order.updateMany({ where: { id: order.id, status: revive ? "cancelled" : "pending_payment" }, data: { status: "paid" } });
     if (moved.count === 0) return;
     paidNow = true;
-    await t.orderStatusHistory.create({ data: { orderId: order.id, fromStatus: "pending_payment", toStatus: "paid", reason: "Pago aprobado en Wompi" } });
+    await t.orderStatusHistory.create({ data: { orderId: order.id, fromStatus: revive ? "cancelled" : "pending_payment", toStatus: "paid", reason: revive ? "Pago aprobado después de vencer la reserva" : "Pago aprobado en Wompi" } });
+
+    // Lo normal: las unidades ya estaban apartadas y ahora se descuentan. Si no hay reservas (pedido antiguo o vencido), se intenta descontar directo.
+    if (!revive && (await commitOrder(t, order.id))) return;
     for (const item of order.items) {
       const dec = await t.inventoryItem.updateMany({
         where: { variantId: item.variantId, onHand: { gte: item.quantity } },
         data: { onHand: { decrement: item.quantity } },
       });
-      if (dec.count === 0) console.error(`[wompi] Sin inventario suficiente para ${item.sku} en el pedido NC-${order.number}: revisar a mano`);
+      if (dec.count === 0) console.error(`[wompi] Sin inventario suficiente para ${item.sku} en el pedido NC-${order.number}: revisar a mano (¡el cliente ya pagó!)`);
     }
   });
   // Los correos salen una sola vez: solo quien logró pasar el pedido a "paid". Un fallo no afecta el pago.

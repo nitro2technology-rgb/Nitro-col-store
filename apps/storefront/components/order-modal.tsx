@@ -13,6 +13,7 @@ import { useOrderModal } from "@/lib/order-modal";
 import { priceCart } from "@/lib/pricing";
 import { findCategory } from "@/lib/products";
 import { SavedFill } from "@/components/saved-fill";
+import { track } from "@/lib/track";
 
 const input = "mt-1 w-full rounded-[12px] border border-ink/25 bg-canvas px-3 py-2.5 text-[16px] text-ink outline-none focus:border-ink";
 const lbl = "block text-[13px] font-semibold text-ink";
@@ -114,6 +115,13 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
     const get = (k: string) => String(f.get(k) ?? "").trim();
     setBusy(true);
     setError("");
+    track("begin_checkout", {
+      value: totals.totalCents / 100,
+      items: [...wanted].flatMap(([sku, n]) => {
+        const f = findVariant(sku);
+        return f ? [{ sku, name: `${f.product.name} ${f.variant.label}`, price: f.variant.priceCents / 100, qty: n }] : [];
+      }),
+    });
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",

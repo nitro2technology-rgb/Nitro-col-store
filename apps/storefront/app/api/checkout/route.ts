@@ -5,6 +5,7 @@ import { requestOrigin } from "@/lib/site";
 import { ensureProfile } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
 import { checkoutUrl, orderReference } from "@/lib/wompi";
+import { expireStaleOrders, OutOfStockError, RESERVATION_MINUTES, reserveItem } from "@/lib/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
   }
 
   const { db } = await import("@nitro/db");
+  // Suelta primero el stock de pedidos vencidos para que no aparezca como agotado sin estarlo.
+  await expireStaleOrders().catch((e) => console.error("[checkout] No se pudieron vencer pedidos:", e));
   const variants = await db.productVariant.findMany({
     where: { sku: { in: [...wanted.keys()] }, deletedAt: null, product: { status: "published", deletedAt: null } },
     include: { inventory: true, product: { include: { categories: { include: { category: true } } } } },
@@ -67,7 +70,12 @@ export async function POST(req: Request) {
   // Con sesión, el pedido queda en "Mi cuenta". Comprar sin cuenta sigue siendo posible.
   const user = await currentUser().catch(() => null);
   const profile = user ? await ensureProfile(user) : null;
-  const order = await db.order.create({
+  const expiresAt = new Date(Date.now() + RESERVATION_MINUTES * 60_000);
+  let order;
+  try {
+    // Pedido y reservas en una sola transacción: si alguna unidad ya no alcanza, no queda nada a medias.
+    order = await db.$transaction(async (t) => {
+      const created = await t.order.create({
     data: {
       profileId: profile?.id,
       email,
@@ -93,7 +101,17 @@ export async function POST(req: Request) {
       payments: { create: { provider: "wompi", method: "checkout", amountCents: totals.totalCents } },
       history: { create: { toStatus: "pending_payment", reason: "Pedido creado" } },
     },
-  });
+      });
+      for (const r of rows) {
+        if (!r.v.inventory) throw new OutOfStockError(r.v.id);
+        await reserveItem(t, { orderId: created.id, variantId: r.v.id, inventoryItemId: r.v.inventory.id, quantity: r.qty, expiresAt });
+      }
+      return created;
+    }, { timeout: 20000, maxWait: 10000 });
+  } catch (error) {
+    if (error instanceof OutOfStockError) return fail("Alguien más acaba de llevarse las últimas unidades de un producto de tu carrito. Revisa el carrito.", 409);
+    throw error;
+  }
 
   // «Guardar mis datos»: solo con sesión. Un fallo aquí nunca debe frenar el pago.
   if (profile && body?.saveData === true) {

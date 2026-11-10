@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookiePrefs } from "@/components/analytics";
 import { categories } from "@/lib/products";
 import { BUSINESS } from "@/lib/business";
 
@@ -41,6 +42,7 @@ export function SiteFooter() {
             <Link href="/terminos" className="hover:text-ink">Términos y condiciones</Link>
             <Link href="/privacidad" className="hover:text-ink">Privacidad</Link>
             <Link href="/cuenta" className="hover:text-ink">Mi cuenta</Link>
+            <CookiePrefs className="hover:text-ink" />
           </nav>
           <p>© {new Date().getFullYear()} Nitro Col Store. Precios en COP, IVA incluido.</p>
         </div>
