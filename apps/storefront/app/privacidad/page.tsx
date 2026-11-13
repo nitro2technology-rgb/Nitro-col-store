@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <li>Datos de pago: <b>no los recibimos ni los guardamos</b>. Los captura Wompi en su sitio seguro; a nosotros solo nos informa si el pago fue aprobado.</li>
           <li>Tu carrito se guarda en el almacenamiento de tu navegador.</li>
           {trackingEnabled ? (
-            <li>Con tu permiso (el aviso de cookies te deja aceptar o rechazar) usamos el Pixel de Meta y las etiquetas de Google (Analytics y Ads) para medir nuestra publicidad: qué páginas ves, qué productos agregas al carrito y si compras. Si rechazas, no se carga nada de eso. Puedes cambiar tu decisión cuando quieras en «Preferencias de cookies», al final de la página.</li>
+            <li>Con tu permiso (el aviso de cookies te deja aceptar o rechazar) usamos el Pixel de Meta y las etiquetas de Google (Analytics y Ads) para medir nuestra publicidad: qué páginas ves, qué productos agregas al carrito y si compras. Si aceptas y compras, también informamos la compra a Meta desde nuestro servidor (con tu correo, teléfono y nombre cifrados, y datos técnicos como la IP y el navegador) para medir mejor la publicidad. Si rechazas, no se carga ni se envía nada de eso. Puedes cambiar tu decisión cuando quieras en «Preferencias de cookies», al final de la página.</li>
           ) : (
             <li>No usamos cookies de publicidad ni de seguimiento.</li>
           )}

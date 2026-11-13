@@ -4,6 +4,7 @@ import { priceCart } from "@/lib/pricing";
 import { requestOrigin } from "@/lib/site";
 import { ensureProfile } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
+import { buildCapiContext } from "@/lib/meta-capi";
 import { checkoutUrl, orderReference } from "@/lib/wompi";
 import { expireStaleOrders, OutOfStockError, RESERVATION_MINUTES, reserveItem } from "@/lib/reservations";
 
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
   // Con sesión, el pedido queda en "Mi cuenta". Comprar sin cuenta sigue siendo posible.
   const user = await currentUser().catch(() => null);
   const profile = user ? await ensureProfile(user) : null;
+  const capi = buildCapiContext(body?.tracking, req);
   const expiresAt = new Date(Date.now() + RESERVATION_MINUTES * 60_000);
   let order;
   try {
@@ -85,6 +87,7 @@ export async function POST(req: Request) {
       shippingCents: totals.shippingCents,
       totalCents: totals.totalCents,
       shippingAddress: { name, department, city, line, notes },
+      ...(capi && { attribution: { source: "web", capi } }),
       items: {
         create: rows.map((r) => ({
           variantId: r.v.id,

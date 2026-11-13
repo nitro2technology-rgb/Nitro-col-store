@@ -3,6 +3,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Prisma } from "@nitro/db";
 import { sendOrderEmails } from "./mail";
+import { sendMetaPurchase } from "./meta-capi";
 import { commitOrder, EXPIRED_REASON } from "./reservations";
 
 export const wompiApi = () =>
@@ -131,7 +132,10 @@ export async function applyTransaction(tx: WompiTransaction) {
   if (paidNow) {
     try {
       const paid = await db.order.findUnique({ where: { number }, include: { items: true } });
-      if (paid) await sendOrderEmails(paid);
+      if (paid) {
+        await sendOrderEmails(paid);
+        await sendMetaPurchase(paid);
+      }
     } catch (error) {
       console.error(`[mail] No se pudieron preparar los correos de NC-${number}:`, error);
     }

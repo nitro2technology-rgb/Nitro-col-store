@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "Nitro Col Store",
     description: "Tecnología y moda con envío a toda Colombia.",
-    images: [{ url: "/brand/portada-tarjeta.webp", alt: "Nitro Col Store" }],
+    images: [{ url: "/brand/compartir-1200x630.png", width: 1200, height: 630, alt: "Nitro Col Store" }],
   },
   twitter: { card: "summary_large_image" },
 };

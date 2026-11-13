@@ -14,15 +14,6 @@ export const gafasDiscountPct = (units: number) =>
   [...GAFAS_TIERS].reverse().find((t) => units >= t.min)?.pct ?? 0;
 export const qtyDiscountPct = gafasDiscountPct;
 
-/** Texto común de la ficha de todas las gafas. */
-export const GAFAS_BULLETS = [
-  "Impuesto incluido. Envío calculado en el momento de pagar",
-  "Lentes con protección UV400",
-  "Diseño unisex",
-  "Bisagras cómodas para máximo agarre y durabilidad",
-  "Materiales livianos y altamente resistentes a impactos",
-];
-
 /** Gafa sugerida en "Lleva más y ahorra": solo lo que el navegador necesita. */
 export type Recommendation = {
   slug: string;

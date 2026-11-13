@@ -8,7 +8,7 @@ import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
 import { priceCart } from "@/lib/pricing";
 import { SavedFill } from "@/components/saved-fill";
-import { track } from "@/lib/track";
+import { track, trackingContext } from "@/lib/track";
 
 const field = "mt-2 w-full rounded-button border border-ink/30 bg-transparent px-4 py-3 text-[17px] text-ink backdrop-blur-md";
 const label = "block text-sm text-muted";
@@ -55,6 +55,7 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
           customer: { name: get("name"), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
           saveData: f.get("saveData") === "on",
+          tracking: trackingContext(),
         }),
       });
       const data = await res.json();

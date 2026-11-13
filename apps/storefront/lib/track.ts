@@ -14,6 +14,29 @@ export const hasConsent = () => {
   }
 };
 
+const cookie = (name: string) => {
+  try {
+    return document.cookie.split("; ").find((c) => c.startsWith(`${name}=`))?.slice(name.length + 1) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Datos para la API de conversiones de Meta (servidor), que se envían con el pedido. Solo con consentimiento: sin él
+ * devuelve `{ consent: false }` y el servidor no manda nada a Meta.
+ */
+export function trackingContext(): { consent: boolean; fbp?: string; fbc?: string } {
+  if (!META_ID || !hasConsent()) return { consent: false };
+  let fbc = cookie("_fbc");
+  if (!fbc) {
+    // Si llegó desde un anuncio, Meta pone ?fbclid=… en la URL; la cookie _fbc puede no existir aún.
+    const id = new URLSearchParams(window.location.search).get("fbclid");
+    if (id) fbc = `fb.1.${Date.now()}.${id}`;
+  }
+  return { consent: true, fbp: cookie("_fbp"), fbc };
+}
+
 export type TrackItem = { sku: string; name: string; price: number; qty: number };
 type W = Window & { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void };
 

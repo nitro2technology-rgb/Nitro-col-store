@@ -13,7 +13,7 @@ import { useOrderModal } from "@/lib/order-modal";
 import { priceCart } from "@/lib/pricing";
 import { findCategory } from "@/lib/products";
 import { SavedFill } from "@/components/saved-fill";
-import { track } from "@/lib/track";
+import { track, trackingContext } from "@/lib/track";
 
 const input = "mt-1 w-full rounded-[12px] border border-ink/25 bg-canvas px-3 py-2.5 text-[16px] text-ink outline-none focus:border-ink";
 const lbl = "block text-[13px] font-semibold text-ink";
@@ -131,6 +131,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
           customer: { name: `${get("name")} ${get("lastname")}`.trim(), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
           saveData: f.get("saveData") === "on",
+          tracking: trackingContext(),
         }),
       });
       const data = await res.json();
