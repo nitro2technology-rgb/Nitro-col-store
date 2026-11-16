@@ -1,6 +1,6 @@
 # Continuar aquí — Nitro Col Store
 
-**Última actualización:** 9 de noviembre de 2026 (ver 5z) (ver la sección 9: lista para salir a producción) (tienda en vivo en Render en `https://nitrocol.nitro2tech.com`, rama `main`; catálogo desde la base, inicio de sesión con Google activo, fichas estilo Apple de smartwatch y audífonos, **panel de administración v2** en `/admin` con resumen de ganancias, edición de productos, costos y devoluciones)
+**Última actualización:** 13 de noviembre de 2026 (ver 5aa y «Estado al 13 nov»; antes: 9 de noviembre, ver 5z) (ver la sección 9: lista para salir a producción) (tienda en vivo en Render en `https://nitrocol.nitro2tech.com`, rama `main`; catálogo desde la base, inicio de sesión con Google activo, fichas estilo Apple de smartwatch y audífonos, **panel de administración v2** en `/admin` con resumen de ganancias, edición de productos, costos y devoluciones)
 **Para quién es:** quien retome el proyecto (persona o Claude) sin haber visto la conversación anterior.
 
 Lee primero `especificaciones-tecnicas.md` y `especificaciones-de-uso.md` (en esta misma carpeta). Este archivo solo resume **qué está hecho, cómo correrlo, qué decisiones se tomaron y qué sigue**.
@@ -417,6 +417,20 @@ Cupones, exportar pedidos, Beanies, roles por vendedor (marketplace), inicio de 
 - **Variables en Render (servidor, secretas):** `META_CAPI_TOKEN` (Events Manager → Configuración → API de conversiones → generar token) y, solo para probar, `META_CAPI_TEST_CODE` (código de «Probar eventos»; quitarlo al terminar). Requiere `NEXT_PUBLIC_META_PIXEL_ID`. **Sin probar con Meta real.**
 - **Imagen para compartir:** `public/brand/compartir-1200x630.png` (logo negro sobre blanco) en `layout.tsx`. Las fichas de producto siguen usando su propia foto.
 - Se borró `GAFAS_BULLETS` (traía «UV400» y ya no se usaba).
+
+### Estado al 13 nov 2026 (cierre) y qué sigue (el dueño quiere vender ya; **Wompi producción va de ÚLTIMO**)
+- Commit local `5fc3ee5` (API de conversiones, imagen para compartir; ver 5aa) **pendiente de `git push`** (lo hace el dueño). Typecheck y build de producción pasan. `/api/health` en vivo responde bien, pero la primera llamada tardó más de 60 s (arranque en frío: Render dormido o Supabase pausado) → necesita el plan de pago de Render y el monitor.
+- Meta (token, píxel) y demás seguimiento **pueden esperar**; no bloquean vender.
+- **Orden acordado antes de Wompi producción (todo con Wompi en modo pruebas):**
+  1. **Dejar producción lista:** push; revisar variables en Render (`CATALOG_SOURCE=db`, `ADMIN_EMAILS`, `SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `MAIL_FROM`, `ORDER_NOTIFY_EMAIL`); crear el monitor de `/api/health` cada 5 min (obligatorio: cancela pedidos sin pagar y libera stock); pasar Render al plan de pago.
+  2. **Compra completa en sandbox** (lo más importante): «Quiero el mío ahora» → tarjeta `4242 4242 4242 4242` → pedido pagado, baja el stock y llegan los dos correos; repetir con la rechazada `4111 1111 1111 1111`; abandonar un pedido y ver que el stock se libere (45 min); probar el descuento por 2 y 3 unidades.
+  3. **Con sesión real:** cuenta de cliente (pedidos con fotos, cancelar, devolución, corregir envío, direcciones, favoritos, reseña) y panel (guardar producto, crear color, subir fotos, marcar enviado con correo, flujo de devolución). Borrar los pedidos de prueba con «Eliminar este pedido».
+  4. **Celular real:** inicio, ficha, «Completa tu pedido», pago, cuenta, menú y favoritos.
+  5. Confirmar textos (descripciones, eslóganes, «historia» del inicio) y activar el reenvío de `pedidos@nitro2tech.com`.
+  6. **Al final:** Wompi producción (`WOMPI_ENV=production`, 4 llaves, URL de eventos en modo producción), compra real de monto bajo y devolverla.
+- Puede esperar unos días: copias de seguridad de Supabase, facturación DIAN (al inicio a mano), revisión legal.
+- **Código pendiente (no urgente):** miniaturas de colores bajo la tarjeta del catálogo; conectar las imágenes nuevas por sección (bloqueado: `imagenes/productos/` no existe, el dueño debe generarlas); cupones, exportar pedidos, Beanies, reembolso automático con Wompi.
+- Se acordó que Claude puede hacer las pruebas 2 y 3 desde el Chrome del dueño (con sus sesiones abiertas), paso a paso, una vez hecho el push.
 
 ### Estado al 9 nov 2026 (cierre del día) y qué sigue mañana
 - Código subido a `main` hasta el commit `8094ef3` (reservas de stock, SEO, seguimiento y cookies; ver 5z). Render redespliega solo.
