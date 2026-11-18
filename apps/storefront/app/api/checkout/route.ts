@@ -1,6 +1,7 @@
 // Crea el pedido y devuelve la URL de pago de Wompi. El navegador solo envía SKU y cantidades:
 // precios, descuento, envío y stock se calculan aquí con los datos de la base.
 import { priceCart } from "@/lib/pricing";
+import { validateCoupon } from "@/lib/coupons";
 import { requestOrigin } from "@/lib/site";
 import { ensureProfile } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
@@ -67,10 +68,18 @@ export async function POST(req: Request) {
     if (available < r.qty) return fail(`No hay suficientes unidades de ${r.v.product.name} (${r.v.label}).`, 409);
   }
 
-  const totals = priceCart(rows.map((r) => ({ category: r.category, priceCents: r.v.priceCents, qty: r.qty })));
+  const priceRows = rows.map((r) => ({ category: r.category, priceCents: r.v.priceCents, qty: r.qty }));
   // Con sesión, el pedido queda en "Mi cuenta". Comprar sin cuenta sigue siendo posible.
   const user = await currentUser().catch(() => null);
   const profile = user ? await ensureProfile(user) : null;
+  // Cupón opcional: se valida aquí con los precios de la base.
+  let coupon: { id: string; type: "percentage" | "fixed" | "free_shipping"; value: number } | null = null;
+  if (typeof body?.coupon === "string" && body.coupon.trim()) {
+    const checked = await validateCoupon({ code: body.coupon, subtotalCents: priceCart(priceRows).subtotalCents, profileId: profile?.id, email });
+    if ("error" in checked) return fail(checked.error, 409);
+    coupon = checked.coupon;
+  }
+  const totals = priceCart(priceRows, coupon);
   const capi = buildCapiContext(body?.tracking, req);
   const expiresAt = new Date(Date.now() + RESERVATION_MINUTES * 60_000);
   let order;
@@ -86,6 +95,8 @@ export async function POST(req: Request) {
       discountCents: totals.discountCents,
       shippingCents: totals.shippingCents,
       totalCents: totals.totalCents,
+      couponId: coupon?.id,
+      ...(coupon && { redemptions: { create: { couponId: coupon.id, profileId: profile?.id } } }),
       shippingAddress: { name, department, city, line, notes },
       ...(capi && { attribution: { source: "web", capi } }),
       items: {

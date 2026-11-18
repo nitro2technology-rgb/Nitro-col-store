@@ -6,7 +6,7 @@ import { formatCOP } from "@nitro/shared";
 import { Button, buttonClasses } from "@nitro/ui";
 import { useCart, useHydrated } from "@/lib/cart";
 import { useVariantLookup } from "@/lib/catalog-client";
-import { priceCart } from "@/lib/pricing";
+import { priceCart, type CouponInput } from "@/lib/pricing";
 import { SavedFill } from "@/components/saved-fill";
 import { track, trackingContext } from "@/lib/track";
 
@@ -19,6 +19,9 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
   const findVariant = useVariantLookup();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [coupon, setCoupon] = useState<CouponInput & { code: string } | null>(null);
+  const [couponMsg, setCouponMsg] = useState("");
 
   if (!hydrated) return <div className="mt-12 h-48" aria-hidden="true" />;
 
@@ -37,7 +40,29 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
     );
   }
 
-  const totals = priceCart(rows.map((r) => ({ category: r.product.category, priceCents: r.variant.priceCents, qty: r.qty })));
+  const totals = priceCart(rows.map((r) => ({ category: r.product.category, priceCents: r.variant.priceCents, qty: r.qty })), coupon);
+
+  async function applyCoupon() {
+    setCouponMsg("");
+    if (!codeInput.trim()) return;
+    try {
+      const res = await fetch("/api/coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput, items: rows.map((r) => ({ sku: r.variant.sku, qty: r.qty })) }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setCoupon({ code: data.code, type: data.type, value: data.value });
+        setCouponMsg("");
+      } else {
+        setCoupon(null);
+        setCouponMsg(data.error ?? "No se pudo aplicar el código.");
+      }
+    } catch {
+      setCouponMsg("No se pudo comprobar el código. Intenta de nuevo.");
+    }
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,6 +80,7 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
           customer: { name: get("name"), email: get("email"), phone: get("phone") },
           address: { department: get("department"), city: get("city"), line: get("line"), notes: get("notes") },
           saveData: f.get("saveData") === "on",
+          coupon: coupon?.code ?? "",
           tracking: trackingContext(),
         }),
       });
@@ -142,15 +168,46 @@ export function CheckoutForm({ defaultEmail = "", defaultName = "" }: { defaultE
             </li>
           ))}
         </ul>
-        <dl className="mt-6 space-y-3 border-t border-ink/15 pt-5 text-[17px]">
+        <div className="mt-6 border-t border-ink/15 pt-5">
+          <label className={label}>
+            ¿Tienes un código?
+            <div className="mt-2 flex gap-2">
+              <input
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyCoupon();
+                  }
+                }}
+                maxLength={40}
+                placeholder="CÓDIGO"
+                className="w-full rounded-button border border-ink/30 bg-transparent px-4 py-2.5 text-[16px] uppercase text-ink"
+              />
+              <button type="button" onClick={applyCoupon} className="shrink-0 rounded-button border border-ink/40 px-4 py-2.5 text-[14px] font-semibold hover:bg-ink hover:text-canvas">
+                Aplicar
+              </button>
+            </div>
+          </label>
+          {couponMsg && <p className="mt-2 text-[13px] text-red-600">{couponMsg}</p>}
+          {coupon && <p className="mt-2 text-[13px] text-green-700">Código {coupon.code} aplicado.</p>}
+        </div>
+        <dl className="mt-5 space-y-3 border-t border-ink/15 pt-5 text-[17px]">
           <div className="flex justify-between">
             <dt className="text-muted">Subtotal</dt>
             <dd>{formatCOP(totals.subtotalCents)}</dd>
           </div>
-          {totals.discountCents > 0 && (
+          {totals.discountCents - totals.couponCents > 0 && (
             <div className="flex justify-between">
               <dt className="text-muted">Descuento ({totals.discountPct}%)</dt>
-              <dd>−{formatCOP(totals.discountCents)}</dd>
+              <dd>−{formatCOP(totals.discountCents - totals.couponCents)}</dd>
+            </div>
+          )}
+          {totals.couponCents > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted">Código {coupon?.code}</dt>
+              <dd>−{formatCOP(totals.couponCents)}</dd>
             </div>
           )}
           <div className="flex justify-between">

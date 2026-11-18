@@ -808,6 +808,81 @@ export async function deleteCategory(form: FormData) {
   back(path, { ok: `Categoría «${c!.name}» borrada.` });
 }
 
+// ───────────── Cupones ─────────────
+
+/** Código aleatorio legible (sin 0/O/1/I): NITRO-XXXXXX. */
+function randomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `NITRO-${s}`;
+}
+
+export async function createCoupon(form: FormData) {
+  const path = "/admin/cupones";
+  const user = await requireAdmin(path);
+  const type = str(form, "type");
+  if (type !== "percentage" && type !== "fixed" && type !== "free_shipping") back(path, { error: "Elige el tipo de cupón." });
+  const rawValue = int(str(form, "value") || "0");
+  if (rawValue === null) back(path, { error: "El valor debe ser un número." });
+  let value = 0;
+  if (type === "percentage") {
+    if (!rawValue || rawValue > 100) back(path, { error: "El porcentaje va de 1 a 100." });
+    value = rawValue!;
+  } else if (type === "fixed") {
+    if (!rawValue) back(path, { error: "Escribe cuántos pesos descuenta." });
+    value = rawValue! * 100; // pesos → centavos
+  }
+  const qty = Math.min(Math.max(int(str(form, "count") || "1") ?? 1, 1), 50);
+  const custom = str(form, "code").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 30);
+  if (custom && qty > 1) back(path, { error: "Con un código propio solo se crea uno. Deja el código vacío para generar varios." });
+  const maxRedemptions = int(str(form, "max") || "0") || null;
+  const perCustomerLimit = int(str(form, "perCustomer") || "0") || null;
+  const minPesos = int(str(form, "min") || "0");
+  const endsRaw = str(form, "ends");
+  const endsAt = endsRaw ? new Date(`${endsRaw}T23:59:59-05:00`) : null;
+  if (endsAt && Number.isNaN(endsAt.getTime())) back(path, { error: "La fecha de vencimiento no es válida." });
+  const d = await db();
+  const made: string[] = [];
+  for (let i = 0; i < qty; i++) {
+    const code = custom || randomCode();
+    if (await d.coupon.findUnique({ where: { code }, select: { id: true } })) {
+      if (custom) back(path, { error: `El código «${code}» ya existe.` });
+      i--; // aleatorio repetido: intenta otro
+      continue;
+    }
+    const c = await d.coupon.create({
+      data: { code, type: type as "percentage" | "fixed" | "free_shipping", value, maxRedemptions, perCustomerLimit, minSubtotalCents: minPesos ? minPesos * 100 : null, endsAt },
+    });
+    await d.auditLog.create({ data: { actorId: user.id, action: "coupon.create", entity: "coupon", entityId: c.id, changes: { code, type, value } } });
+    made.push(code);
+  }
+  back(path, { ok: `Código${made.length > 1 ? "s" : ""} creado${made.length > 1 ? "s" : ""}: ${made.join(", ")}` });
+}
+
+export async function toggleCoupon(form: FormData) {
+  const path = "/admin/cupones";
+  const user = await requireAdmin(path);
+  const d = await db();
+  const c = await d.coupon.findUnique({ where: { id: str(form, "id") } });
+  if (!c) back(path, { error: "El cupón ya no existe." });
+  await d.coupon.update({ where: { id: c!.id }, data: { active: !c!.active } });
+  await d.auditLog.create({ data: { actorId: user.id, action: "coupon.toggle", entity: "coupon", entityId: c!.id, changes: { code: c!.code, active: !c!.active } } });
+  back(path, { ok: `Código ${c!.code} ${c!.active ? "desactivado" : "activado"}.` });
+}
+
+export async function deleteCoupon(form: FormData) {
+  const path = "/admin/cupones";
+  const user = await requireAdmin(path);
+  const d = await db();
+  const c = await d.coupon.findUnique({ where: { id: str(form, "id") }, include: { _count: { select: { orders: true, redemptions: true } } } });
+  if (!c) back(path, { error: "El cupón ya no existe." });
+  if (c!._count.orders > 0 || c!._count.redemptions > 0) back(path, { error: "Ese código ya se usó en pedidos: desactívalo en vez de borrarlo." });
+  await d.coupon.delete({ where: { id: c!.id } });
+  await d.auditLog.create({ data: { actorId: user.id, action: "coupon.delete", entity: "coupon", entityId: c!.id, changes: { code: c!.code } } });
+  back(path, { ok: `Código ${c!.code} borrado.` });
+}
+
 // ───────────── Portadas de categoría ─────────────
 
 /** Guarda de una vez las portadas de todas las categorías que tengan archivos nuevos, cambios de enlace o pedido de quitar la de celular. */
