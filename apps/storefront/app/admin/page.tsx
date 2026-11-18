@@ -78,6 +78,8 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           <div className="divide-y divide-[#f0f0f5]">
             <Stat icon="cash" value={cop(s.sales.sales)} label="Vendido" hint="Lo que pagaron los clientes, con envío" />
             <Stat icon="trend" value={s.sales.profit == null ? "Falta el costo" : cop(s.sales.profit)} label={`Ganancia${s.sales.margin != null ? ` · ${pct(s.sales.margin)}` : ""}`} hint="Productos vendidos − lo que te costaron − reembolsos. No resta comisión de pago ni envío." />
+            <Stat icon="coins" value={s.sales.wompiFees > 0 ? `−${cop(s.sales.wompiFees)}` : cop(0)} label="Comisión de Wompi (estimada)" hint="2,65 % + $700 + IVA por pago con tarjeta. PSE y otros medios pueden variar." />
+            <Stat icon="trend" value={s.sales.profitAfterFees == null ? "Falta el costo" : cop(s.sales.profitAfterFees)} label="Ganancia después de Wompi" hint="Ganancia − comisión de Wompi. El envío que pagas a la transportadora no está incluido." />
             <Stat icon="coins" value={cop(s.sales.cost)} label="Costo de lo vendido" />
             <Stat icon="orders" value={`${s.sales.orders} ${s.sales.orders === 1 ? "pedido" : "pedidos"} · ${s.sales.units} und.`} label="Pedidos y unidades" />
             <Stat icon="truck" value={cop(s.sales.shipping)} label="Envíos cobrados" />

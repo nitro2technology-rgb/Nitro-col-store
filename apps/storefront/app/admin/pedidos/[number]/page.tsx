@@ -4,6 +4,7 @@ import { formatCOP } from "@nitro/shared";
 import { requireAdmin } from "@/lib/admin";
 import { dateTimeFmt, ORDER_STATUS } from "@/lib/order-status";
 import { createReturn, deleteTestOrder, setOrderStatus, shipOrder } from "../../actions";
+import { wompiFeeCents } from "../../stats";
 import { card, field, ghostBtn, label, Notice, primaryBtn, StatusBadge } from "../../ui";
 
 const PAYMENT: Record<string, string> = { pending: "Pendiente", approved: "Aprobado", declined: "Rechazado", voided: "Anulado", refunded: "Reembolsado" };
@@ -42,6 +43,8 @@ export default async function OrderDetail({
   const canShip = order.status === "paid" || order.status === "processing";
   const costKnown = order.items.every((i) => i.unitCostCents != null);
   const profit = Number(order.subtotalCents - order.discountCents) - order.items.reduce((sum, i) => sum + (i.unitCostCents ?? 0) * i.quantity, 0);
+  const viaWompi = order.payments.some((p) => p.provider === "wompi" && p.status === "approved");
+  const wompiFee = wompiFeeCents(Number(order.totalCents));
   const canReturn = order.status === "delivered" || order.status === "shipped";
   const whatsapp = order.phone.replace(/\D/g, "");
 
@@ -96,6 +99,18 @@ export default async function OrderDetail({
                 <dt className="text-[#6b6b80]">Ganancia (productos − costo, sin envío)</dt>
                 <dd className={costKnown ? "font-semibold text-emerald-700" : "text-[#a0a0b2]"}>{costKnown ? cop(profit) : "Faltan costos"}</dd>
               </div>
+              {viaWompi && (
+                <>
+                  <div className="flex justify-between text-[14px]">
+                    <dt className="text-[#6b6b80]">Comisión de Wompi (estimada, con IVA)</dt>
+                    <dd>−{cop(wompiFee)}</dd>
+                  </div>
+                  <div className="flex justify-between text-[14px]">
+                    <dt className="text-[#6b6b80]">Ganancia después de Wompi</dt>
+                    <dd className={costKnown ? "font-semibold text-emerald-700" : "text-[#a0a0b2]"}>{costKnown ? cop(profit - wompiFee) : "Faltan costos"}</dd>
+                  </div>
+                </>
+              )}
             </dl>
           </section>
 

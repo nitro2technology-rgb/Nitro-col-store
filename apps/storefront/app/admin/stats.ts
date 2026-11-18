@@ -24,6 +24,18 @@ function rangeStart(key: RangeKey): Date | null {
   return null;
 }
 
+/**
+ * Comisión estimada de Wompi por pago con tarjeta: 2,65 % + $700, más IVA del 19 % sobre esa comisión (coincide con el pago real
+ * de $2.000: comisión $753 + IVA $143,07). PSE, Nequi y otros medios pueden cobrar distinto: es una estimación.
+ */
+const WOMPI_PCT = 0.0265;
+const WOMPI_FIXED_CENTS = 70_000;
+const WOMPI_IVA = 0.19;
+export function wompiFeeCents(totalCents: number) {
+  const fee = totalCents * WOMPI_PCT + WOMPI_FIXED_CENTS;
+  return Math.round(fee * (1 + WOMPI_IVA));
+}
+
 export type Bucket = { key: string; label: string; cents: number; orders: number };
 
 export async function loadSummary(range: RangeKey) {
@@ -40,6 +52,7 @@ export async function loadSummary(range: RangeKey) {
         discountCents: true,
         shippingCents: true,
         totalCents: true,
+        payments: { select: { provider: true } },
         items: { select: { quantity: true, totalCents: true, unitCostCents: true, variant: { select: { product: { select: { slug: true, name: true } } } } } },
       },
     }),
@@ -66,10 +79,11 @@ export async function loadSummary(range: RangeKey) {
   ]);
 
   // ── Ventas del periodo
-  let sales = 0, net = 0, shipping = 0, cost = 0, units = 0, unitsNoCost = 0;
+  let sales = 0, net = 0, shipping = 0, cost = 0, units = 0, unitsNoCost = 0, wompiFees = 0;
   const byProduct = new Map<string, { name: string; slug: string; cents: number; units: number }>();
   for (const o of orders) {
     sales += Number(o.totalCents);
+    if (o.payments.some((p) => p.provider === "wompi")) wompiFees += wompiFeeCents(Number(o.totalCents));
     net += Number(o.subtotalCents - o.discountCents);
     shipping += Number(o.shippingCents);
     for (const i of o.items) {
@@ -133,7 +147,7 @@ export async function loadSummary(range: RangeKey) {
   low.sort((a, b) => a.onHand - b.onHand);
 
   return {
-    sales: { sales, net, shipping, cost, units, unitsNoCost, refunds, recovered, profit, orders: orders.length, margin: profit != null && net > 0 ? (profit / net) * 100 : null },
+    sales: { sales, net, shipping, cost, units, unitsNoCost, refunds, recovered, profit, wompiFees, profitAfterFees: profit == null ? null : profit - wompiFees, orders: orders.length, margin: profit != null && net > 0 ? (profit / net) * 100 : null },
     buckets: [...buckets.values()],
     monthly,
     top: [...byProduct.values()].sort((a, b) => b.cents - a.cents).slice(0, 6),
