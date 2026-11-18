@@ -8,7 +8,7 @@ export function AnnouncementBar() {
     "ENVÍO A TODA COLOMBIA",
     `ENVÍO GRATIS DESDE ${formatCOP(FREE_SHIPPING_FROM_CENTS)}`,
     "PAGO SEGURO CON WOMPI",
-    "GARANTÍAS Y DEVOLUCIONES",
+    "DEVOLUCIONES",
   ];
   return (
     <div data-theme="dark" className="relative z-40 bg-[#0b0b0b] text-ink" role="region" aria-label="Avisos de la tienda">

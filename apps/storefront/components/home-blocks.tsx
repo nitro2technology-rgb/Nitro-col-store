@@ -24,7 +24,7 @@ export function HomeAfterHero({ hasReviews }: { hasReviews: boolean }) {
 
 /** Franja gris con tres promesas (portada de inicio y de cada categoría). En celular corre horizontal, en movimiento. */
 export function PromiseStrip({ className = "" }: { className?: string }) {
-  const items = ["Envío a toda Colombia", "Pago seguro con Wompi", "Garantía y devoluciones"];
+  const items = ["Envío a toda Colombia", "Pago seguro con Wompi", "Devoluciones"];
   return (
     <div data-theme="dark" className={`bg-[#4b5563]/90 text-[13px] text-white backdrop-blur-md ${className}`}>
       <div className="md:hidden">
@@ -55,7 +55,7 @@ export function HomeMarquee() {
   return (
     <div data-theme="dark" className="bg-[#111827] text-ink">
       <Marquee
-        items={["ENVÍOS A TODO EL PAÍS", "PAGO SEGURO CON WOMPI", "GARANTÍA Y DEVOLUCIONES", "ATENCIÓN POR WHATSAPP", "COMPRA ASEGURADA"]}
+        items={["ENVÍOS A TODO EL PAÍS", "PAGO SEGURO CON WOMPI", "DEVOLUCIONES", "ATENCIÓN POR WHATSAPP", "COMPRA ASEGURADA"]}
         speed={42}
         itemClass="py-3.5 text-[13px] font-semibold uppercase tracking-[0.08em]"
         separator="✓"
@@ -150,7 +150,7 @@ const benefits = [
     ),
     text: (
       <>
-        <b>5 días hábiles</b> de retracto y garantía legal
+        <b>5 días hábiles</b> de retracto
       </>
     ),
   },
@@ -215,7 +215,7 @@ export function HomeStory() {
     { big: "Desde 2020", small: "Tecnología y estilo para tu día a día" },
     { big: "Toda Colombia", small: "Envíos a cualquier ciudad del país" },
     { big: "Pago seguro", small: "Wompi: tarjeta, PSE, Nequi y más" },
-    { big: "Garantía", small: "Retracto de cinco días hábiles" },
+    { big: "WhatsApp", small: "Te acompañamos antes y después de tu compra" },
   ];
   return (
     <section data-theme="dark" className="bg-[#1b1b1b] text-ink">
@@ -226,9 +226,11 @@ export function HomeStory() {
             {BUSINESS.legalName} · {BUSINESS.tradeName}
           </p>
           <p className="mt-4 leading-[1.55]">
-            Nitro Col nació para que comprar tecnología y accesorios con estilo sea fácil, seguro y sin vueltas: pagas en un sitio protegido, te lo enviamos a donde estés y te
-            acompañamos por WhatsApp si necesitas algo.
+            Nitro Colombia (antes Nitro Clothing) nació en Pasto, Nariño, como un emprendimiento de accesorios de moda con gorros beanie. Con el tiempo amplió su oferta a las gafas
+            de sol y, después, nos propusimos convertirla en una tienda en línea con productos de distintas categorías. Hoy ofrecemos tecnología y moda, y en el futuro seguiremos
+            creciendo.
           </p>
+          <p className="mt-4 leading-[1.55]">Nitro Colombia pertenece a Nitro 2Tech, empresa de software y datos que es nuestra empresa matriz.</p>
         </div>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-8 text-center">
           {facts.map((f) => (

@@ -262,7 +262,7 @@ function Dialog({ initialSku, onClose }: { initialSku: string; onClose: () => vo
             Envío a toda Colombia, <b>gratis</b> desde $150.000
           </Check>
           <Check>
-            <b>Garantía</b> y cinco días hábiles de retracto
+            <b>Cinco días hábiles</b> de retracto
           </Check>
           <Check>Entrega en 2 a 5 días hábiles</Check>
         </ul>

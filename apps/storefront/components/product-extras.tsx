@@ -9,7 +9,7 @@ export function BenefitsMarquee({ product }: { product: Product }) {
     ...product.highlights.map((h) => h.title.toUpperCase()),
     "ENVÍO A TODA COLOMBIA",
     "PAGO SEGURO CON WOMPI",
-    "GARANTÍA Y DEVOLUCIONES",
+    "DEVOLUCIONES",
   ];
   return (
     <div className="border-y border-ink/10">
@@ -18,7 +18,7 @@ export function BenefitsMarquee({ product }: { product: Product }) {
   );
 }
 
-/** Preguntas que frenan una compra, resueltas en acordeones: material, envíos, garantía y qué hacer si algo falla. */
+/** Preguntas que frenan una compra, resueltas en acordeones: material, envíos, devoluciones y qué hacer si algo falla. */
 export function ProductAccordion({ product }: { product: Product }) {
   const specs = Object.entries(product.specs);
   const items: { q: string; a: React.ReactNode }[] = [
@@ -43,8 +43,8 @@ export function ProductAccordion({ product }: { product: Product }) {
       a: `Enviamos a toda Colombia en ${BUSINESS.deliveryTime}. El envío cuesta ${formatCOP(SHIPPING_FLAT_CENTS)} y es gratis desde ${formatCOP(FREE_SHIPPING_FROM_CENTS)}.`,
     },
     {
-      q: "Garantía y devoluciones",
-      a: `Tienes cinco días hábiles después de recibirlo para ejercer el derecho de retracto, y la garantía legal por defectos de fábrica. Escríbenos a ${BUSINESS.email} o por WhatsApp con tu número de pedido.`,
+      q: "Devoluciones",
+      a: `Tienes cinco días hábiles después de recibirlo para ejercer el derecho de retracto. Si llega dañado o con falla, escríbenos a ${BUSINESS.email} o por WhatsApp con tu número de pedido.`,
     },
     {
       q: "¿Qué pasa si llega dañado o con una falla?",
@@ -100,7 +100,7 @@ export function TrustStrip() {
   const items = [
     { icon: <IconCard />, text: "Pago seguro\ncon Wompi" },
     { icon: <IconTruck />, text: "Envío a toda\nColombia" },
-    { icon: <IconShield />, text: "Garantía y\ndevoluciones" },
+    { icon: <IconShield />, text: "Devoluciones\nen 5 días" },
   ];
   return (
     <div className="mx-auto max-w-[1024px] px-3">
@@ -116,14 +116,14 @@ export function TrustStrip() {
   );
 }
 
-/** Cierre de la ficha: ola negra y cinta con las garantías. */
+/** Cierre de la ficha: ola negra y cinta con las promesas. */
 export function QualityMarquee() {
   return (
     <div data-theme="dark" className="mt-10">
       <div className="wave-top" aria-hidden="true" />
       <div className="bg-[#111827] pb-2 text-ink">
         <Marquee
-          items={["LA MEJOR CALIDAD", "GARANTÍA Y DEVOLUCIONES", "COMPRA ASEGURADA", "ENVÍO A TODA COLOMBIA"]}
+          items={["LA MEJOR CALIDAD", "DEVOLUCIONES", "COMPRA ASEGURADA", "ENVÍO A TODA COLOMBIA"]}
           speed={40}
           itemClass="py-5 text-[18px] font-medium uppercase tracking-[0.04em] md:text-[22px]"
           separator=""
