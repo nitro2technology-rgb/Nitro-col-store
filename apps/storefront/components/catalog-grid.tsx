@@ -29,22 +29,22 @@ function FilterGroup({
     onChange(next);
   };
   return (
-    <details className="group border-t border-ink/20 py-4">
-      <summary className="flex cursor-pointer list-none items-center justify-between text-[17px] [&::-webkit-details-marker]:hidden">
+    <details className="group border-t border-ink/20 py-2.5 md:py-4">
+      <summary className="flex cursor-pointer list-none items-center justify-between text-[14px] md:text-[17px] [&::-webkit-details-marker]:hidden">
         {title}
-        {selected.size > 0 && <span className="ml-2 text-[13px] text-muted">({selected.size})</span>}
-        <span aria-hidden="true" className="ml-auto text-[20px] leading-none group-open:hidden">
+        {selected.size > 0 && <span className="ml-2 text-[12px] text-muted md:text-[13px]">({selected.size})</span>}
+        <span aria-hidden="true" className="ml-auto text-[18px] leading-none md:text-[20px] group-open:hidden">
           +
         </span>
-        <span aria-hidden="true" className="ml-auto hidden text-[20px] leading-none group-open:inline">
+        <span aria-hidden="true" className="ml-auto hidden text-[18px] leading-none md:text-[20px] group-open:inline">
           −
         </span>
       </summary>
-      <ul className="mt-3 max-h-[320px] space-y-2.5 overflow-y-auto pr-1">
+      <ul className="mt-2 max-h-[220px] space-y-1.5 overflow-y-auto pr-1 md:mt-3 md:max-h-[320px] md:space-y-2.5">
         {options.map((o) => (
           <li key={o.name}>
-            <label className="flex cursor-pointer items-center gap-3 text-[15px]">
-              <input type="checkbox" checked={selected.has(o.name)} onChange={() => toggle(o.name)} className="size-[18px] shrink-0 rounded-[5px] accent-current" />
+            <label className="flex cursor-pointer items-center gap-2.5 text-[13px] md:gap-3 md:text-[15px]">
+              <input type="checkbox" checked={selected.has(o.name)} onChange={() => toggle(o.name)} className="size-4 shrink-0 rounded-[4px] accent-current md:size-[18px] md:rounded-[5px]" />
               <span className="flex-1">{o.name}</span>
               <span className="text-muted">({o.count})</span>
             </label>
@@ -65,7 +65,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
   const [models, setModels] = useState<Set<string>>(new Set());
   const [types, setTypes] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<Sort>("destacados");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const colorOptions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -116,27 +116,27 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
   const hasFilters = products.length > 0;
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-5">
+    <div className="mt-3 md:mt-8">
+      <div className="plate flex items-center justify-between gap-3 md:flex-wrap md:gap-4">
+        <div className="flex items-center gap-3 md:gap-5">
           {hasFilters && (
-            <button type="button" onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters} className="flex items-center gap-2 text-[17px] font-semibold">
-              {showFilters ? "Ocultar filtro" : "Mostrar filtro"}
-              {active > 0 && <span className="rounded-full bg-ink px-2 text-[12px] text-canvas">{active}</span>}
-              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <button type="button" onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters} className="flex items-center gap-1.5 text-[14px] font-semibold md:gap-2 md:text-[17px]">
+              {showFilters ? "Ocultar filtro" : "Filtros"}
+              {active > 0 && <span className="rounded-full bg-ink px-2 text-[11px] text-canvas md:text-[12px]">{active}</span>}
+              <svg viewBox="0 0 24 24" className="size-4 md:size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
                 <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
                 <circle cx="16" cy="7" r="2" />
                 <circle cx="8" cy="17" r="2" />
               </svg>
             </button>
           )}
-          <p className="text-[16px] text-muted" aria-live="polite">
+          <p className="text-[13px] text-muted md:text-[16px]" aria-live="polite">
             {shown.length} {shown.length === 1 ? "producto" : "productos"}
           </p>
         </div>
         <label className="flex items-center gap-3 text-[16px]">
-          <span className="font-semibold">Ordenar por</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="rounded-[10px] border border-ink/25 bg-canvas/70 px-3 py-2 text-[15px] backdrop-blur-md">
+          <span className="hidden font-semibold md:inline">Ordenar por</span>
+          <select aria-label="Ordenar por" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="rounded-[10px] border border-ink/25 bg-canvas/70 px-2 py-1.5 text-[13px] backdrop-blur-md md:px-3 md:py-2 md:text-[15px]">
             <option value="destacados">Destacados</option>
             <option value="precio-asc">Precio: menor a mayor</option>
             <option value="precio-desc">Precio: mayor a menor</option>
@@ -145,20 +145,20 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
         </label>
       </div>
 
-      <div className={`mt-6 grid gap-8 ${showFilters && hasFilters ? "lg:grid-cols-[260px_1fr]" : ""}`}>
+      <div className={`mt-3 grid gap-4 md:mt-6 md:gap-8 ${showFilters && hasFilters ? "lg:grid-cols-[260px_1fr]" : ""}`}>
         {showFilters && hasFilters && (
-          <aside aria-label="Filtros" className="lg:sticky lg:top-24 lg:self-start">
-            <label className="block text-[15px] font-semibold">
+          <aside aria-label="Filtros" className="plate lg:sticky lg:top-24 lg:self-start">
+            <label className="block text-[13px] font-semibold md:text-[15px]">
               Buscar por nombre
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`Ej. ${products[0]?.name ?? ""}`}
-                className="mt-2 w-full rounded-[10px] border border-ink/25 bg-canvas/70 px-3 py-2.5 text-[16px] font-normal backdrop-blur-md"
+                className="mt-1.5 w-full rounded-[10px] border border-ink/25 bg-canvas/70 px-3 py-2 text-[16px] font-normal backdrop-blur-md md:mt-2 md:py-2.5"
               />
             </label>
-            <div className="mt-5">
+            <div className="mt-3 md:mt-5">
               <FilterGroup title="Color" options={colorOptions} selected={colors} onChange={setColors} />
               <FilterGroup title="Modelo" options={modelOptions} selected={models} onChange={setModels} />
               <FilterGroup title="Tipo" options={typeOptions} selected={types} onChange={setTypes} />
@@ -184,7 +184,7 @@ export function CatalogGrid({ products, byColor = false }: { products: Product[]
               <ProductTile key={key} product={product} sku={sku} showColor={byColor} />
             ))}
           </section>
-          {shown.length === 0 && <p className="mt-6 text-[17px] text-muted">No hay productos con esos filtros.</p>}
+          {shown.length === 0 && <p className="plate mt-6 inline-block text-[17px] text-muted">No hay productos con esos filtros.</p>}
         </div>
       </div>
     </div>

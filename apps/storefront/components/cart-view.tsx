@@ -1,6 +1,7 @@
 "use client";
 
 import { PriceTag } from "./price-tag";
+import { CartUpsell } from "./cart-upsell";
 import Link from "next/link";
 import { formatCOP } from "@nitro/shared";
 import { buttonClasses } from "@nitro/ui";
@@ -25,7 +26,7 @@ export function CartView() {
 
   if (rows.length === 0) {
     return (
-      <div className="mt-12 max-w-xl">
+      <div className="plate mt-12 max-w-xl">
         <p className="text-[20px] text-muted">Tu carrito está vacío. Elige una categoría para empezar.</p>
         <div className="mt-8 flex flex-wrap gap-3">
           {categories.map((c) => (
@@ -43,6 +44,7 @@ export function CartView() {
 
   return (
     <div className="mt-12 grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+      <div className="min-w-0">
       <ul className="space-y-4">
         {rows.map(({ product, variant, qty }) => (
           <li
@@ -111,6 +113,8 @@ export function CartView() {
           </li>
         ))}
       </ul>
+      <CartUpsell inCart={rows.map((r) => r.product)} units={units} />
+      </div>
 
       <aside className="glass rounded-card p-8 lg:sticky lg:top-24">
         <h2 className="text-[28px]">Resumen</h2>

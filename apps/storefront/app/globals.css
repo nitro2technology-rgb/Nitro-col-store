@@ -392,6 +392,40 @@ main :where(h1, h2, h3, p, dt, dd, legend, li) {
     0 0 24px var(--canvas);
 }
 
+/* Textos sueltos sobre el follaje (filtros, carrito): sin caja. Una nube difusa del color del lienzo detrás del bloque
+   (borde totalmente desenfocado, sin esquinas) y un halo más fuerte en las letras, así se leen sobre hojas oscuras. */
+.plate {
+  position: relative;
+  isolation: isolate;
+}
+.plate::before {
+  content: "";
+  position: absolute;
+  inset: -10px -14px;
+  z-index: -1;
+  background: var(--canvas);
+  opacity: 0.72;
+  filter: blur(14px);
+  border-radius: 40px;
+  pointer-events: none;
+}
+.plate :where(h1, h2, h3, p, span, label, summary, legend, li, dt, dd, button) {
+  text-shadow:
+    0 0 3px var(--canvas),
+    0 0 10px var(--canvas),
+    0 0 20px var(--canvas),
+    0 0 32px var(--canvas);
+}
+/* Para títulos en línea (se parten en varias líneas): solo el halo reforzado. */
+.plate-inline {
+  text-shadow:
+    0 0 3px var(--canvas),
+    0 0 10px var(--canvas),
+    0 0 22px var(--canvas),
+    0 0 40px var(--canvas),
+    0 0 60px var(--canvas);
+}
+
 /* Rendimiento: cada capa animada va en su propia capa de composición, así el navegador
    la mueve como una imagen ya pintada en vez de redibujar los desenfoques en cada cuadro. */
 .fol-edge,

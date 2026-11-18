@@ -56,8 +56,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <h1 className="text-[clamp(44px,8vw,96px)]">{found.name}</h1>
       )}
 
-      <div id="coleccion" className="mx-auto max-w-[1440px] scroll-mt-16 pt-10">
-      <nav aria-label="Subcategorías" className="mt-8 flex flex-wrap gap-2">
+      <div id="coleccion" className="mx-auto max-w-[1440px] scroll-mt-16 pt-4 md:pt-10">
+      <nav aria-label="Subcategorías" className="mt-2 flex flex-wrap gap-1.5 md:mt-8 md:gap-2">
         {chips.map((c) => {
           const active = c.slug === slug;
           return (
@@ -65,7 +65,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               key={c.slug}
               href={`/c/${c.slug}`}
               aria-current={active ? "page" : undefined}
-              className={`rounded-chip px-4 py-2 text-[15px] transition-colors ${
+              className={`rounded-chip px-3 py-1.5 text-[13px] transition-colors md:px-4 md:py-2 md:text-[15px] ${
                 active ? "bg-ink text-canvas" : "glass text-ink hover:bg-white/80"
               }`}
             >
