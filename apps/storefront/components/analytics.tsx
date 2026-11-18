@@ -1,9 +1,8 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ADS_ID, CONSENT_KEY, GA_ID, hasConsent, META_ID, track, trackingEnabled } from "@/lib/track";
+import { CONSENT_KEY, ensureTracking, GA_ID, hasConsent, track, trackingEnabled } from "@/lib/track";
 
 type Choice = "granted" | "denied" | null;
 type W = Window & { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void };
@@ -35,6 +34,7 @@ export function Analytics() {
   // Cada cambio de página cuenta como visita (la tienda navega sin recargar).
   useEffect(() => {
     if (choice !== "granted") return;
+    ensureTracking();
     const w = window as W;
     w.fbq?.("track", "PageView");
     if (GA_ID) w.gtag?.("event", "page_view", { page_path: pathname, send_to: GA_ID });
@@ -52,22 +52,8 @@ export function Analytics() {
   }
 
   if (!trackingEnabled || !ready) return null;
-  const gId = GA_ID || ADS_ID;
   return (
     <>
-      {choice === "granted" && (
-        <>
-          {META_ID && (
-            <Script id="meta-pixel" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_ID}');`}</Script>
-          )}
-          {gId && (
-            <>
-              <Script src={`https://www.googletagmanager.com/gtag/js?id=${gId}`} strategy="afterInteractive" />
-              <Script id="gtag-init" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());${GA_ID ? `gtag('config','${GA_ID}',{send_page_view:false});` : ""}${ADS_ID ? `gtag('config','${ADS_ID}');` : ""}`}</Script>
-            </>
-          )}
-        </>
-      )}
       {open && (
         <div role="dialog" aria-label="Cookies" data-theme="light" className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-[620px] rounded-[22px] bg-canvas p-5 text-ink shadow-2xl ring-1 ring-ink/15 sm:inset-x-6 sm:bottom-6">
           <p className="text-[15px] font-semibold">Tu privacidad</p>
@@ -107,7 +93,7 @@ export function TrackPurchase({ orderRef, value, items }: { orderRef: string; va
       const w = window as W;
       try {
         if (localStorage.getItem(key)) return clearInterval(id);
-        if (hasConsent() && (w.fbq || w.gtag)) {
+        if (hasConsent()) {
           track("purchase", { items, value, transactionId: orderRef });
           localStorage.setItem(key, "1");
           clearInterval(id);

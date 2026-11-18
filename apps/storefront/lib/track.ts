@@ -40,9 +40,53 @@ export function trackingContext(): { consent: boolean; fbp?: string; fbc?: strin
 export type TrackItem = { sku: string; name: string; price: number; qty: number };
 type W = Window & { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void };
 
+/**
+ * Deja listos Meta Pixel y gtag, UNA sola vez y solo con consentimiento. Crea `fbq`/`gtag` al instante: lo que se envíe antes de
+ * que terminen de descargarse los scripts queda en cola y sale apenas cargan (si no, el primer PageView y ViewContent se perdían).
+ */
+export function ensureTracking() {
+  if (!trackingEnabled || typeof window === "undefined" || !hasConsent()) return;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const w = window as any;
+  if (META_ID && !w.fbq) {
+    const n: any = function () {
+      // eslint-disable-next-line prefer-rest-params
+      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+    };
+    w.fbq = n;
+    if (!w._fbq) w._fbq = n;
+    n.push = n;
+    n.loaded = true;
+    n.version = "2.0";
+    n.queue = [];
+    const s = document.createElement("script");
+    s.async = true;
+    s.src = "https://connect.facebook.net/en_US/fbevents.js";
+    document.head.appendChild(s);
+    n("init", META_ID);
+  }
+  const gId = GA_ID || ADS_ID;
+  if (gId && !w.gtag) {
+    w.dataLayer = w.dataLayer || [];
+    w.gtag = function () {
+      // eslint-disable-next-line prefer-rest-params
+      w.dataLayer.push(arguments);
+    };
+    const s = document.createElement("script");
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${gId}`;
+    document.head.appendChild(s);
+    w.gtag("js", new Date());
+    if (GA_ID) w.gtag("config", GA_ID, { send_page_view: false });
+    if (ADS_ID) w.gtag("config", ADS_ID);
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
 /** `price` y `value` en pesos (COP), no en centavos. */
 export function track(event: "view_item" | "add_to_cart" | "begin_checkout" | "purchase", d: { items: TrackItem[]; value: number; transactionId?: string }) {
   if (!trackingEnabled || typeof window === "undefined" || !hasConsent()) return;
+  ensureTracking();
   const w = window as W;
   const ids = d.items.map((i) => i.sku);
   const ga = d.items.map((i) => ({ item_id: i.sku, item_name: i.name, price: i.price, quantity: i.qty }));
