@@ -11,6 +11,8 @@ export const RESERVATION_MINUTES = 45;
 const IN_PROGRESS_HOURS = 24;
 /** Prefijo del motivo de cancelación por vencimiento (permite reactivar el pedido si el pago llega tarde). */
 export const EXPIRED_REASON = "Vencido: no se pagó a tiempo";
+/** Motivo cuando Wompi rechaza el pago: el pedido se cancela y el stock se libera al instante. También permite reactivarlo si luego llega un pago aprobado. */
+export const DECLINED_REASON = "Pago rechazado en Wompi";
 
 export class OutOfStockError extends Error {
   constructor(public variantId: string) {

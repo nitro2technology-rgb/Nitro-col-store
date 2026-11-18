@@ -4,7 +4,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { Prisma } from "@nitro/db";
 import { sendOrderEmails } from "./mail";
 import { sendMetaPurchase } from "./meta-capi";
-import { commitOrder, EXPIRED_REASON } from "./reservations";
+import { commitOrder, DECLINED_REASON, EXPIRED_REASON, releaseOrder } from "./reservations";
 
 export const wompiApi = () =>
   process.env.WOMPI_ENV === "production" ? "https://production.wompi.co/v1" : "https://sandbox.wompi.co/v1";
@@ -104,11 +104,20 @@ export async function applyTransaction(tx: WompiTransaction) {
         data: { providerRef: tx.id, method: tx.payment_method_type ?? payment.method, status, raw: tx as unknown as Prisma.InputJsonValue },
       });
     }
+    // Pago rechazado: se cancela el pedido (solo si sigue sin pagar) y se libera el stock apartado al instante.
+    if (status === "declined") {
+      const cancelled = await t.order.updateMany({ where: { id: order.id, status: "pending_payment" }, data: { status: "cancelled" } });
+      if (cancelled.count > 0) {
+        await releaseOrder(t, order.id);
+        await t.orderStatusHistory.create({ data: { orderId: order.id, fromStatus: "pending_payment", toStatus: "cancelled", reason: DECLINED_REASON } });
+      }
+      return;
+    }
     if (status !== "approved") return;
 
-    // Un pedido vencido (sin pagar a tiempo) se puede reactivar si el pago llega tarde y todavía hay stock.
+    // Un pedido vencido o rechazado se puede reactivar si luego llega un pago aprobado y todavía hay stock.
     const lastReason = order.status === "cancelled" ? (await t.orderStatusHistory.findFirst({ where: { orderId: order.id }, orderBy: { createdAt: "desc" }, select: { reason: true } }))?.reason : null;
-    const revive = order.status === "cancelled" && !!lastReason?.startsWith(EXPIRED_REASON);
+    const revive = order.status === "cancelled" && !!lastReason && (lastReason.startsWith(EXPIRED_REASON) || lastReason.startsWith(DECLINED_REASON));
 
     if (order.status === "cancelled" && !revive) console.error(`[wompi] ¡Pago aprobado de un pedido CANCELADO (NC-${order.number})! Hay que devolver el dinero a mano.`);
 
